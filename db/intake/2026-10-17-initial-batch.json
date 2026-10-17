@@ -1,0 +1,149 @@
+{
+  "batch": "initial-directory-batch-1",
+  "preparedAt": "2026-10-17",
+  "status": "pending_admin_entry",
+  "policy": "Research file only. Nothing here is published or stored in the database. Each record must be entered as a draft in /admin, submitted for review, and verified by a different Owner/Editor against the cited page before publication. 'captured' means an automated fetch on preparedAt returned the quoted evidence; it is NOT 'verified'. Rankings are never captured.",
+  "selectionCriteria": [
+    "One institution per configured destination, so every destination page can be tested with a real record.",
+    "Public or state-chartered research university with an official English-language website.",
+    "UK and US picks are taken from the PDF's genuine-name leads whose homepages already matched in the PDF audit; the PDF supplied the name only, no facts.",
+    "Admissions and fee information is published on the institution's own domain.",
+    "No ranking position was used as evidence or recorded."
+  ],
+  "records": [
+    {
+      "destinationIso2": "US",
+      "officialName": "University of California, Berkeley",
+      "slug": "university-of-california-berkeley",
+      "institutionType": "public",
+      "fromPdfLead": true,
+      "identity": { "url": "https://www.berkeley.edu/", "method": "curl", "httpStatus": 200, "pageTitle": "University of California, Berkeley: Home", "checkedAt": "2026-10-17", "result": "captured" },
+      "facts": [
+        { "field": "undergraduate_admissions_url", "scope": "university_wide", "value": "https://admissions.berkeley.edu/", "evidence": "Page title 'Home - Office of Undergraduate Admissions' (HTTP 200)", "checkedAt": "2026-10-17", "validity": null, "result": "captured" },
+        { "field": "tuition_fee", "scope": "course_specific", "value": null, "evidence": "Not captured in this batch.", "checkedAt": "2026-10-17", "validity": null, "result": "not_yet_researched" }
+      ]
+    },
+    {
+      "destinationIso2": "GB",
+      "officialName": "The University of Edinburgh",
+      "slug": "the-university-of-edinburgh",
+      "institutionType": "public",
+      "fromPdfLead": true,
+      "identity": { "url": "https://www.ed.ac.uk/", "method": "curl", "httpStatus": 200, "pageTitle": "The University of Edinburgh", "checkedAt": "2026-10-17", "result": "captured" },
+      "facts": [
+        { "field": "tuition_fee_lookup_url", "scope": "course_specific", "value": "https://www.ed.ac.uk/student-funding/tuition-fees", "evidence": "Page title 'Find your tuition fees | Tuition fees | Registry Services' (HTTP 200). Fees are looked up per programme, so no university-wide amount exists.", "checkedAt": "2026-10-17", "validity": null, "result": "captured" },
+        { "field": "tuition_fee", "scope": "course_specific", "value": null, "evidence": "Requires a specific programme and entry year.", "checkedAt": "2026-10-17", "validity": null, "result": "not_yet_researched" }
+      ]
+    },
+    {
+      "destinationIso2": "CA",
+      "officialName": "University of Toronto",
+      "slug": "university-of-toronto",
+      "institutionType": "public",
+      "fromPdfLead": false,
+      "identity": { "url": "https://www.utoronto.ca/", "method": "curl", "httpStatus": 200, "pageTitle": "University of Toronto", "checkedAt": "2026-10-17", "result": "captured" },
+      "facts": [
+        { "field": "prospective_students_url", "scope": "university_wide", "value": "https://future.utoronto.ca/", "evidence": "Page title 'Your future starts here | Future Students. University of Toronto' (HTTP 200)", "checkedAt": "2026-10-17", "validity": null, "result": "captured" }
+      ]
+    },
+    {
+      "destinationIso2": "IT",
+      "officialName": "Politecnico di Milano",
+      "slug": "politecnico-di-milano",
+      "institutionType": "public",
+      "fromPdfLead": false,
+      "identity": { "url": "https://www.polimi.it/en", "method": "curl", "httpStatus": 200, "pageTitle": "Politecnico di Milano - polimi", "checkedAt": "2026-10-17", "result": "captured" },
+      "facts": [
+        { "field": "tuition_fee", "scope": "university_wide", "value": null, "evidence": "Guessed fee URL https://www.polimi.it/en/students/tuition-fees returned 404; official fee page not yet located.", "checkedAt": "2026-10-17", "validity": null, "result": "source_not_located" }
+      ]
+    },
+    {
+      "destinationIso2": "DE",
+      "officialName": "Technical University of Munich",
+      "slug": "technical-university-of-munich",
+      "institutionType": "public",
+      "fromPdfLead": false,
+      "identity": { "url": "https://www.tum.de/en/", "method": "curl", "httpStatus": 200, "pageTitle": "Technical University of Munich: The Entrepreneurial University - TUM", "checkedAt": "2026-10-17", "result": "captured" },
+      "facts": [
+        {
+          "field": "tuition_fee_policy_non_eu",
+          "scope": "university_wide",
+          "value": {
+            "currency": "EUR",
+            "billingPeriod": "per_semester",
+            "appliesTo": "Newly enrolling non-EU/EEA students in bachelor's and master's programmes",
+            "currentBands": { "bachelor": [2000, 3000], "master": [4000, 6000] },
+            "fromWinterSemester2027_28": { "bachelor": [2300, 3400], "master": [4600, 6800] },
+            "exactAmount": "Per programme, on the programme page under 'Program details'"
+          },
+          "evidence": "https://www.tum.de/en/studies/fees/tuition (title 'Tuition Fees for Students from Non-EU Countries - TUM'): 'For bachelor's degree programs, tuition fees are usually 2,000 or 3,000 euros per semester. For master's degree programs, they are usually 4,000 or 6,000 euros per semester.' and 'Tuition fees for international students from non-EU/EEA countries at TUM will increase for the winter semester 2027/28 ... Bachelor's programs: 2,300 euros or 3,400 euros ... Master's programs: 4,600 or 6,800 euros'.",
+          "checkedAt": "2026-10-17",
+          "validity": "Current bands until winter semester 2027/28; increased bands from winter semester 2027/28",
+          "result": "captured",
+          "entryNote": "A band, not a course fee. Do not enter it as a tuition_fees row until the specific programme's amount is captured from its programme page."
+        },
+        { "field": "semester_fee", "scope": "university_wide", "value": null, "evidence": "https://www.tum.de/en/studies/fees: 'In the summer semester 2026, the semester fee amounts to 97.00 Euro in Munich, Garching and Weihenstephan 82.00 Euro in Straubing 97.00 Euro in Heilbronn'.", "checkedAt": "2026-10-17", "validity": "Summer semester 2026 only (already past); must be re-captured for the current semester", "result": "stale" }
+      ]
+    },
+    {
+      "destinationIso2": "AU",
+      "officialName": "The University of Melbourne",
+      "slug": "the-university-of-melbourne",
+      "institutionType": "public",
+      "fromPdfLead": false,
+      "identity": { "url": "https://www.unimelb.edu.au/", "method": "web_reader", "httpStatus": 403, "pageTitle": "The University of Melbourne - Australia's #1 Ranked University", "checkedAt": "2026-10-17", "result": "blocked_automated_check", "note": "curl receives a bot challenge (403 'Just a moment...'); a web reader returned the title. Needs a manual browser check." },
+      "facts": []
+    },
+    {
+      "destinationIso2": "NZ",
+      "officialName": "Waipapa Taumata Rau | University of Auckland",
+      "slug": "university-of-auckland",
+      "institutionType": "public",
+      "fromPdfLead": false,
+      "identity": { "url": "https://www.auckland.ac.nz/en.html", "method": "curl", "httpStatus": 200, "pageTitle": "Waipapa Taumata Rau – University of Auckland", "checkedAt": "2026-10-17", "result": "captured" },
+      "facts": [
+        { "field": "international_students_url", "scope": "university_wide", "value": "https://www.auckland.ac.nz/en/study/international-students.html", "evidence": "Page title 'International students – University of Auckland' (HTTP 200)", "checkedAt": "2026-10-17", "validity": null, "result": "captured" }
+      ]
+    },
+    {
+      "destinationIso2": "SA",
+      "officialName": "King Abdullah University of Science and Technology",
+      "slug": "king-abdullah-university-of-science-and-technology",
+      "institutionType": "unknown",
+      "fromPdfLead": false,
+      "identity": { "url": "https://www.kaust.edu.sa/en/", "method": "curl", "httpStatus": 200, "pageTitle": "KAUST | A top research university in the Middle East", "checkedAt": "2026-10-17", "result": "captured", "note": "Graduate-only institution per its own homepage ('an international graduate-level science and technology research university'). Governance type not confirmed, so institution type stays 'unknown'." },
+      "facts": [
+        { "field": "study_levels", "scope": "university_wide", "value": "PG only", "evidence": "Homepage: 'We are an international graduate-level science and technology research university'.", "checkedAt": "2026-10-17", "validity": null, "result": "captured" }
+      ]
+    },
+    {
+      "destinationIso2": "AE",
+      "officialName": "Khalifa University of Science and Technology",
+      "slug": "khalifa-university-of-science-and-technology",
+      "institutionType": "unknown",
+      "fromPdfLead": false,
+      "identity": { "url": "https://www.ku.ac.ae/", "method": "web_reader", "httpStatus": null, "pageTitle": "Top Ranked, Research-Intensive University in UAE - Khalifa University", "checkedAt": "2026-10-17", "result": "blocked_automated_check", "note": "curl timed out; a web reader returned the page. Needs a manual browser check." },
+      "facts": []
+    },
+    {
+      "destinationIso2": "FI",
+      "officialName": "University of Helsinki",
+      "slug": "university-of-helsinki",
+      "institutionType": "public",
+      "fromPdfLead": false,
+      "identity": { "url": "https://www.helsinki.fi/en", "method": "curl", "httpStatus": 200, "pageTitle": "University of Helsinki", "checkedAt": "2026-10-17", "result": "captured" },
+      "facts": [
+        { "field": "tuition_fee_policy_non_eu", "scope": "course_specific", "value": null, "evidence": "A search summary mentioned programme-dependent fees, but two guessed official URLs returned 404 and the primary page was not opened. Search summaries are not evidence.", "checkedAt": "2026-10-17", "validity": null, "result": "source_not_located" }
+      ]
+    },
+    {
+      "destinationIso2": "PL",
+      "officialName": "University of Warsaw",
+      "slug": "university-of-warsaw",
+      "institutionType": "public",
+      "fromPdfLead": false,
+      "identity": { "url": "https://en.uw.edu.pl/", "method": "curl", "httpStatus": 200, "pageTitle": "| University of Warsaw", "checkedAt": "2026-10-17", "result": "captured" },
+      "facts": []
+    }
+  ]
+}

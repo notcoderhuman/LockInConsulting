@@ -2,7 +2,7 @@
 
 Study-abroad guidance site for Indian students. Next.js 16.4 · three.js / React Three Fiber · Tailwind v4 · MySQL / MariaDB · Better Auth (planned host: Hostinger).
 
-**Current stage: 3.** Public homepage, 3D globe, all 11 destination pages, university-directory schema (`0001` & `0002`), Better Auth staff authentication, Owner/Reviewer/Editor role-based `/admin` dashboard, publication/licensing gates, and a SHA-256 hash-chained + trigger-protected audit log are implemented and tested against real MySQL 8.4. No production database is connected yet, and there is no student chat or AI integration (Derek remains disabled per `D-002`). University listings show "pending verification" until real, verified data is published. See `TODO.md` and `RISKS.md`.
+**Current stage: 4 (staging readiness; local checks complete, staging blocked on the hosting plan).** Public homepage, 3D globe, all 11 destination pages, university-directory schema (`0001` & `0002`), Better Auth staff authentication, Owner/Reviewer/Editor role-based `/admin` dashboard, publication/licensing gates, and a SHA-256 hash-chained + trigger-protected audit log are implemented and tested against real MySQL 8.4. No production database is connected yet, and there is no student chat or AI integration (Derek remains disabled per `D-002`). University listings show "pending verification" until real, verified data is published. See `TODO.md` and `RISKS.md`.
 
 ## Scripts
 
@@ -12,8 +12,14 @@ pnpm test         # Vitest unit tests (routing, validation, publication rules, R
 pnpm test:db      # migrations + constraints + views + admin workflow + auth against MySQL 8.4 (mysql-memory-server or $DB_TEST_URL)
 pnpm typecheck    # tsc --noEmit
 pnpm build        # Next.js production build
-pnpm db:migrate   # apply db/migrations to $DATABASE_URL (back up first; MySQL DDL auto-commits)
+pnpm db:preflight # read-only engine/grants report for $PREFLIGHT_DATABASE_URL; add --probe to test DDL features
+pnpm db:migrate   # probe, lock, then apply db/migrations to $DATABASE_URL (back up first; DDL auto-commits)
 pnpm admin:user   # provision/manage admin accounts (create, grant, revoke, set-password, list, verify-audit)
+```
+
+`pnpm test:db` passes on MySQL 8.4.9 (default) and MariaDB 10.5.29 (`DB_TEST_URL=mysql://user:pass@host:port/empty_db`). Run operator commands from a trusted machine; Hostinger Business/Cloud can't run npm over SSH. See the staging checklist in `TODO.md`.
+
+```bash
 ```
 
 Append `?ist=15:30` to preview the globe's lighting at that India time.

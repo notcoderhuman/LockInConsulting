@@ -7,6 +7,7 @@ import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import mysql from 'mysql2/promise'
+import { describeServer, probeAdvice, probeDdlCapabilities } from './db-capabilities.mjs'
 
 export const MIGRATIONS_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'db', 'migrations')
 
@@ -33,23 +34,44 @@ export async function migrate(connection, migrations) {
 
   const [rows] = await connection.query('SELECT name, checksum FROM schema_migrations')
   const applied = new Map(rows.map((r) => [r.name, r.checksum]))
-  const ran = []
-
+  const pending = []
   for (const m of migrations) {
     const previous = applied.get(m.name)
-    if (previous) {
-      if (previous !== m.checksum) {
-        throw new Error(`Migration ${m.name} was modified after being applied. Create a new migration instead.`)
-      }
-      continue
-    }
-    // MySQL DDL auto-commits, so a failed migration can leave partial tables. Run against a
-    // backup first in production (documented in README).
-    await connection.query(m.sql)
-    await connection.query('INSERT INTO schema_migrations (name, checksum) VALUES (?, ?)', [m.name, m.checksum])
-    ran.push(m.name)
+    if (!previous) pending.push(m)
+    else if (previous !== m.checksum)
+      throw new Error(`Migration ${m.name} was modified after being applied. Create a new migration instead.`)
   }
-  return ran
+  if (!pending.length) return []
+
+  const [lockRows] = await connection.query("SELECT GET_LOCK('lockin_schema_migrate', 0) AS got")
+  if (Number(lockRows[0]?.got) !== 1) throw new Error('Another migration run holds the lock. Wait for it to finish.')
+  try {
+    // DDL auto-commits, so prove every required feature works for this user BEFORE changing
+    // anything, rather than discovering a refused CREATE TRIGGER halfway through 0002.
+    const probe = await probeDdlCapabilities(connection)
+    if (!probe.ok) {
+      const failed = probe.steps.filter((s) => !s.ok).map((s) => `${s.name}${s.detail ? ` (${s.detail})` : ''}`)
+      const advice = probeAdvice(await describeServer(connection))
+      throw new Error(`Database capability check failed; no migration was applied. ${[...failed, ...advice].join(' | ')}`)
+    }
+
+    const ran = []
+    for (const m of pending) {
+      try {
+        await connection.query(m.sql)
+      } catch (e) {
+        throw new Error(
+          `Migration ${m.name} failed partway: ${e?.code ?? ''} ${e?.sqlMessage ?? e?.message ?? e}. DDL auto-commits, so the schema may be partially changed. ` +
+            'It was NOT recorded in schema_migrations, so /admin stays unavailable (fails closed). Restore the pre-migration backup before retrying.',
+        )
+      }
+      await connection.query('INSERT INTO schema_migrations (name, checksum) VALUES (?, ?)', [m.name, m.checksum])
+      ran.push(m.name)
+    }
+    return ran
+  } finally {
+    await connection.query("SELECT RELEASE_LOCK('lockin_schema_migrate')").catch(() => {})
+  }
 }
 
 const isCli = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
@@ -64,6 +86,9 @@ if (isCli) {
   try {
     const ran = await migrate(connection, await loadMigrations())
     console.log(ran.length ? `Applied: ${ran.join(', ')}` : 'Database is up to date.')
+  } catch (e) {
+    console.error(e instanceof Error ? e.message : e)
+    process.exitCode = 1
   } finally {
     await connection.end()
   }

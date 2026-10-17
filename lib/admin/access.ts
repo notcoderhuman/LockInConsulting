@@ -4,6 +4,7 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { getAuth } from '@/lib/auth'
 import { getAdminPool } from '@/lib/db/pool'
+import { REQUIRED_MIGRATIONS } from '@/lib/db/schema-version'
 import { ADMIN_ROLES, can, type AdminActor, type AdminRole, type Permission } from './roles'
 
 // Server-side authorisation for every admin page, API route and server action. Hiding a link in
@@ -16,10 +17,20 @@ export type AdminContext =
   | { state: 'forbidden'; email: string }
   | { state: 'ok'; actor: AdminActor }
 
+async function schemaIsCurrent(): Promise<boolean> {
+  const [rows] = await getAdminPool().query<RowDataPacket[]>('SELECT name FROM schema_migrations')
+  const applied = new Set(rows.map((r) => String(r.name)))
+  return REQUIRED_MIGRATIONS.every((m) => applied.has(m))
+}
+
 export async function resolveAdminContext(requestHeaders: Headers): Promise<AdminContext> {
   const auth = getAuth()
   if (!auth) return { state: 'not_configured' }
   try {
+    if (!(await schemaIsCurrent())) {
+      console.error('[admin] database schema is missing required migrations; refusing admin access')
+      return { state: 'error' }
+    }
     const session = await auth.api.getSession({ headers: requestHeaders })
     if (!session?.user) return { state: 'signed_out' }
     const [rows] = await getAdminPool().query<RowDataPacket[]>(

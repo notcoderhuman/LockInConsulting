@@ -1,6 +1,6 @@
 # LockIn Consulting — Architecture
 
-Status: **Stage 3.** The public homepage, 11 destination pages, university-directory schema (`0001_university_directory.sql` + `0002_admin_auth.sql`), Better Auth administrator sign-in, Owner/Reviewer/Editor role-based access control, `/admin` dashboard, publication/licensing workflow, and SHA-256 hash-chained + trigger-protected audit log are implemented and verified against real MySQL 8.4 (`pnpm test:db`). There is still **no live production database connection, no student chat, and no AI provider** (Derek remains disabled per D-002).
+Status: **Stage 4 (staging readiness).** Local checks are complete, and the integration suite also passes on MariaDB 10.5.29. Staging is blocked on the Hostinger plan and staging credentials. Stage 3 summary: The public homepage, 11 destination pages, university-directory schema (`0001_university_directory.sql` + `0002_admin_auth.sql`), Better Auth administrator sign-in, Owner/Reviewer/Editor role-based access control, `/admin` dashboard, publication/licensing workflow, and SHA-256 hash-chained + trigger-protected audit log are implemented and verified against real MySQL 8.4 (`pnpm test:db`). There is still **no live production database connection, no student chat, and no AI provider** (Derek remains disabled per D-002).
 
 ## Stack
 
@@ -80,7 +80,9 @@ db/migrations/
   0002_admin_auth.sql                         Better Auth tables, admin_members, fx_providers, public_fx_rates,
                                               hash-chained data_change_log, audit_chain_head, immutability triggers
 scripts/
-  migrate.mjs                                 ordered, SHA-256 checksummed migration runner
+  migrate.mjs                                 ordered, SHA-256 checksummed, probed and locked migration runner
+  db-capabilities.mjs                         engine classification, DDL capability probe, grant redaction
+  db-preflight.mjs                            read-only staging compatibility report (`pnpm db:preflight`)
   admin-user.mjs                              CLI-only admin provisioning (create, grant, revoke, set-password, list, verify-audit)
 tests/                                        Vitest unit tests (pnpm test)
 tests/db/                                     real-MySQL 8.4 integration tests (pnpm test:db)
@@ -132,4 +134,11 @@ All money is `DECIMAL` in the original currency. All facts are linked to a `sour
 
 ## Deployment shape (pending plan confirmation)
 
-GitHub → Hostinger build (`pnpm build`) → `next start`. Run `pnpm db:migrate` with `DATABASE_URL` set, against a backup first: MySQL DDL auto-commits. Provision the initial owner account via `pnpm admin:user create`. Secrets live only in Hostinger environment variables.
+GitHub → Hostinger Node.js web app (Business or Cloud; Node 22.x/24.x; Hostinger applies `output: "standalone"` itself) → server process restarted from hPanel. Secrets live only in Hostinger environment variables. Changing them requires a restart, or a redeploy for build-time values.
+
+Database operations run from a trusted machine over Remote MySQL (R-018), never from a web route:
+1. `pnpm db:preflight --probe` prints version, `sql_mode`, time zone, binlog/trigger settings and redacted grants. It creates and drops a throwaway `_lockin_probe_*` table, view and trigger.
+2. `pnpm db:migrate` (`scripts/migrate.mjs`) takes `GET_LOCK('lockin_schema_migrate')`, re-runs the probe and applies nothing if a feature is refused. A migration that fails partway is **not** recorded and the error says to restore the backup.
+3. `lib/admin/access.ts` checks that every name in `lib/db/schema-version.ts` is recorded in `schema_migrations`. Otherwise every admin page, API route and server action fails closed (`/admin/unavailable`, `503`). The public site reads only `public_*` views, so a half-applied schema can never expose unpublished data.
+
+Tested engines: MySQL 8.4.9 and MariaDB 10.5.29 (`scripts/db-capabilities.mjs → TESTED_ENGINES`).

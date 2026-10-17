@@ -1,0 +1,156 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * LockIn design tokens.
+ * Palette: near-black (background), warm charcoal (surface), ivory (text),
+ * stone (secondary text), warm gold (accent — reserved for interactive/selected states).
+ */
+:root {
+  color-scheme: dark;
+  --background: #0b0a09;
+  --foreground: #efe7d8;
+  --card: #15130f;
+  --card-foreground: #efe7d8;
+  --popover: #15130f;
+  --popover-foreground: #efe7d8;
+  --primary: #d4b47a;
+  --primary-foreground: #0b0a09;
+  --secondary: #15130f;
+  --secondary-foreground: #efe7d8;
+  --muted: #15130f;
+  --muted-foreground: #a89e8b;
+  --accent: #15130f;
+  --accent-foreground: #efe7d8;
+  --destructive: #e07a5f;
+  --border: rgb(212 180 122 / 0.16);
+  --input: rgb(212 180 122 / 0.24);
+  --ring: #d4b47a;
+  --radius: 0.75rem;
+
+  --chart-1: #d4b47a;
+  --chart-2: #a89e8b;
+  --chart-3: #efe7d8;
+  --chart-4: #6f6656;
+  --chart-5: #3a342b;
+  --sidebar: #0b0a09;
+  --sidebar-foreground: #efe7d8;
+  --sidebar-primary: #d4b47a;
+  --sidebar-primary-foreground: #0b0a09;
+  --sidebar-accent: #15130f;
+  --sidebar-accent-foreground: #efe7d8;
+  --sidebar-border: rgb(212 180 122 / 0.16);
+  --sidebar-ring: #d4b47a;
+
+  /* Motion tokens */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 160ms;
+  --duration-base: 320ms;
+  --duration-slow: 700ms;
+}
+
+@theme inline {
+  --font-sans: var(--font-manrope), 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-cormorant), 'Cormorant Garamond', ui-serif, Georgia, serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+  ::selection {
+    background: rgb(212 180 122 / 0.3);
+    color: var(--foreground);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Single orchestrated entrance — content is visible by default; motion only enhances. */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal {
+    animation: reveal var(--duration-slow) var(--ease-out-soft) both;
+    animation-delay: calc(var(--reveal-index, 0) * 90ms);
+  }
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hairline-gold {
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+}

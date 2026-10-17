@@ -16,7 +16,9 @@ Legend: `[x]` done and verified · `[~]` partial · `[ ]` not started
   - [x] Admin editor, review queue, publication workflow, and SHA-256 hash-chained + trigger-protected audit-log writes
   - [ ] Connect Hostinger MySQL / MariaDB (blocked by R-005, R-013, R-014, R-018)
   - [ ] Owner approval of FX provider(s) in `/admin/settings` (R-016)
-  - [ ] Real university data, entered and verified by a human reviewer
+  - [x] Audit of the supplied directory PDF: rejected as a source; 25 identity leads in `db/intake/` (R-022)
+  - [ ] Real university data, entered from official sources and verified by a human reviewer in `/admin`
+  - [ ] Browser check of the 8 bot-protected candidate homepages (`identity_check_blocked`)
 - [x] **Phase 6**: Better Auth 1.7.8 for `/admin` (email/password, public sign-up disabled, DB rate limit, CLI provisioning via `scripts/admin-user.mjs`; OAuth and Apple deferred).
 - [ ] **Phase 7**: human-reviewed support: student questions, team replies in the admin inbox. No simulated chat.
 - [ ] **Phase 8**: AI provider. **Not connected by owner decision (D-002, R-001, R-002).**
@@ -35,7 +37,7 @@ Legend: `[x]` done and verified · `[~]` partial · `[ ]` not started
   - [ ] Production (not authorised)
 
 ## Staging readiness checklist (run in order; stop at the first failure)
-1. Owner confirms the exact Hostinger plan (Business or Cloud tier). No upgrade.
+1. **Before buying**, get Hostinger pre-sales to confirm in writing the seven questions in R-021 for the **Unlimited** plan. Buy only once the website is complete, and only with the owner's approval. No upgrade.
 2. Create a **separate** staging website (e.g. `staging.<domain>`) with Node **22.x or 24.x**. Confirm whether the build uses pnpm (R-019).
 3. In hPanel, create an **empty** staging database and user. Do not reuse any production database or user.
 4. In hPanel → Remote MySQL, temporarily allow-list only the operator's IP.

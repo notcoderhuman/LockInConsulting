@@ -1,0 +1,681 @@
+{
+  "document": "global_university_directory_2026_2027-v6.pdf",
+  "auditedAt": "2026-10-17",
+  "verdict": "rejected_as_data_source",
+  "summary": {
+    "rowsClaimed": 749,
+    "rowsFound": 779,
+    "placeholderRows": 754,
+    "namedInstitutionRows": 25,
+    "rowsPerCountry": {
+      "US": 150,
+      "GB": 130,
+      "CA": 120,
+      "DE": 65,
+      "AU": 42,
+      "FR": 50,
+      "IT": 50,
+      "JP": 50,
+      "SA": 20,
+      "AE": 20,
+      "NZ": 8,
+      "FI": 12,
+      "PL": 35,
+      "PH": 15,
+      "GE": 12
+    }
+  },
+  "publicationPolicy": "Nothing from this document is published. Candidates below are identity leads only: every fact must be captured from an official source in /admin and pass review. Rankings stay unpublished until the provider rights are confirmed.",
+  "candidates": [
+    {
+      "pdfName": "Massachusetts Institute of Technology (MIT)",
+      "officialName": "Massachusetts Institute of Technology",
+      "destinationIso2": "US",
+      "slug": "massachusetts-institute-of-technology",
+      "candidateWebsite": "https://www.mit.edu/",
+      "identityCheck": {
+        "method": "homepage_fetch",
+        "checkedAt": "2026-10-17",
+        "httpStatus": 200,
+        "result": "title_matches",
+        "pageTitle": "MIT - Massachusetts Institute of Technology"
+      },
+      "reviewStatus": "identity_candidate",
+      "acceptedFacts": [],
+      "rejectedPdfFacts": [
+        "qs_rank",
+        "the_rank",
+        "qs_scores",
+        "acceptance_rate",
+        "intake_deadlines",
+        "entry_criteria",
+        "tuition_fee",
+        "scholarships"
+      ]
+    },
+    {
+      "pdfName": "Stanford University",
+      "officialName": "Stanford University",
+      "destinationIso2": "US",
+      "slug": "stanford-university",
+      "candidateWebsite": "https://www.stanford.edu/",
+      "identityCheck": {
+        "method": "homepage_fetch",
+        "checkedAt": "2026-10-17",
+        "httpStatus": 200,
+        "result": "title_matches",
+        "pageTitle": "Stanford University"
+      },
+      "reviewStatus": "identity_candidate",
+      "acceptedFacts": [],
+      "rejectedPdfFacts": [
+        "qs_rank",
+        "the_rank",
+        "qs_scores",
+        "acceptance_rate",
+        "intake_deadlines",
+        "entry_criteria",
+        "tuition_fee",
+        "scholarships"
+      ]
+    },
+    {
+      "pdfName": "Harvard University",
+      "officialName": "Harvard University",
+      "destinationIso2": "US",
+      "slug": "harvard-university",
+      "candidateWebsite": "https://www.harvard.edu/",
+      "identityCheck": {
+        "method": "homepage_fetch",
+        "checkedAt": "2026-10-17",
+        "httpStatus": 200,
+        "result": "title_matches",
+        "pageTitle": "Harvard University"
+      },
+      "reviewStatus": "identity_candidate",
+      "acceptedFacts": [],
+      "rejectedPdfFacts": [
+        "qs_rank",
+        "the_rank",
+        "qs_scores",
+        "acceptance_rate",
+        "intake_deadlines",
+        "entry_criteria",
+        "tuition_fee",
+        "scholarships"
+      ]
+    },
+    {
+      "pdfName": "California Institute of Technology (Caltech)",
+      "officialName": "California Institute of Technology",
+      "destinationIso2": "US",
+      "slug": "california-institute-of-technology",
+      "candidateWebsite": "https://www.caltech.edu/",
+      "identityCheck": {
+        "method": "homepage_fetch",
+        "checkedAt": "2026-10-17",
+        "httpStatus": 200,
+        "result": "title_matches",
+        "pageTitle": "Home - www.caltech.edu"
+      },
+      "reviewStatus": "identity_candidate",
+      "acceptedFacts": [],
+      "rejectedPdfFacts": [
+        "qs_rank",
+        "the_rank",
+        "qs_scores",
+        "acceptance_rate",
+        "intake_deadlines",
+        "entry_criteria",
+        "tuition_fee",
+        "scholarships"
+      ]
+    },
+    {
+      "pdfName": "University of Pennsylvania (UPenn)",
+      "officialName": "University of Pennsylvania",
+      "destinationIso2": "US",
+      "slug": "university-of-pennsylvania",
+      "candidateWebsite": "https://www.upenn.edu/",
+      "identityCheck": {
+        "method": "homepage_fetch",
+        "checkedAt": "2026-10-17",
+        "httpStatus": 403,
+        "result": "blocked_by_bot_protection",
+        "pageTitle": null
+      },
+      "reviewStatus": "identity_check_blocked",
+      "acceptedFacts": [],
+      "rejectedPdfFacts": [
+        "qs_rank",
+        "the_rank",
+        "qs_scores",
+        "acceptance_rate",
+        "intake_deadlines",
+        "entry_criteria",
+        "tuition_fee",
+        "scholarships"
+      ]
+    },
+    {
+      "pdfName": "University of California, Berkeley (UCB)",
+      "officialName": "University of California, Berkeley",
+      "destinationIso2": "US",
+      "slug": "university-of-california-berkeley",
+      "candidateWebsite": "https://www.berkeley.edu/",
+      "identityCheck": {
+        "method": "homepage_fetch",
+        "checkedAt": "2026-10-17",
+        "httpStatus": 200,
+        "result": "title_matches",
+        "pageTitle": "University of California, Berkeley: Home"
+      },
+      "reviewStatus": "identity_candidate",
+      "acceptedFacts": [],
+      "rejectedPdfFacts": [
+        "qs_rank",
+        "the_rank",
+        "qs_scores",
+        "acceptance_rate",
+        "intake_deadlines",
+        "entry_criteria",
+        "tuition_fee",
+        "scholarships"
+      ]
+    },
+    {
+      "pdfName": "Cornell University",
+      "officialName": "Cornell University",
+      "destinationIso2": "US",
+      "slug": "cornell-university",
+      "candidateWebsite": "https://www.cornell.edu/",
+      "identityCheck": {
+        "method": "homepage_fetch",
+        "checkedAt": "2026-10-17",
+        "httpStatus": 200,
+        "result": "title_matches",
+        "pageTitle": "Cornell University"
+      },
+      "reviewStatus": "identity_candidate",
+      "acceptedFacts": [],
+      "rejectedPdfFacts": [
+        "qs_rank",
+        "the_rank",
+        "qs_scores",
+        "acceptance_rate",
+        "intake_deadlines",
+        "entry_criteria",
+        "tuition_fee",
+        "scholarships"
+      ]
+    },
+    {
+      "pdfName": "University of Chicago",
+      "officialName": "University of Chicago",
+      "destinationIso2": "US",
+      "slug": "university-of-chicago",
+      "candidateWebsite": "https://www.uchicago.edu/",
+      "identityCheck": {
+        "method": "homepage_fetch",
+        "checkedAt": "2026-10-17",
+        "httpStatus": 200,
+        "result": "title_matches",
+        "pageTitle": "The University of Chicago"
+      },
+      "reviewStatus": "identity_candidate",
+      "acceptedFacts": [],
+      "rejectedPdfFacts": [
+        "qs_rank",
+        "the_rank",
+        "qs_scores",
+        "acceptance_rate",
+        "intake_deadlines",
+        "entry_criteria",
+        "tuition_fee",
+        "scholarships"
+      ]
+    },
+    {
+      "pdfName": "Princeton University",
+      "officialName": "Princeton University",
+      "destinationIso2": "US",
+      "slug": "princeton-university",
+      "candidateWebsite": "https://www.princeton.edu/",
+      "identityCheck": {
+        "method": "homepage_fetch",
+        "checkedAt": "2026-10-17",
+        "httpStatus": 403,
+        "result": "blocked_by_bot_protection",
+        "pageTitle": null
+      },
+      "reviewStatus": "identity_check_blocked",
+      "acceptedFacts": [],
+      "rejectedPdfFacts": [
+        "qs_rank",
+        "the_rank",
+        "qs_scores",
+        "acceptance_rate",
+        "intake_deadlines",
+        "entry_criteria",
+        "tuition_fee",
+        "scholarships"
+      ]
+    },
+    {
+      "pdfName": "Yale University",
+      "officialName": "Yale University",
+      "destinationIso2": "US",
+      "slug": "yale-university",
+      "candidateWebsite": "https://www.yale.edu/",
+      "identityCheck": {
+        "method": "homepage_fetch",
+        "checkedAt": "2026-10-17",
+        "httpStatus": 200,
+        "result": "title_matches",
+        "pageTitle": "Yale University"
+      },
+      "reviewStatus": "identity_candidate",
+      "acceptedFacts": [],
+      "rejectedPdfFacts": [
+        "qs_rank",
+        "the_rank",
+        "qs_scores",
+        "acceptance_rate",
+        "intake_deadlines",
+        "entry_criteria",
+        "tuition_fee",
+        "scholarships"
+      ]
+    },
+    {
+      "pdfName": "Johns Hopkins University",
+      "officialName": "Johns Hopkins University",
+      "destinationIso2": "US",
+      "slug": "johns-hopkins-university",
+      "candidateWebsite": "https://www.jhu.edu/",
+      "identityCheck": {
+        "method": "homepage_fetch",
+        "checkedAt": "2026-10-17",
+        "httpStatus": 403,
+        "result": "blocked_by_bot_protection",
+        "pageTitle": null
+      },
+      "reviewStatus": "identity_check_blocked",
+      "acceptedFacts": [],
+      "rejectedPdfFacts": [
+        "qs_rank",
+        "the_rank",
+        "qs_scores",
+        "acceptance_rate",
+        "intake_deadlines",
+        "entry_criteria",
+        "tuition_fee",
+        "scholarships"
+      ]
+    },
+    {
+      "pdfName": "Columbia University",
+      "officialName": "Columbia University",
+      "destinationIso2": "US",
+      "slug": "columbia-university",
+      "candidateWebsite": "https://www.columbia.edu/",
+      "identityCheck": {
+        "method": "homepage_fetch",
+        "checkedAt": "2026-10-17",
+        "httpStatus": 403,
+        "result": "blocked_by_bot_protection",
+        "pageTitle": null
+      },
+      "reviewStatus": "identity_check_blocked",
+      "acceptedFacts": [],
+      "rejectedPdfFacts": [
+        "qs_rank",
+        "the_rank",
+        "qs_scores",
+        "acceptance_rate",
+        "intake_deadlines",
+        "entry_criteria",
+        "tuition_fee",
+        "scholarships"
+      ]
+    },
+    {
+      "pdfName": "University of California, Los Angeles (UCLA)",
+      "officialName": "University of California, Los Angeles",
+      "destinationIso2": "US",
+      "slug": "university-of-california-los-angeles",
+      "candidateWebsite": "https://www.ucla.edu/",
+      "identityCheck": {
+        "method": "homepage_fetch",
+        "checkedAt": "2026-10-17",
+        "httpStatus": 200,
+        "result": "title_matches",
+        "pageTitle": "A World Leader in Education and Research Excellence | UCLA"
+      },
+      "reviewStatus": "identity_candidate",
+      "acceptedFacts": [],
+      "rejectedPdfFacts": [
+        "qs_rank",
+        "the_rank",
+        "qs_scores",
+        "acceptance_rate",
+        "intake_deadlines",
+        "entry_criteria",
+        "tuition_fee",
+        "scholarships"
+      ]
+    },
+    {
+      "pdfName": "New York University (NYU)",
+      "officialName": "New York University",
+      "destinationIso2": "US",
+      "slug": "new-york-university",
+      "candidateWebsite": "https://www.nyu.edu/",
+      "identityCheck": {
+        "method": "homepage_fetch",
+        "checkedAt": "2026-10-17",
+        "httpStatus": 405,
+        "result": "blocked_by_bot_protection",
+        "pageTitle": null
+      },
+      "reviewStatus": "identity_check_blocked",
+      "acceptedFacts": [],
+      "rejectedPdfFacts": [
+        "qs_rank",
+        "the_rank",
+        "qs_scores",
+        "acceptance_rate",
+        "intake_deadlines",
+        "entry_criteria",
+        "tuition_fee",
+        "scholarships"
+      ]
+    },
+    {
+      "pdfName": "University of Michigan-Ann Arbor",
+      "officialName": "University of Michigan",
+      "destinationIso2": "US",
+      "slug": "university-of-michigan",
+      "candidateWebsite": "https://umich.edu/",
+      "identityCheck": {
+        "method": "homepage_fetch",
+        "checkedAt": "2026-10-17",
+        "httpStatus": 403,
+        "result": "blocked_by_bot_protection",
+        "pageTitle": null
+      },
+      "reviewStatus": "identity_check_blocked",
+      "acceptedFacts": [],
+      "rejectedPdfFacts": [
+        "qs_rank",
+        "the_rank",
+        "qs_scores",
+        "acceptance_rate",
+        "intake_deadlines",
+        "entry_criteria",
+        "tuition_fee",
+        "scholarships"
+      ]
+    },
+    {
+      "pdfName": "Imperial College London",
+      "officialName": "Imperial College London",
+      "destinationIso2": "GB",
+      "slug": "imperial-college-london",
+      "candidateWebsite": "https://www.imperial.ac.uk/",
+      "identityCheck": {
+        "method": "homepage_fetch",
+        "checkedAt": "2026-10-17",
+        "httpStatus": 200,
+        "result": "title_matches",
+        "pageTitle": "Imperial College London"
+      },
+      "reviewStatus": "identity_candidate",
+      "acceptedFacts": [],
+      "rejectedPdfFacts": [
+        "qs_rank",
+        "the_rank",
+        "qs_scores",
+        "acceptance_rate",
+        "intake_deadlines",
+        "entry_criteria",
+        "tuition_fee",
+        "scholarships"
+      ]
+    },
+    {
+      "pdfName": "University of Oxford",
+      "officialName": "University of Oxford",
+      "destinationIso2": "GB",
+      "slug": "university-of-oxford",
+      "candidateWebsite": "https://www.ox.ac.uk/",
+      "identityCheck": {
+        "method": "homepage_fetch",
+        "checkedAt": "2026-10-17",
+        "httpStatus": 403,
+        "result": "blocked_by_bot_protection",
+        "pageTitle": null
+      },
+      "reviewStatus": "identity_check_blocked",
+      "acceptedFacts": [],
+      "rejectedPdfFacts": [
+        "qs_rank",
+        "the_rank",
+        "qs_scores",
+        "acceptance_rate",
+        "intake_deadlines",
+        "entry_criteria",
+        "tuition_fee",
+        "scholarships"
+      ]
+    },
+    {
+      "pdfName": "University of Cambridge",
+      "officialName": "University of Cambridge",
+      "destinationIso2": "GB",
+      "slug": "university-of-cambridge",
+      "candidateWebsite": "https://www.cam.ac.uk/",
+      "identityCheck": {
+        "method": "homepage_fetch",
+        "checkedAt": "2026-10-17",
+        "httpStatus": 200,
+        "result": "title_matches",
+        "pageTitle": "University of Cambridge"
+      },
+      "reviewStatus": "identity_candidate",
+      "acceptedFacts": [],
+      "rejectedPdfFacts": [
+        "qs_rank",
+        "the_rank",
+        "qs_scores",
+        "acceptance_rate",
+        "intake_deadlines",
+        "entry_criteria",
+        "tuition_fee",
+        "scholarships"
+      ]
+    },
+    {
+      "pdfName": "UCL (University College London)",
+      "officialName": "University College London",
+      "destinationIso2": "GB",
+      "slug": "university-college-london",
+      "candidateWebsite": "https://www.ucl.ac.uk/",
+      "identityCheck": {
+        "method": "homepage_fetch",
+        "checkedAt": "2026-10-17",
+        "httpStatus": 403,
+        "result": "blocked_by_bot_protection",
+        "pageTitle": null
+      },
+      "reviewStatus": "identity_check_blocked",
+      "acceptedFacts": [],
+      "rejectedPdfFacts": [
+        "qs_rank",
+        "the_rank",
+        "qs_scores",
+        "acceptance_rate",
+        "intake_deadlines",
+        "entry_criteria",
+        "tuition_fee",
+        "scholarships"
+      ]
+    },
+    {
+      "pdfName": "University of Edinburgh",
+      "officialName": "The University of Edinburgh",
+      "destinationIso2": "GB",
+      "slug": "the-university-of-edinburgh",
+      "candidateWebsite": "https://www.ed.ac.uk/",
+      "identityCheck": {
+        "method": "homepage_fetch",
+        "checkedAt": "2026-10-17",
+        "httpStatus": 200,
+        "result": "title_matches",
+        "pageTitle": "The University of Edinburgh"
+      },
+      "reviewStatus": "identity_candidate",
+      "acceptedFacts": [],
+      "rejectedPdfFacts": [
+        "qs_rank",
+        "the_rank",
+        "qs_scores",
+        "acceptance_rate",
+        "intake_deadlines",
+        "entry_criteria",
+        "tuition_fee",
+        "scholarships"
+      ]
+    },
+    {
+      "pdfName": "The University of Manchester",
+      "officialName": "The University of Manchester",
+      "destinationIso2": "GB",
+      "slug": "the-university-of-manchester",
+      "candidateWebsite": "https://www.manchester.ac.uk/",
+      "identityCheck": {
+        "method": "homepage_fetch",
+        "checkedAt": "2026-10-17",
+        "httpStatus": 200,
+        "result": "title_matches",
+        "pageTitle": "The University of Manchester"
+      },
+      "reviewStatus": "identity_candidate",
+      "acceptedFacts": [],
+      "rejectedPdfFacts": [
+        "qs_rank",
+        "the_rank",
+        "qs_scores",
+        "acceptance_rate",
+        "intake_deadlines",
+        "entry_criteria",
+        "tuition_fee",
+        "scholarships"
+      ]
+    },
+    {
+      "pdfName": "King's College London",
+      "officialName": "King's College London",
+      "destinationIso2": "GB",
+      "slug": "kings-college-london",
+      "candidateWebsite": "https://www.kcl.ac.uk/",
+      "identityCheck": {
+        "method": "homepage_fetch",
+        "checkedAt": "2026-10-17",
+        "httpStatus": 200,
+        "result": "title_matches",
+        "pageTitle": "King's College London"
+      },
+      "reviewStatus": "identity_candidate",
+      "acceptedFacts": [],
+      "rejectedPdfFacts": [
+        "qs_rank",
+        "the_rank",
+        "qs_scores",
+        "acceptance_rate",
+        "intake_deadlines",
+        "entry_criteria",
+        "tuition_fee",
+        "scholarships"
+      ]
+    },
+    {
+      "pdfName": "London School of Economics (LSE)",
+      "officialName": "London School of Economics and Political Science",
+      "destinationIso2": "GB",
+      "slug": "london-school-of-economics-and-political-science",
+      "candidateWebsite": "https://www.lse.ac.uk/",
+      "identityCheck": {
+        "method": "homepage_fetch",
+        "checkedAt": "2026-10-17",
+        "httpStatus": 200,
+        "result": "title_matches",
+        "pageTitle": "The London School of Economics and Political Science - LSE"
+      },
+      "reviewStatus": "identity_candidate",
+      "acceptedFacts": [],
+      "rejectedPdfFacts": [
+        "qs_rank",
+        "the_rank",
+        "qs_scores",
+        "acceptance_rate",
+        "intake_deadlines",
+        "entry_criteria",
+        "tuition_fee",
+        "scholarships"
+      ]
+    },
+    {
+      "pdfName": "University of Bristol",
+      "officialName": "University of Bristol",
+      "destinationIso2": "GB",
+      "slug": "university-of-bristol",
+      "candidateWebsite": "https://www.bristol.ac.uk/",
+      "identityCheck": {
+        "method": "homepage_fetch",
+        "checkedAt": "2026-10-17",
+        "httpStatus": 200,
+        "result": "title_matches",
+        "pageTitle": "Homepage | University of Bristol"
+      },
+      "reviewStatus": "identity_candidate",
+      "acceptedFacts": [],
+      "rejectedPdfFacts": [
+        "qs_rank",
+        "the_rank",
+        "qs_scores",
+        "acceptance_rate",
+        "intake_deadlines",
+        "entry_criteria",
+        "tuition_fee",
+        "scholarships"
+      ]
+    },
+    {
+      "pdfName": "University of Warwick",
+      "officialName": "University of Warwick",
+      "destinationIso2": "GB",
+      "slug": "university-of-warwick",
+      "candidateWebsite": "https://warwick.ac.uk/",
+      "identityCheck": {
+        "method": "homepage_fetch",
+        "checkedAt": "2026-10-17",
+        "httpStatus": 200,
+        "result": "title_matches",
+        "pageTitle": "University of Warwick - Study at a top 10 UK University"
+      },
+      "reviewStatus": "identity_candidate",
+      "acceptedFacts": [],
+      "rejectedPdfFacts": [
+        "qs_rank",
+        "the_rank",
+        "qs_scores",
+        "acceptance_rate",
+        "intake_deadlines",
+        "entry_criteria",
+        "tuition_fee",
+        "scholarships"
+      ]
+    }
+  ]
+}

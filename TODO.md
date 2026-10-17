@@ -17,6 +17,9 @@ Legend: `[x]` done and verified · `[~]` partial · `[ ]` not started
   - [ ] Connect Hostinger MySQL / MariaDB (blocked by R-005, R-013, R-014, R-018)
   - [ ] Owner approval of FX provider(s) in `/admin/settings` (R-016)
   - [x] Audit of the supplied directory PDF: rejected as a source; 25 identity leads in `db/intake/` (R-022)
+  - [x] Research checklist and private review file (`db/intake/RESEARCH-CHECKLIST.md`, `2026-10-17-initial-batch.json`). One university per destination, identity captured; validated by `tests/intake-batch.test.ts`
+  - [ ] Enter batch 1 in `/admin` as drafts, with a second-person review (needs a database, so blocked by staging). **Nothing is entered or published.**
+  - [ ] Browser checks for Melbourne and Khalifa homepages (bot-blocked); locate official Polimi and Helsinki fee pages
   - [ ] Real university data, entered from official sources and verified by a human reviewer in `/admin`
   - [ ] Browser check of the 8 bot-protected candidate homepages (`identity_check_blocked`)
 - [x] **Phase 6**: Better Auth 1.7.8 for `/admin` (email/password, public sign-up disabled, DB rate limit, CLI provisioning via `scripts/admin-user.mjs`; OAuth and Apple deferred).
@@ -28,11 +31,16 @@ Legend: `[x]` done and verified · `[~]` partial · `[ ]` not started
   - [ ] Student Inbox, Students, Our Team (Phases 7, 11, 12)
 - [ ] **Phase 11**: document upload, validation, 30-day deletion (no AI processing)
 - [ ] **Phase 12**: team manager (move `lib/content/team.ts` into the DB; bio pending approved copy)
-- [ ] **Phase 13**: legal drafts, privacy controls, CSP enforcement, rate limits
+- [~] **Phase 13**: legal drafts, privacy controls, CSP enforcement, rate limits
+  - [x] Enforcing nonce CSP (`proxy.ts`). Checked locally against `next start`: all scripts and stylesheets nonced, 0 violations on `/`, globe textures, fonts and images load
+  - [x] Auth rate limits (5 sign-ins / 5 min, 60 req/min, DB-backed); admin fails closed
+  - [ ] Real-browser and staging check of the CSP across browsers (R-023)
+  - [ ] Legal drafts, privacy controls
 - [ ] **Phase 14**: E2E, a11y and performance audit
 - [~] **Phase 15**: Hostinger staging & production deployment and launch checklist
   - [x] Stage 4 local readiness: 90 unit tests and 46 DB tests (MySQL 8.4.9 **and** MariaDB 10.5.29), typecheck, build, production-server smoke test without configuration
   - [x] Migration safety: capability probe, migration lock, never recording partial failures, `/admin` schema gate, `pnpm db:preflight`
+  - [x] Stage 5 local verification (17 Oct 2026): 103 unit tests, 46 DB tests on MySQL 8.4.9 and 46 on MariaDB 10.5.29, typecheck, production build
   - [ ] Staging environment (blocked: plan, staging hostname, empty DB + user, Remote MySQL allow-list)
   - [ ] Production (not authorised)
 
@@ -51,8 +59,22 @@ Legend: `[x]` done and verified · `[~]` partial · `[ ]` not started
 
 ## Open items
 - Confirm the Hostinger plan and its exact MySQL/MariaDB version; run `DB_TEST_URL=... pnpm test:db` against that engine (R-005, R-013, R-014)
-- Owner decision on FX provider strategy (e.g., approve `ecb` for 7 currencies + `imf` for `SAR`/`AED`, or `imf` for all 9) in `/admin/settings` (R-016)
-- Manual browser check of the 7 WAF/timeout links in `UNRESOLVED_OFFICIAL_LINKS` if additional portals are desired beyond the 30 verified links (R-015)
+- Owner decision on FX provider strategy (R-016). IMF needs written permission from copyright@imf.org first (commercial reuse + automated download, R-024; evidence in `db/intake/2026-10-17-imf-terms-review.md`)
+- Manual browser check of the 3 listed links that block automated checks, plus the unresolved ones (`db/intake/2026-10-17-link-check.md`, R-015)
 - Check the reduced-motion fallback with the OS setting enabled in a real browser
 - Measure globe FPS and LCP on a mid-range Android phone
-- Switch CSP from report-only to enforcing after staging verification
+- Verify the enforcing CSP on staging in Chrome, Safari and Firefox; check `/admin` sign-in and server actions under it (R-023)
+- Set `NEXT_PUBLIC_SITE_URL` once a domain exists, then rebuild
+
+## Hostinger Unlimited suitability checklist (confirm in writing before buying; do not buy until the site is complete)
+- [ ] Node.js Web App included on **Unlimited** and how many apps (R-021)
+- [ ] Supported Node versions include 22.x or 24.x (Next.js 16 needs ≥ 20.9)
+- [ ] Runs a persistent `next start` server. Required: every page is dynamic (CSP nonces), `proxy.ts` runs on each request, server actions. A static export is **not** possible.
+- [ ] Process limits: RAM, CPU, entry processes, maximum concurrent requests, and idle-sleep behaviour
+- [ ] Build: pnpm 12 support or npm-only (R-019); build-time memory; build logs
+- [ ] Environment variables per website (staging separate from production); custom response headers are not stripped
+- [ ] Database: engine and exact version (MySQL 8.0+/8.4 or MariaDB ≥ 10.5), enforced `CHECK`, stored generated columns, views, `CREATE TRIGGER` with binary logging (`log_bin_trust_function_creators`, R-014), `GET_LOCK`
+- [ ] Database size limit, max connections per user (the app opens up to 3 pools × 5 connections), `max_user_connections`
+- [ ] Remote MySQL with an IP allow-list for operator scripts (R-018)
+- [ ] HTTPS certificate on the staging subdomain; HSTS not overridden
+- [ ] Deployment workflow: Git deploy or upload; whether deploys overwrite files (R-006); rollback

@@ -1,6 +1,6 @@
 # LockIn Consulting — Architecture
 
-Status: **Stage 4 (staging readiness).** Local checks are complete, and the integration suite also passes on MariaDB 10.5.29. Staging is blocked on the Hostinger plan and staging credentials. Stage 3 summary: The public homepage, 11 destination pages, university-directory schema (`0001_university_directory.sql` + `0002_admin_auth.sql`), Better Auth administrator sign-in, Owner/Reviewer/Editor role-based access control, `/admin` dashboard, publication/licensing workflow, and SHA-256 hash-chained + trigger-protected audit log are implemented and verified against real MySQL 8.4 (`pnpm test:db`). There is still **no live production database connection, no student chat, and no AI provider** (Derek remains disabled per D-002).
+Status: **Stage 5 (local product completion).** Stage 5 added an enforcing nonce CSP (`proxy.ts`), so every route now renders per request. It also added a 404 page, `robots`/`sitemap` gated on `NEXT_PUBLIC_SITE_URL`, and private intake/evidence files for the first university batch and the IMF terms (nothing published). Stage 4: local checks are complete, and the integration suite also passes on MariaDB 10.5.29. Staging is blocked on the Hostinger plan and staging credentials. Stage 3 summary: The public homepage, 11 destination pages, university-directory schema (`0001_university_directory.sql` + `0002_admin_auth.sql`), Better Auth administrator sign-in, Owner/Reviewer/Editor role-based access control, `/admin` dashboard, publication/licensing workflow, and SHA-256 hash-chained + trigger-protected audit log are implemented and verified against real MySQL 8.4 (`pnpm test:db`). There is still **no live production database connection, no student chat, and no AI provider** (Derek remains disabled per D-002).
 
 ## Stack
 
@@ -22,7 +22,7 @@ Status: **Stage 4 (staging readiness).** Local checks are complete, and the inte
 app/
   page.tsx                                    homepage
   destinations/page.tsx                       index of 11 destinations, grouped by region
-  destinations/[slug]/page.tsx                SSG for 11 slugs, dynamicParams = false, revalidate 3600
+  destinations/[slug]/page.tsx                dynamic per request (CSP nonce), dynamicParams = false
   admin/
     layout.tsx                                noindex/nofollow root wrapper
     actions.ts                                server actions (re-authorise before reading input)
@@ -128,7 +128,13 @@ All money is `DECIMAL` in the original currency. All facts are linked to a `sour
 
 ## Destination pages & globe behaviour
 
-- `/destinations/[slug]` is statically generated for the 11 slugs (`dynamicParams = false`, `revalidate = 3600`). Unknown slugs (including `dubai`) return 404.
+- `/destinations/[slug]` serves the 11 slugs (`dynamicParams = false`) and renders per request, because the root layout awaits `connection()` so Next can apply the CSP nonce. Unknown slugs (including `dubai`) return the branded 404.
+
+## Security headers & CSP
+
+- Static headers live in `next.config.mjs`: `nosniff`, `Referrer-Policy`, HSTS, `X-Frame-Options: SAMEORIGIN`, `Permissions-Policy`, `Cross-Origin-Opener-Policy`.
+- The `Content-Security-Policy` is built by `lib/security/csp.ts` and set per request in `proxy.ts`. It is enforcing by default (`CSP_MODE=report-only` is a diagnostic switch only). Policy: `default-src 'self'`, `script-src 'self' 'nonce-…' 'strict-dynamic'`, `style-src 'self' 'nonce-…'`, `style-src-attr 'unsafe-inline'`, `img-src 'self' data: blob:`, `connect-src 'self'`, `worker-src 'self' blob:`, `object-src 'none'`, `frame-src 'none'`, `frame-ancestors 'self'`, `base-uri 'self'`, `form-action 'self'`, `upgrade-insecure-requests`. Development adds `'unsafe-eval'` and `ws:`/`wss:` for HMR.
+- The proxy skips `/api`, `/_next/static`, `/textures`, `/images` and static files. Those responses carry no HTML, so they need no CSP.
 - Without `DATABASE_URL`, the directory shows "pending verification". On a DB failure it shows "temporarily unavailable". It never shows sample data.
 - Globe: server-rendered static poster, WebGL check and lazy R3F chunk, reduced-motion static mode, context-loss recovery, off-screen pause, IST lighting (`?ist=HH:MM`).
 

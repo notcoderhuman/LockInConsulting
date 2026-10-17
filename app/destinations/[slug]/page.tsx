@@ -14,8 +14,6 @@ import { getDestinationDirectory } from '@/lib/data/directory'
 import { DESTINATIONS, getDestinationBySlug } from '@/lib/destinations'
 
 export const dynamicParams = false
-/** Re-read the published directory hourly once a database is connected. */
-export const revalidate = 3600
 
 export function generateStaticParams() {
   return DESTINATIONS.map((d) => ({ slug: d.slug }))

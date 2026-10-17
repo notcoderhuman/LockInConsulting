@@ -4,10 +4,11 @@ import { getAdminConfigStatus, resolveAuthBaseUrl } from '@/lib/admin/config'
 import { getAuthPool } from '@/lib/db/pool'
 import { AUTH_MODELS, DISABLED_AUTH_PATHS, PASSWORD_POLICY, RATE_LIMIT } from '@/lib/auth-options.mjs'
 
-function createAuth() {
+/** Exported so tests can check the real cookie attributes for an https staging origin. */
+export function createAuth(baseURL = resolveAuthBaseUrl()) {
   return betterAuth({
     database: getAuthPool(),
-    baseURL: resolveAuthBaseUrl(),
+    baseURL,
     ...AUTH_MODELS,
     rateLimit: RATE_LIMIT as never,
     disabledPaths: DISABLED_AUTH_PATHS,

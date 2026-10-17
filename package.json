@@ -10,6 +10,8 @@
     "test": "vitest run",
     "test:db": "vitest run --config vitest.db.config.mts",
     "db:migrate": "node scripts/migrate.mjs",
+    "db:preflight": "node scripts/db-preflight.mjs",
+    "admin:user": "node scripts/admin-user.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

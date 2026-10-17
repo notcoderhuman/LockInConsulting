@@ -25,7 +25,8 @@ const { verifyAuditChain } = await import('@/lib/admin/audit')
 const { formId } = await import('@/lib/admin/forms')
 const { isEntityKey } = await import('@/lib/admin/entities')
 const { resolveAdminContext } = await import('@/lib/admin/access')
-const { getAuth } = await import('@/lib/auth')
+const { getAuth, createAuth } = await import('@/lib/auth')
+const { fetchDestinationDirectory } = await import('@/lib/db/directory-queries')
 const { getAdminPool, getAuthPool, getPool } = await import('@/lib/db/pool')
 const actions = await import('@/app/admin/actions')
 const reviewQueueRoute = await import('@/app/api/admin/review-queue/route')
@@ -214,6 +215,38 @@ describe('university workflow: capture → review → verify → publish → re-
     const [r] = await rows<{ publication_status: string; verification_status: string; verified_by: string | null }>(
       'SELECT publication_status, verification_status, verified_by FROM universities WHERE id = ?', [draft])
     expect(r).toEqual({ publication_status: 'draft', verification_status: 'unverified', verified_by: null })
+  })
+
+  it('returns a record to draft with a reason, and the public directory only ever shows it while published', async () => {
+    const pool = getAdminPool()
+    const publicNames = async () => (await fetchDestinationDirectory(getPool(), 'CA', TODAY)).map((u) => u.name)
+    const src = await newSource()
+    const id = await W.createRecord(pool, editor, 'university', form({
+      name: 'Staging Synthetic University', slug: 'staging-synthetic', destinationIso2: 'CA', officialWebsite: 'https://staging-synthetic.example/', sourceId: String(src),
+    }), null)
+    expect(await publicNames()).not.toContain('Staging Synthetic University')
+
+    await W.transitionRecord(pool, editor, 'university', id, 'submit_for_review', form({}))
+    await expect(W.transitionRecord(pool, editor, 'university', id, 'return_to_draft', form({ reason: 'Wrong city' }))).rejects.toThrow()
+    await expect(W.transitionRecord(pool, reviewer, 'university', id, 'return_to_draft', form({ reason: '' }))).rejects.toMatchObject({ fieldErrors: { reason: expect.any(Array) } })
+    await W.transitionRecord(pool, reviewer, 'university', id, 'return_to_draft', form({ reason: 'Official website needs re-checking.' }))
+    const [draft] = await rows<{ publication_status: string }>('SELECT publication_status FROM universities WHERE id = ?', [id])
+    expect(draft.publication_status).toBe('draft')
+    expect(await publicNames()).not.toContain('Staging Synthetic University')
+
+    await W.transitionRecord(pool, editor, 'university', id, 'submit_for_review', form({}))
+    await W.transitionRecord(pool, reviewer, 'university', id, 'verify', verifyForm(src))
+    expect(await publicNames()).not.toContain('Staging Synthetic University') // verified, not yet published
+    await W.transitionRecord(pool, reviewer, 'university', id, 'publish', form({}))
+    expect(await publicNames()).toContain('Staging Synthetic University')
+
+    await W.transitionRecord(pool, reviewer, 'university', id, 'unpublish', form({ reason: 'Staging check' }))
+    expect(await publicNames()).not.toContain('Staging Synthetic University')
+
+    const log = await rows<{ action: string; reason: string | null }>("SELECT action, reason FROM data_change_log WHERE entity_type = 'university' AND entity_id = ? ORDER BY id", [id])
+    expect(log.map((l) => l.action)).toEqual(['create', 'submit_for_review', 'return_to_draft', 'submit_for_review', 'verify', 'publish', 'unpublish'])
+    expect(log[2].reason).toBe('Official website needs re-checking.')
+    expect(await verifyAuditChain(db)).toMatchObject({ ok: true })
   })
 
   it('lets exactly one of two concurrent reviewers publish the same record', async () => {
@@ -426,6 +459,34 @@ describe('authentication and authorisation', () => {
     expect(await rows('SELECT id FROM auth_session WHERE userId = ?', [revokedUserId])).toHaveLength(0)
     const [m] = await rows<{ status: string }>('SELECT status FROM admin_members WHERE user_id = ?', [revokedUserId])
     expect(m.status).toBe('revoked')
+  })
+
+  it('issues HttpOnly, Secure, SameSite=Lax __Secure- session cookies for an https origin', async () => {
+    const staging = createAuth('https://staging.lockin.example')
+    const res = (await staging.api.signInEmail({ body: { email: 'owner@test.example', password: PASSWORD }, asResponse: true })) as Response
+    expect(res.ok).toBe(true)
+    const session = res.headers.getSetCookie().find((c) => c.includes('session_token='))!
+    expect(session).toMatch(/^__Secure-better-auth\.session_token=/)
+    expect(session).toMatch(/;\s*Secure/i)
+    expect(session).toMatch(/;\s*HttpOnly/i)
+    expect(session).toMatch(/;\s*SameSite=Lax/i)
+    expect(session).toMatch(/;\s*Path=\//i)
+    expect(session).not.toMatch(/Domain=/i)
+  })
+
+  it('fails closed when a required migration is not recorded (e.g. after a partial failure)', async () => {
+    expect((await resolveAdminContext(new Headers({ cookie: ownerCookie }))).state).toBe('ok')
+    const [[saved]] = await db.query<RowDataPacket[]>("SELECT name, checksum, applied_at FROM schema_migrations WHERE name = '0002_admin_auth.sql'")
+    await db.query("DELETE FROM schema_migrations WHERE name = '0002_admin_auth.sql'")
+    try {
+      expect(await resolveAdminContext(new Headers({ cookie: ownerCookie }))).toEqual({ state: 'error' })
+      expect((await reviewQueueRoute.GET(apiRequest('/api/admin/review-queue', ownerCookie))).status).toBe(503)
+      const body = await (await auditRoute.GET(apiRequest('/api/admin/audit', ownerCookie))).text()
+      expect(body).not.toMatch(/schema_migrations|SELECT|mysql|password/i)
+    } finally {
+      await db.query('INSERT INTO schema_migrations (name, checksum, applied_at) VALUES (?, ?, ?)', [saved.name, saved.checksum, saved.applied_at])
+    }
+    expect((await resolveAdminContext(new Headers({ cookie: ownerCookie }))).state).toBe('ok')
   })
 
   it('enforces access in route handlers (direct API calls)', async () => {

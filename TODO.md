@@ -41,6 +41,8 @@ Legend: `[x]` done and verified · `[~]` partial · `[ ]` not started
   - [x] Stage 4 local readiness: 90 unit tests and 46 DB tests (MySQL 8.4.9 **and** MariaDB 10.5.29), typecheck, build, production-server smoke test without configuration
   - [x] Migration safety: capability probe, migration lock, never recording partial failures, `/admin` schema gate, `pnpm db:preflight`
   - [x] Stage 5 local verification (17 Oct 2026): 103 unit tests, 46 DB tests on MySQL 8.4.9 and 46 on MariaDB 10.5.29, typecheck, production build
+  - [x] Phase E re-run at `d8a0e64` (17 Oct 2026): 103/103 unit, 46/46 DB (default MySQL 8.4 harness), 46/46 DB on a disposable MariaDB 10.5.29 (non-root, schema-scoped user, left empty), `tsc` clean, `next build` OK. `next start` HTTP checks: enforcing CSP, a different nonce per request, 0 un-nonced scripts/styles, all 11 destinations 200 with one `<h1>` each, `/destinations/dubai` 404, `/admin` → `/admin/unavailable`, admin/auth APIs 503 without config, no secret values in `.next/static`. Headless Chromium (preview): 0 overflow at 390px on the sampled pages, skip link is the first Tab stop, reduced motion swaps the WebGL globe for the static fallback, and textures/fonts load under CSP
+  - [ ] Router-error investigation (R-025): not reproduced; cause unverified. Needs a real-browser `next start` check
   - [ ] Staging environment (blocked: plan, staging hostname, empty DB + user, Remote MySQL allow-list)
   - [ ] Production (not authorised)
 
@@ -65,6 +67,8 @@ Legend: `[x]` done and verified · `[~]` partial · `[ ]` not started
 - Measure globe FPS and LCP on a mid-range Android phone
 - Verify the enforcing CSP on staging in Chrome, Safari and Firefox; check `/admin` sign-in and server actions under it (R-023)
 - Set `NEXT_PUBLIC_SITE_URL` once a domain exists, then rebuild
+- In a real Chrome, Safari and Firefox, run `pnpm build && pnpm start`, open `/destinations/finland#data-status`, and repeat the R-025 interactions (anchor, back/forward, reload, fresh tab). Record whether the router error appears outside v0
+- Indian privacy/legal review before enabling student accounts, uploads or the inbox
 
 ## Hostinger Unlimited suitability checklist (confirm in writing before buying; do not buy until the site is complete)
 - [ ] Node.js Web App included on **Unlimited** and how many apps (R-021)

@@ -1,13 +1,13 @@
 # LockIn Consulting — Architecture
 
-Status: **Stage 3.** The public homepage, 11 destination pages, university-directory schema (`0001_university_directory.sql` + `0002_admin_auth.sql`), Better Auth administrator sign-in, Owner/Reviewer/Editor role-based access control, `/admin` dashboard, publication/licensing workflow, and SHA-256 hash-chained + trigger-protected audit log are implemented and verified against real MySQL 8.4 (`pnpm test:db`). There is still **no live production database connection, no student chat, and no AI provider** (Derek remains disabled per D-002).
+Status: **Stage 5 (local product completion).** Stage 5 added an enforcing nonce CSP (`proxy.ts`), so every route now renders per request. It also added a 404 page, `robots`/`sitemap` gated on `NEXT_PUBLIC_SITE_URL`, and private intake/evidence files for the first university batch and the IMF terms (nothing published). Stage 4: local checks are complete, and the integration suite also passes on MariaDB 10.5.29. Staging is blocked on the Hostinger plan and staging credentials. Stage 3 summary: The public homepage, 11 destination pages, university-directory schema (`0001_university_directory.sql` + `0002_admin_auth.sql`), Better Auth administrator sign-in, Owner/Reviewer/Editor role-based access control, `/admin` dashboard, publication/licensing workflow, and SHA-256 hash-chained + trigger-protected audit log are implemented and verified against real MySQL 8.4 (`pnpm test:db`). There is still **no live production database connection, no student chat, and no AI provider** (Derek remains disabled per D-002).
 
 ## Stack
 
 | Concern | Choice | Status |
 |---|---|---|
 | Framework | Next.js 16.4.0 App Router, Node server mode | Implemented |
-| Hosting | Hostinger Business or Cloud (Node.js Web App) | **Plan unconfirmed (D-001, R-005)** |
+| Hosting | Hostinger Node.js Web App. Owner's intended plan: **Unlimited** (not bought) | **Node.js support and DB version unconfirmed (D-001, R-005, R-021)** |
 | Database | Hostinger MySQL / MariaDB, accessed with `mysql2` and plain SQL migrations (no ORM, D-011) | Migrations `0001` & `0002` implemented and tested on MySQL 8.4.9; **not connected to production** |
 | Validation | `zod` schemas (`lib/data/validation.ts`) + column whitelist (`lib/admin/forms.ts`) | Implemented across all admin write paths |
 | Auth | Better Auth 1.7.8 (`lib/auth.ts`, `lib/auth-options.mjs`) — email/password, public sign-up disabled, DB-backed rate limiting, CLI-only provisioning (`scripts/admin-user.mjs`) | Implemented and integration-tested; fails closed without config |
@@ -22,7 +22,7 @@ Status: **Stage 3.** The public homepage, 11 destination pages, university-direc
 app/
   page.tsx                                    homepage
   destinations/page.tsx                       index of 11 destinations, grouped by region
-  destinations/[slug]/page.tsx                SSG for 11 slugs, dynamicParams = false, revalidate 3600
+  destinations/[slug]/page.tsx                dynamic per request (CSP nonce), dynamicParams = false
   admin/
     layout.tsx                                noindex/nofollow root wrapper
     actions.ts                                server actions (re-authorise before reading input)
@@ -80,7 +80,9 @@ db/migrations/
   0002_admin_auth.sql                         Better Auth tables, admin_members, fx_providers, public_fx_rates,
                                               hash-chained data_change_log, audit_chain_head, immutability triggers
 scripts/
-  migrate.mjs                                 ordered, SHA-256 checksummed migration runner
+  migrate.mjs                                 ordered, SHA-256 checksummed, probed and locked migration runner
+  db-capabilities.mjs                         engine classification, DDL capability probe, grant redaction
+  db-preflight.mjs                            read-only staging compatibility report (`pnpm db:preflight`)
   admin-user.mjs                              CLI-only admin provisioning (create, grant, revoke, set-password, list, verify-audit)
 tests/                                        Vitest unit tests (pnpm test)
 tests/db/                                     real-MySQL 8.4 integration tests (pnpm test:db)
@@ -126,10 +128,23 @@ All money is `DECIMAL` in the original currency. All facts are linked to a `sour
 
 ## Destination pages & globe behaviour
 
-- `/destinations/[slug]` is statically generated for the 11 slugs (`dynamicParams = false`, `revalidate = 3600`). Unknown slugs (including `dubai`) return 404.
+- `/destinations/[slug]` serves the 11 slugs (`dynamicParams = false`) and renders per request, because the root layout awaits `connection()` so Next can apply the CSP nonce. Unknown slugs (including `dubai`) return the branded 404.
+
+## Security headers & CSP
+
+- Static headers live in `next.config.mjs`: `nosniff`, `Referrer-Policy`, HSTS, `X-Frame-Options: SAMEORIGIN`, `Permissions-Policy`, `Cross-Origin-Opener-Policy`.
+- The `Content-Security-Policy` is built by `lib/security/csp.ts` and set per request in `proxy.ts`. It is enforcing by default (`CSP_MODE=report-only` is a diagnostic switch only). Policy: `default-src 'self'`, `script-src 'self' 'nonce-…' 'strict-dynamic'`, `style-src 'self' 'nonce-…'`, `style-src-attr 'unsafe-inline'`, `img-src 'self' data: blob:`, `connect-src 'self'`, `worker-src 'self' blob:`, `object-src 'none'`, `frame-src 'none'`, `frame-ancestors 'self'`, `base-uri 'self'`, `form-action 'self'`, `upgrade-insecure-requests`. Development adds `'unsafe-eval'` and `ws:`/`wss:` for HMR.
+- The proxy skips `/api`, `/_next/static`, `/textures`, `/images` and static files. Those responses carry no HTML, so they need no CSP.
 - Without `DATABASE_URL`, the directory shows "pending verification". On a DB failure it shows "temporarily unavailable". It never shows sample data.
 - Globe: server-rendered static poster, WebGL check and lazy R3F chunk, reduced-motion static mode, context-loss recovery, off-screen pause, IST lighting (`?ist=HH:MM`).
 
 ## Deployment shape (pending plan confirmation)
 
-GitHub → Hostinger build (`pnpm build`) → `next start`. Run `pnpm db:migrate` with `DATABASE_URL` set, against a backup first: MySQL DDL auto-commits. Provision the initial owner account via `pnpm admin:user create`. Secrets live only in Hostinger environment variables.
+GitHub → Hostinger Node.js web app (Business or Cloud; Node 22.x/24.x; Hostinger applies `output: "standalone"` itself) → server process restarted from hPanel. Secrets live only in Hostinger environment variables. Changing them requires a restart, or a redeploy for build-time values.
+
+Database operations run from a trusted machine over Remote MySQL (R-018), never from a web route:
+1. `pnpm db:preflight --probe` prints version, `sql_mode`, time zone, binlog/trigger settings and redacted grants. It creates and drops a throwaway `_lockin_probe_*` table, view and trigger.
+2. `pnpm db:migrate` (`scripts/migrate.mjs`) takes `GET_LOCK('lockin_schema_migrate')`, re-runs the probe and applies nothing if a feature is refused. A migration that fails partway is **not** recorded and the error says to restore the backup.
+3. `lib/admin/access.ts` checks that every name in `lib/db/schema-version.ts` is recorded in `schema_migrations`. Otherwise every admin page, API route and server action fails closed (`/admin/unavailable`, `503`). The public site reads only `public_*` views, so a half-applied schema can never expose unpublished data.
+
+Tested engines: MySQL 8.4.9 and MariaDB 10.5.29 (`scripts/db-capabilities.mjs → TESTED_ENGINES`).

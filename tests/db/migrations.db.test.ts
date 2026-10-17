@@ -66,6 +66,30 @@ describe('migrations', () => {
     await expect(migrate(db, [{ ...first, checksum: 'x'.repeat(64) }])).rejects.toThrow(/modified after being applied/)
   })
 
+  it('do not record a migration that fails partway, and report it as unsafe', async () => {
+    const broken = {
+      name: '9999_broken_test.sql',
+      checksum: 'b'.repeat(64),
+      sql: 'CREATE TABLE _partial_test (id INT PRIMARY KEY) ENGINE=InnoDB; CREATE TABLE _partial_test (id INT);',
+    }
+    await expect(migrate(db, [...(await loadMigrations()), broken])).rejects.toThrow(/failed partway[\s\S]*NOT recorded[\s\S]*Restore the pre-migration backup/)
+    expect(await rows("SELECT name FROM schema_migrations WHERE name = '9999_broken_test.sql'")).toHaveLength(0)
+    // DDL auto-commits: the first statement stayed. That is why the runner refuses to record it
+    // and /admin requires every migration to be recorded (see the admin suite).
+    expect(await rows("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '_partial_test'")).toHaveLength(1)
+    await db.query('DROP TABLE _partial_test')
+    const [[lock]] = await db.query<RowDataPacket[]>("SELECT IS_FREE_LOCK('lockin_schema_migrate') AS free")
+    expect(Number(lock.free)).toBe(1)
+  })
+
+  it('pass the DDL capability probe and leave no probe objects behind', async () => {
+    const { probeDdlCapabilities } = await import('../../scripts/db-capabilities.mjs')
+    const result = await probeDdlCapabilities(db)
+    expect(result.steps.filter((s) => !s.ok)).toEqual([])
+    expect(result.ok).toBe(true)
+    expect(await rows("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME LIKE '\\_lockin\\_probe%'")).toHaveLength(0)
+  })
+
   it('seed destinations that match lib/destinations.ts', async () => {
     const seeded = await rows<{ iso2: string; slug: string }>('SELECT iso2, slug FROM destinations ORDER BY iso2')
     expect(seeded.map((r) => ({ ...r }))).toEqual(

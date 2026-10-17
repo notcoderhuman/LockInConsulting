@@ -7,7 +7,7 @@ Status: **Stage 4 (staging readiness).** Local checks are complete, and the inte
 | Concern | Choice | Status |
 |---|---|---|
 | Framework | Next.js 16.4.0 App Router, Node server mode | Implemented |
-| Hosting | Hostinger Business or Cloud (Node.js Web App) | **Plan unconfirmed (D-001, R-005)** |
+| Hosting | Hostinger Node.js Web App. Owner's intended plan: **Unlimited** (not bought) | **Node.js support and DB version unconfirmed (D-001, R-005, R-021)** |
 | Database | Hostinger MySQL / MariaDB, accessed with `mysql2` and plain SQL migrations (no ORM, D-011) | Migrations `0001` & `0002` implemented and tested on MySQL 8.4.9; **not connected to production** |
 | Validation | `zod` schemas (`lib/data/validation.ts`) + column whitelist (`lib/admin/forms.ts`) | Implemented across all admin write paths |
 | Auth | Better Auth 1.7.8 (`lib/auth.ts`, `lib/auth-options.mjs`) — email/password, public sign-up disabled, DB-backed rate limiting, CLI-only provisioning (`scripts/admin-user.mjs`) | Implemented and integration-tested; fails closed without config |

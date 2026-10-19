@@ -35,13 +35,14 @@ Append `?ist=15:30` to preview the globe's lighting at that India time.
 - `sources`, `fx_rates`, and `data_change_log` are append-only (enforced by database `BEFORE UPDATE`/`BEFORE DELETE` triggers and verified by the `audit_chain_head` SHA-256 hash chain).
 - An **enforcing** Content-Security-Policy is set per request in `proxy.ts` (`lib/security/csp.ts`): per-request nonce + `'strict-dynamic'`, no third-party origins, no `unsafe-eval` in production. Every page is dynamically rendered so Next can stamp the nonce. `CSP_MODE=report-only` is a temporary diagnostic switch only.
 - New universities are researched with `db/intake/RESEARCH-CHECKLIST.md` and entered through `/admin`. Intake files are never read by the site.
-- Admin accounts can only be created or granted roles via `pnpm admin:user` on a trusted shell; public sign-up is disabled and `/admin` fails closed if auth or DB environment variables are missing.
+- Admin accounts can only be created or granted roles via `pnpm admin:user` on a trusted shell; public sign-up is disabled and `/admin` fails closed if auth or DB environment variables are missing (see `docs/ENVIRONMENT.md`).
 
 ## Docs
 - `ARCHITECTURE.md` — stack, code layout, data model, RBAC and admin workflow
 - `DECISIONS.md` — decision log
 - `RISKS.md` — risk register, blockers, and FX source review
 - `TODO.md` — phased roadmap
+- `docs/ENVIRONMENT.md` — environment variables, fail-closed configuration, and template (`docs/env.example`)
 
 ## Asset credits and licences
 - Earth textures: NASA Earth Observatory, *Blue Marble: Next Generation* and *Black Marble 2016*. Public domain.

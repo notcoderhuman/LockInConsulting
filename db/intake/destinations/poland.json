@@ -1,0 +1,294 @@
+{
+  "destinationSlug": "poland",
+  "destinationIso2": "PL",
+  "preparedAt": "2026-10-18",
+  "status": "pending_admin_entry",
+  "recordCount": 3,
+  "records": [
+    {
+      "destinationIso2": "PL",
+      "officialName": "University of Warsaw",
+      "slug": "university-of-warsaw",
+      "institutionType": "public",
+      "city": "Warsaw",
+      "subRegion": "Masovian Voivodeship",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://en.uw.edu.pl/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Warsaw",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master in Machine Learning",
+            "slug": "master-in-machine-learning",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Ochota",
+            "teachingLanguage": "English",
+            "url": "https://en.uw.edu.pl/education/study-offer/masters-programmes/"
+          },
+          "evidence": "Faculty of Mathematics, Informatics and Mechanics (MIMUW): 'The Master in Machine Learning is a 2-year (120 ECTS) full-time program taught in English.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 study offer",
+          "result": "captured",
+          "sourceUrl": "https://en.uw.edu.pl/education/study-offer/masters-programmes/",
+          "publisher": "University of Warsaw Admissions Office"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "4600.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Tuition for international students in Machine Learning is €4,600 per academic year (€2,300 per semester)."
+          },
+          "evidence": "UW Rector's Decree on Tuition Fees: 'Tuition fee for foreign students for the Master in Machine Learning is 4,600 EUR per academic year.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://admission.uw.edu.pl/tuition-fees/",
+          "publisher": "University of Warsaw Admissions Office"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Diploma of higher education (bachelor's or equivalent) in computer science, mathematics or related technical domain; qualification exam in mathematics and computer science.",
+          "evidence": "MIMUW Admissions: 'Candidates must hold a Bachelor's diploma in computer science, mathematics or related area and pass the written qualifying exam.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://irk.uw.edu.pl/",
+          "publisher": "University of Warsaw Internet Recruitment of Candidates"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "English language certificate confirming at least level B2 (e.g. IELTS Academic 6.0+, TOEFL iBT 80+, or verified diploma where English was the language of instruction).",
+          "evidence": "Language competence requirement: B2 level English certification according to CEFR standards.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://admission.uw.edu.pl/language-requirements/",
+          "publisher": "University of Warsaw Admissions Office"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-07-07"
+          },
+          "evidence": "Admissions timetable: Online candidate registration in IRK closes in early July for October commencement.",
+          "checkedAt": "2026-10-18",
+          "validity": "2026/2027 academic year",
+          "result": "captured",
+          "sourceUrl": "https://irk.uw.edu.pl/",
+          "publisher": "University of Warsaw Internet Recruitment of Candidates"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "PL",
+      "officialName": "Jagiellonian University",
+      "slug": "jagiellonian-university",
+      "institutionType": "public",
+      "city": "Kraków",
+      "subRegion": "Lesser Poland Voivodeship",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://en.uj.edu.pl/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Jagiellonian University in Kraków",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master in Computer Science (Specialisation: Data Science)",
+            "slug": "msc-computer-science-data-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Campus 600th Anniversary (Gronostajowa)",
+            "teachingLanguage": "English",
+            "url": "https://internationalstudents.uj.edu.pl/course/m-cs"
+          },
+          "evidence": "Faculty of Mathematics and Computer Science: '2-year full-time graduate study program taught in English in Kraków.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 programme brochure",
+          "result": "captured",
+          "sourceUrl": "https://internationalstudents.uj.edu.pl/course/m-cs",
+          "publisher": "Jagiellonian University International Students"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "PLN",
+            "amount": "18000.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Tuition fee for foreigners for the Computer Science master's degree is PLN 18,000 per academic year (PLN 9,000 per semester)."
+          },
+          "evidence": "Tuition fees for foreigners: 'Tuition fee for the English-taught Master in Computer Science is 18,000 PLN per year.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://en.uj.edu.pl/en_GB/studies/tuition-fees",
+          "publisher": "Jagiellonian University Centre for Communication and Marketing"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Diploma of higher education (bachelor's or equivalent) in Computer Science, Applied Mathematics or related field, plus qualifying transcript evaluation or online interview.",
+          "evidence": "Admission requirements: 'Higher education diploma in computer science or related field; evaluation of grades in math and programming subjects.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://internationalstudents.uj.edu.pl/course/m-cs",
+          "publisher": "Jagiellonian University International Students"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "English language certificate confirming at least level B2 (IELTS 6.0+, TOEFL iBT 87+, or equivalent).",
+          "evidence": "Language competence requirement: 'Document confirming English language competence at minimum B2 level.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://internationalstudents.uj.edu.pl/enrolment/language",
+          "publisher": "Jagiellonian University International Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-07-15"
+          },
+          "evidence": "Online Application System (OAS): International intake applications close in mid-July for October commencement.",
+          "checkedAt": "2026-10-18",
+          "validity": "Winter semester 2026/27",
+          "result": "captured",
+          "sourceUrl": "https://internationalstudents.uj.edu.pl/enrolment/calendar",
+          "publisher": "Jagiellonian University International Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "PL",
+      "officialName": "Warsaw University of Technology",
+      "slug": "warsaw-university-of-technology",
+      "institutionType": "public",
+      "city": "Warsaw",
+      "subRegion": "Masovian Voivodeship",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.pw.edu.pl/eng",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Warsaw University of Technology",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "B.Sc. in Computer Science",
+            "slug": "bsc-computer-science",
+            "qualification": "bachelor",
+            "studyLevel": "UG",
+            "durationMonths": 42,
+            "studyMode": "full_time",
+            "campus": "Central Campus",
+            "teachingLanguage": "English",
+            "url": "https://www.students.pw.edu.pl/index.php/Studies-Offer/B.Sc.-Studies/Computer-Science"
+          },
+          "evidence": "Studies Offer: 'B.Sc. in Computer Science is a 3.5-year (7 semesters, 210 ECTS) undergraduate engineering programme taught in English at the Faculty of Electronics and Information Technology.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 offer",
+          "result": "captured",
+          "sourceUrl": "https://www.students.pw.edu.pl/index.php/Studies-Offer/B.Sc.-Studies/Computer-Science",
+          "publisher": "Warsaw University of Technology International Students Office"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "4000.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Tuition fee for non-EU international students is €2,000 per semester (€4,000 per academic year)."
+          },
+          "evidence": "Tuition fees for international students: 'Faculty of Electronics and Information Technology undergraduate tuition is €2,000 per semester (€4,000 per year).'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.students.pw.edu.pl/index.php/Fees/Tuition-Fees",
+          "publisher": "Warsaw University of Technology International Students Office"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Secondary school leaving certificate (e.g. CBSE / ISC from India) with high marks in Mathematics and Physics; entrance examination or qualification score ranking.",
+          "evidence": "Admission requirements: 'Secondary school leaving certificate with apostille/legalisation, with qualifying grades in mathematics and physics.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.students.pw.edu.pl/index.php/How-to-Apply/B.Sc.-programme",
+          "publisher": "WUT Centre for International Cooperation"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "English language proficiency at level B2 (IELTS Academic 6.0+, TOEFL iBT 87+, or recognized international certificate).",
+          "evidence": "Language competence requirement: 'Document confirming English proficiency at minimum B2 level (IELTS 6.0, TOEFL 87).' ",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.students.pw.edu.pl/index.php/How-to-Apply/B.Sc.-programme",
+          "publisher": "WUT Centre for International Cooperation"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-07-15"
+          },
+          "evidence": "Application deadlines: Winter semester admissions open in February; final deadline for non-EU students is mid-July.",
+          "checkedAt": "2026-10-18",
+          "validity": "Winter semester 2026/27",
+          "result": "captured",
+          "sourceUrl": "https://www.students.pw.edu.pl/index.php/How-to-Apply/Application-Deadlines",
+          "publisher": "WUT Centre for International Cooperation"
+        }
+      ]
+    }
+  ]
+}

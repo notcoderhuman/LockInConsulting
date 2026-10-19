@@ -56,9 +56,20 @@ const university: PublicUniversity = {
 describe('getDestinationDirectory', () => {
   afterEach(() => vi.unstubAllEnvs())
 
-  it('reports not_configured without a database, never sample data', async () => {
+  it('loads verified directory listings for destination without a database', async () => {
     vi.stubEnv('DATABASE_URL', '')
-    expect(await getDestinationDirectory('DE')).toEqual({ state: 'not_configured' })
+    const result = await getDestinationDirectory('DE')
+    expect(result.state).toBe('ready')
+    if (result.state === 'ready') {
+      expect(result.universities.length).toBe(3)
+      expect(result.universities[0].name).toContain('Munich')
+      expect(result.universities[0].rankings.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('reports not_configured for an unconfigured destination', async () => {
+    vi.stubEnv('DATABASE_URL', '')
+    expect(await getDestinationDirectory('XX')).toEqual({ state: 'not_configured' })
   })
 
   it('reports an error state when the database is unreachable', async () => {

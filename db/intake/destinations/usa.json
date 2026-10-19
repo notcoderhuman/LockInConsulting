@@ -1,0 +1,294 @@
+{
+  "destinationSlug": "usa",
+  "destinationIso2": "US",
+  "preparedAt": "2026-10-18",
+  "status": "pending_admin_entry",
+  "recordCount": 3,
+  "records": [
+    {
+      "destinationIso2": "US",
+      "officialName": "University of California, Berkeley",
+      "slug": "university-of-california-berkeley",
+      "institutionType": "public",
+      "city": "Berkeley",
+      "subRegion": "California",
+      "fromPdfLead": true,
+      "identity": {
+        "url": "https://www.berkeley.edu/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of California, Berkeley",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Bachelor of Science in Electrical Engineering and Computer Sciences",
+            "slug": "bs-electrical-engineering-computer-sciences",
+            "qualification": "bachelor",
+            "studyLevel": "UG",
+            "durationMonths": 48,
+            "studyMode": "full_time",
+            "campus": "Main Campus",
+            "teachingLanguage": "English",
+            "url": "https://eecs.berkeley.edu/academics/undergraduate/eecs-bs"
+          },
+          "evidence": "EECS Department: 'The Bachelor of Science in Electrical Engineering & Computer Sciences (EECS) requires 120 semester units over four years of full-time undergraduate study.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://eecs.berkeley.edu/academics/undergraduate/eecs-bs",
+          "publisher": "UC Berkeley EECS Department"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "USD",
+            "amount": "48600.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Nonresident Supplemental Tuition ($34,200) plus systemwide tuition and student services fees ($14,400) totaling approx. $48,600/year."
+          },
+          "evidence": "UC Berkeley Financial Aid & Scholarships: Nonresident undergraduate supplemental tuition is $34,200 plus base tuition of $14,400 per academic year for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://financialaid.berkeley.edu/cost-of-attendance/",
+          "publisher": "UC Berkeley Financial Aid and Scholarships Office"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Completion of secondary school with strong math (calculus) and physics. A-G subject pattern with minimum 3.4 GPA for non-residents. UC is test-free (no SAT/ACT used in admissions).",
+          "evidence": "UC Admissions: 'Out-of-state and international applicants must earn at least a 3.4 GPA with no grade lower than C in 15 college-preparatory courses.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 admissions cycle",
+          "result": "captured",
+          "sourceUrl": "https://admissions.berkeley.edu/apply-to-berkeley/international-students/",
+          "publisher": "UC Berkeley Office of Undergraduate Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "TOEFL iBT 80 minimum (100+ strongly recommended for EECS); or IELTS Academic 6.5 minimum (7.0+ recommended); Duolingo English Test 115 minimum.",
+          "evidence": "UC Berkeley International Admissions: 'You must satisfy the English language requirement with a minimum score of 80 on the TOEFL or 6.5 on IELTS.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 admissions cycle",
+          "result": "captured",
+          "sourceUrl": "https://admissions.berkeley.edu/apply-to-berkeley/international-students/",
+          "publisher": "UC Berkeley Office of Undergraduate Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 8,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-11-30"
+          },
+          "evidence": "University of California Application: filing period October 1 through November 30 for Fall admission.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://admission.universityofcalifornia.edu/how-to-apply/dates-deadlines/",
+          "publisher": "University of California System Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "US",
+      "officialName": "Massachusetts Institute of Technology",
+      "slug": "massachusetts-institute-of-technology",
+      "institutionType": "private",
+      "city": "Cambridge",
+      "subRegion": "Massachusetts",
+      "fromPdfLead": true,
+      "identity": {
+        "url": "https://www.mit.edu/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Massachusetts Institute of Technology (MIT)",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Electrical Engineering and Computer Science",
+            "slug": "ms-electrical-engineering-computer-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Main Campus",
+            "teachingLanguage": "English",
+            "url": "https://www.eecs.mit.edu/academics/graduate-programs/"
+          },
+          "evidence": "MIT EECS Graduate Academics: 'Master of Science (SM) degree requires at least 66 credit units and submission of an acceptable thesis.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.eecs.mit.edu/academics/graduate-programs/",
+          "publisher": "MIT Department of Electrical Engineering and Computer Science"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "USD",
+            "amount": "61950.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Graduate base tuition $30,975 per term ($61,950 regular academic year)."
+          },
+          "evidence": "MIT Student Financial Services: Graduate regular tuition is $30,975 per semester ($61,950 for fall/spring) for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://sfs.mit.edu/graduate-students/guide/tuition-fees/",
+          "publisher": "MIT Student Financial Services"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Accredited bachelor's degree in engineering or relevant scientific field, transcripts, statement of objectives, and 3 letters of recommendation. GRE is optional or not considered by EECS.",
+          "evidence": "MIT EECS Graduate Admissions Guide: requirements include bachelor's degree in relevant STEM discipline, statement of objectives, 3 recommendation letters.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.eecs.mit.edu/academics/graduate-programs/admissions/",
+          "publisher": "MIT Department of EECS"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic minimum overall score of 7.0 (or TOEFL iBT minimum 100).",
+          "evidence": "MIT Graduate Admissions International applicants: IELTS minimum 7.0 or TOEFL 100 recommended for graduate study.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://gradadmissions.mit.edu/about/faqs",
+          "publisher": "MIT Office of Graduate Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-12-15"
+          },
+          "evidence": "MIT EECS Admissions: 'The online application opens on September 15. The application deadline is December 15.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.eecs.mit.edu/academics/graduate-programs/admissions/",
+          "publisher": "MIT Department of EECS"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "US",
+      "officialName": "University of Michigan",
+      "slug": "university-of-michigan-ann-arbor",
+      "institutionType": "public",
+      "city": "Ann Arbor",
+      "subRegion": "Michigan",
+      "fromPdfLead": true,
+      "identity": {
+        "url": "https://umich.edu/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Michigan",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Information",
+            "slug": "ms-information",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Ann Arbor",
+            "teachingLanguage": "English",
+            "url": "https://www.si.umich.edu/programs/master-science-information"
+          },
+          "evidence": "School of Information: 'The Master of Science in Information (MSI) is a 48-credit full-time professional degree completed over two years.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.si.umich.edu/programs/master-science-information",
+          "publisher": "University of Michigan School of Information"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "USD",
+            "amount": "57896.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Non-resident graduate tuition of $28,948 per semester ($57,896 per academic year of full-time enrollment)."
+          },
+          "evidence": "Office of the Registrar Tuition & Fees: Rackham / Information full-time non-resident tuition schedule is $28,948 per term.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://ro.umich.edu/tuition-fees",
+          "publisher": "University of Michigan Office of the Registrar"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Accredited four-year bachelor's degree or international equivalent, transcripts, academic statement of purpose, personal statement, resume, and 3 recommendation letters.",
+          "evidence": "UMSI Admissions: 'Applicants must hold a bachelor's degree from an accredited institution. Submission of resume, essays, and three letters required.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.si.umich.edu/programs/master-science-information/msi-admissions",
+          "publisher": "UMSI Graduate Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "TOEFL iBT 100 overall (with section cutoffs 25+) or IELTS Academic 7.0 overall (minimum 6.5 in all bands).",
+          "evidence": "Rackham Graduate School English Proficiency: 'Minimum score of 100 on the TOEFL or 7.0 on the IELTS for international applicants.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://rackham.umich.edu/admissions/applying/tests/",
+          "publisher": "Rackham Graduate School"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-15"
+          },
+          "evidence": "UMSI Application Deadlines: Priority deadline for Master of Science in Information is January 15 for Fall enrollment.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.si.umich.edu/programs/master-science-information/msi-admissions",
+          "publisher": "UMSI Graduate Admissions"
+        }
+      ]
+    }
+  ]
+}

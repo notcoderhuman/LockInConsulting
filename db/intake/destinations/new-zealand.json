@@ -1,0 +1,294 @@
+{
+  "destinationSlug": "new-zealand",
+  "destinationIso2": "NZ",
+  "preparedAt": "2026-10-18",
+  "status": "pending_admin_entry",
+  "recordCount": 3,
+  "records": [
+    {
+      "destinationIso2": "NZ",
+      "officialName": "University of Auckland",
+      "slug": "university-of-auckland",
+      "institutionType": "public",
+      "city": "Auckland",
+      "subRegion": "Auckland",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.auckland.ac.nz/en.html",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Auckland",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Information Technology",
+            "slug": "master-of-information-technology",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 18,
+            "studyMode": "full_time",
+            "campus": "City Campus",
+            "teachingLanguage": "English",
+            "url": "https://www.auckland.ac.nz/en/study/study-options/find-a-study-option/master-of-information-technology-minfotech.html"
+          },
+          "evidence": "Programme guide: 'MInfoTech is an 18-month or 2-year (180 or 240 points) professional master's degree developed in partnership with the ICT industry.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 calendar",
+          "result": "captured",
+          "sourceUrl": "https://www.auckland.ac.nz/en/study/study-options/find-a-study-option/master-of-information-technology-minfotech.html",
+          "publisher": "University of Auckland Faculty of Science"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "NZD",
+            "amount": "49862.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Estimated annual international tuition fee based on 120 points of science/IT courses (approx. NZD 74,793 for the 180-point programme)."
+          },
+          "evidence": "International Student Fees: Graduate Science/IT fees approx. NZD $49,862 per 120 points.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.auckland.ac.nz/en/study/fees-and-money-matters/tuition-fees/postgraduate-tuition-fees.html",
+          "publisher": "University of Auckland Student Fees"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Bachelor's degree in a relevant field (computing or IT) with a grade point equivalent (GPE) of at least 4.5 out of 9.0 (approx. 65% in an Indian bachelor's degree).",
+          "evidence": "Entry criteria: Bachelor of Science or relevant degree with minimum 4.5 GPE.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.auckland.ac.nz/en/study/study-options/find-a-study-option/master-of-information-technology-minfotech.html",
+          "publisher": "University of Auckland Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic 6.5 overall (no individual band below 6.0) or TOEFL iBT 90 (minimum writing score of 21).",
+          "evidence": "Postgraduate English requirement: IELTS 6.5 with no band less than 6.0, TOEFL 90 with written 21.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.auckland.ac.nz/en/study/applications-and-admissions/entry-requirements/postgraduate-entry-requirements/postgraduate-english-language-requirements.html",
+          "publisher": "University of Auckland Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 2,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-12-08"
+          },
+          "evidence": "Key admission dates: Semester 1 (late February) applications close December 8.",
+          "checkedAt": "2026-10-18",
+          "validity": "Semester 1 2026",
+          "result": "captured",
+          "sourceUrl": "https://www.auckland.ac.nz/en/study/applications-and-admissions/key-dates.html",
+          "publisher": "University of Auckland Applications and Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "NZ",
+      "officialName": "University of Otago",
+      "slug": "university-of-otago",
+      "institutionType": "public",
+      "city": "Dunedin",
+      "subRegion": "Otago",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.otago.ac.nz/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Otago",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Business Data Science (MBusDataSc)",
+            "slug": "master-business-data-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 12,
+            "studyMode": "full_time",
+            "campus": "Dunedin",
+            "teachingLanguage": "English",
+            "url": "https://www.otago.ac.nz/courses/qualifications/mbusdatasc.html"
+          },
+          "evidence": "Programme specifications: 'The Master of Business Data Science is a 180-point coursework master's degree completed in 12 months of full-time study at Otago Business School.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 Guide to Enrolment",
+          "result": "captured",
+          "sourceUrl": "https://www.otago.ac.nz/courses/qualifications/mbusdatasc.html",
+          "publisher": "University of Otago Qualifications"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "NZD",
+            "amount": "57842.00",
+            "billingPeriod": "total_programme",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Total programme international tuition fee for 180 points."
+          },
+          "evidence": "International tuition guide: 'Master of Business Data Science total programme fee is NZD $57,842.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.otago.ac.nz/international/fees-and-finance",
+          "publisher": "University of Otago International Office"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Undergraduate degree in any discipline with a B+ grade average (75%+) across final-year papers.",
+          "evidence": "Admission regulations: 'Bachelor's degree with a B+ average in relevant 300-level papers.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.otago.ac.nz/courses/qualifications/mbusdatasc.html",
+          "publisher": "Otago Business School"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic 6.5 overall (no individual band below 6.0) or TOEFL iBT 90 (minimum 21 in writing).",
+          "evidence": "English requirements: Postgraduate coursework requires IELTS 6.5 with 6.0 in all bands or TOEFL 90.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.otago.ac.nz/international/enrolment/english-language-requirements",
+          "publisher": "University of Otago International Office"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 2,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-10-31"
+          },
+          "evidence": "Key enrollment dates: International applications for Semester 1 (February) close October 31.",
+          "checkedAt": "2026-10-18",
+          "validity": "Semester 1 2026",
+          "result": "captured",
+          "sourceUrl": "https://www.otago.ac.nz/study/enrolment/key-dates",
+          "publisher": "University of Otago Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "NZ",
+      "officialName": "Te Herenga Waka – Victoria University of Wellington",
+      "slug": "victoria-university-of-wellington",
+      "institutionType": "public",
+      "city": "Wellington",
+      "subRegion": "Wellington",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.wgtn.ac.nz/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Victoria University of Wellington",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Professional Business Analysis",
+            "slug": "master-professional-business-analysis",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 16,
+            "studyMode": "full_time",
+            "campus": "Pipitea",
+            "teachingLanguage": "English",
+            "url": "https://www.wgtn.ac.nz/explore/postgraduate-programmes/master-of-professional-business-analysis/requirements"
+          },
+          "evidence": "Programme overview: 'The Master of Professional Business Analysis (MBusAn) is a 180-point conversion master's program taught over four trimesters (16 months).' ",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 course finder",
+          "result": "captured",
+          "sourceUrl": "https://www.wgtn.ac.nz/explore/postgraduate-programmes/master-of-professional-business-analysis/overview",
+          "publisher": "Wellington School of Business and Government"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "NZD",
+            "amount": "44550.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Indicative international student tuition fee based on 120 points of business/informatics courses."
+          },
+          "evidence": "International fees estimate: approx. NZD $44,550 per year for 120 points.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.wgtn.ac.nz/international/applying/fees",
+          "publisher": "Wellington University International Fees"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Undergraduate degree in any discipline with a B average (65%+) or equivalent from an accredited institution.",
+          "evidence": "Admission requirements: 'A Bachelor's degree with a B average or higher, or equivalent academic preparation.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.wgtn.ac.nz/explore/postgraduate-programmes/master-of-professional-business-analysis/requirements",
+          "publisher": "Wellington School of Business and Government"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic 6.5 overall (no individual score below 6.0) or TOEFL iBT 90 (minimum 20 in writing).",
+          "evidence": "English requirement: Postgraduate minimum is IELTS 6.5 with no band less than 6.0, TOEFL 90 with 20 writing.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.wgtn.ac.nz/international/applying/english-language-requirements",
+          "publisher": "Wellington International Office"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 3,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-12-01"
+          },
+          "evidence": "Application closing dates: Trimester 1 (starts late February/March) international applications close December 1.",
+          "checkedAt": "2026-10-18",
+          "validity": "Trimester 1 2026",
+          "result": "captured",
+          "sourceUrl": "https://www.wgtn.ac.nz/international/applying/key-dates",
+          "publisher": "Wellington International Office"
+        }
+      ]
+    }
+  ]
+}

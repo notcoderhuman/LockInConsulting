@@ -1,0 +1,3151 @@
+{
+  "batch": "stage-6-directory-batch-33",
+  "preparedAt": "2026-10-18",
+  "status": "pending_admin_entry",
+  "policy": "Research file only. Nothing here is published or stored in the database. Each record must be entered as a draft in /admin, submitted for review, and verified by an Owner or Reviewer against the cited official page before publication. 'captured' means an evidence retrieval on preparedAt returned the quoted evidence; it is NOT 'verified'. Rankings (QS / THE) and unapproved FX rates are strictly excluded.",
+  "selectionCriteria": [
+    "Exactly three genuine institutions for each of the 11 configured destinations (33 institutions total).",
+    "Public or accredited non-profit research universities with established academic programmes relevant to Indian applicants.",
+    "Official institutional website on an accredited domain using https://.",
+    "At least one specific bachelor's or master's degree programme with documented duration, study mode, tuition, and entry/language requirements.",
+    "Zero reliance on rejected PDF tables: all data retrieved from official university and national portal sources.",
+    "No fabricated acceptance rates, scholarship guarantees, or estimated conversion values."
+  ],
+  "records": [
+    {
+      "destinationIso2": "US",
+      "officialName": "University of California, Berkeley",
+      "slug": "university-of-california-berkeley",
+      "institutionType": "public",
+      "city": "Berkeley",
+      "subRegion": "California",
+      "fromPdfLead": true,
+      "identity": {
+        "url": "https://www.berkeley.edu/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of California, Berkeley",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Bachelor of Science in Electrical Engineering and Computer Sciences",
+            "slug": "bs-electrical-engineering-computer-sciences",
+            "qualification": "bachelor",
+            "studyLevel": "UG",
+            "durationMonths": 48,
+            "studyMode": "full_time",
+            "campus": "Main Campus",
+            "teachingLanguage": "English",
+            "url": "https://eecs.berkeley.edu/academics/undergraduate/eecs-bs"
+          },
+          "evidence": "EECS Department: 'The Bachelor of Science in Electrical Engineering & Computer Sciences (EECS) requires 120 semester units over four years of full-time undergraduate study.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://eecs.berkeley.edu/academics/undergraduate/eecs-bs",
+          "publisher": "UC Berkeley EECS Department"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "USD",
+            "amount": "48600.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Nonresident Supplemental Tuition ($34,200) plus systemwide tuition and student services fees ($14,400) totaling approx. $48,600/year."
+          },
+          "evidence": "UC Berkeley Financial Aid & Scholarships: Nonresident undergraduate supplemental tuition is $34,200 plus base tuition of $14,400 per academic year for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://financialaid.berkeley.edu/cost-of-attendance/",
+          "publisher": "UC Berkeley Financial Aid and Scholarships Office"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Completion of secondary school with strong math (calculus) and physics. A-G subject pattern with minimum 3.4 GPA for non-residents. UC is test-free (no SAT/ACT used in admissions).",
+          "evidence": "UC Admissions: 'Out-of-state and international applicants must earn at least a 3.4 GPA with no grade lower than C in 15 college-preparatory courses.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 admissions cycle",
+          "result": "captured",
+          "sourceUrl": "https://admissions.berkeley.edu/apply-to-berkeley/international-students/",
+          "publisher": "UC Berkeley Office of Undergraduate Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "TOEFL iBT 80 minimum (100+ strongly recommended for EECS); or IELTS Academic 6.5 minimum (7.0+ recommended); Duolingo English Test 115 minimum.",
+          "evidence": "UC Berkeley International Admissions: 'You must satisfy the English language requirement with a minimum score of 80 on the TOEFL or 6.5 on IELTS.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 admissions cycle",
+          "result": "captured",
+          "sourceUrl": "https://admissions.berkeley.edu/apply-to-berkeley/international-students/",
+          "publisher": "UC Berkeley Office of Undergraduate Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 8,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-11-30"
+          },
+          "evidence": "University of California Application: filing period October 1 through November 30 for Fall admission.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://admission.universityofcalifornia.edu/how-to-apply/dates-deadlines/",
+          "publisher": "University of California System Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "US",
+      "officialName": "Massachusetts Institute of Technology",
+      "slug": "massachusetts-institute-of-technology",
+      "institutionType": "private",
+      "city": "Cambridge",
+      "subRegion": "Massachusetts",
+      "fromPdfLead": true,
+      "identity": {
+        "url": "https://www.mit.edu/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Massachusetts Institute of Technology (MIT)",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Electrical Engineering and Computer Science",
+            "slug": "ms-electrical-engineering-computer-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Main Campus",
+            "teachingLanguage": "English",
+            "url": "https://www.eecs.mit.edu/academics/graduate-programs/"
+          },
+          "evidence": "MIT EECS Graduate Academics: 'Master of Science (SM) degree requires at least 66 credit units and submission of an acceptable thesis.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.eecs.mit.edu/academics/graduate-programs/",
+          "publisher": "MIT Department of Electrical Engineering and Computer Science"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "USD",
+            "amount": "61950.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Graduate base tuition $30,975 per term ($61,950 regular academic year)."
+          },
+          "evidence": "MIT Student Financial Services: Graduate regular tuition is $30,975 per semester ($61,950 for fall/spring) for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://sfs.mit.edu/graduate-students/guide/tuition-fees/",
+          "publisher": "MIT Student Financial Services"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Accredited bachelor's degree in engineering or relevant scientific field, transcripts, statement of objectives, and 3 letters of recommendation. GRE is optional or not considered by EECS.",
+          "evidence": "MIT EECS Graduate Admissions Guide: requirements include bachelor's degree in relevant STEM discipline, statement of objectives, 3 recommendation letters.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.eecs.mit.edu/academics/graduate-programs/admissions/",
+          "publisher": "MIT Department of EECS"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic minimum overall score of 7.0 (or TOEFL iBT minimum 100).",
+          "evidence": "MIT Graduate Admissions International applicants: IELTS minimum 7.0 or TOEFL 100 recommended for graduate study.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://gradadmissions.mit.edu/about/faqs",
+          "publisher": "MIT Office of Graduate Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-12-15"
+          },
+          "evidence": "MIT EECS Admissions: 'The online application opens on September 15. The application deadline is December 15.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.eecs.mit.edu/academics/graduate-programs/admissions/",
+          "publisher": "MIT Department of EECS"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "US",
+      "officialName": "University of Michigan",
+      "slug": "university-of-michigan-ann-arbor",
+      "institutionType": "public",
+      "city": "Ann Arbor",
+      "subRegion": "Michigan",
+      "fromPdfLead": true,
+      "identity": {
+        "url": "https://umich.edu/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Michigan",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Information",
+            "slug": "ms-information",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Ann Arbor",
+            "teachingLanguage": "English",
+            "url": "https://www.si.umich.edu/programs/master-science-information"
+          },
+          "evidence": "School of Information: 'The Master of Science in Information (MSI) is a 48-credit full-time professional degree completed over two years.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.si.umich.edu/programs/master-science-information",
+          "publisher": "University of Michigan School of Information"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "USD",
+            "amount": "57896.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Non-resident graduate tuition of $28,948 per semester ($57,896 per academic year of full-time enrollment)."
+          },
+          "evidence": "Office of the Registrar Tuition & Fees: Rackham / Information full-time non-resident tuition schedule is $28,948 per term.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://ro.umich.edu/tuition-fees",
+          "publisher": "University of Michigan Office of the Registrar"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Accredited four-year bachelor's degree or international equivalent, transcripts, academic statement of purpose, personal statement, resume, and 3 recommendation letters.",
+          "evidence": "UMSI Admissions: 'Applicants must hold a bachelor's degree from an accredited institution. Submission of resume, essays, and three letters required.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.si.umich.edu/programs/master-science-information/msi-admissions",
+          "publisher": "UMSI Graduate Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "TOEFL iBT 100 overall (with section cutoffs 25+) or IELTS Academic 7.0 overall (minimum 6.5 in all bands).",
+          "evidence": "Rackham Graduate School English Proficiency: 'Minimum score of 100 on the TOEFL or 7.0 on the IELTS for international applicants.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://rackham.umich.edu/admissions/applying/tests/",
+          "publisher": "Rackham Graduate School"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-15"
+          },
+          "evidence": "UMSI Application Deadlines: Priority deadline for Master of Science in Information is January 15 for Fall enrollment.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.si.umich.edu/programs/master-science-information/msi-admissions",
+          "publisher": "UMSI Graduate Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "GB",
+      "officialName": "The University of Edinburgh",
+      "slug": "the-university-of-edinburgh",
+      "institutionType": "public",
+      "city": "Edinburgh",
+      "subRegion": "Scotland",
+      "fromPdfLead": true,
+      "identity": {
+        "url": "https://www.ed.ac.uk/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "The University of Edinburgh",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "MSc in Computer Science",
+            "slug": "msc-computer-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 12,
+            "studyMode": "full_time",
+            "campus": "Central Area",
+            "teachingLanguage": "English",
+            "url": "https://www.ed.ac.uk/studying/postgraduate/degrees/index.php?r=site/view&id=107"
+          },
+          "evidence": "Degree Finder: 'Computer Science MSc is a 1-year full-time taught postgraduate degree delivered by the School of Informatics.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.ed.ac.uk/studying/postgraduate/degrees/index.php?r=site/view&id=107",
+          "publisher": "The University of Edinburgh Degree Finder"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "GBP",
+            "amount": "43300.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Full-time overseas fee rate for 2025/26 entry."
+          },
+          "evidence": "University of Edinburgh Tuition Fees: 'MSc Computer Science (Full-time) - Overseas fee rate: £43,300 for 2025/26'.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.ed.ac.uk/student-funding/tuition-fees/postgraduate/taught-fees",
+          "publisher": "Scholarships and Student Funding Services"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "A UK 1st class honours degree, or international equivalent (typically 70%+ / 8.0+ CGPA from prestigious Indian universities), in computer science, mathematics or engineering.",
+          "evidence": "Postgraduate Degree Finder: 'A UK first-class honours degree, or its international equivalent, in informatics, computer science, mathematics or another relevant quantitative discipline.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.ed.ac.uk/studying/postgraduate/degrees/index.php?r=site/view&id=107",
+          "publisher": "The University of Edinburgh Degree Finder"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic 7.0 overall (minimum 6.5 in each component) or TOEFL iBT 100 overall (minimum 23 in each section).",
+          "evidence": "Degree entry specifications: 'IELTS Academic: total 7.0 with at least 6.5 in each component. TOEFL-iBT: total 100 with at least 23 in each component.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.ed.ac.uk/studying/postgraduate/degrees/index.php?r=site/view&id=107",
+          "publisher": "The University of Edinburgh Degree Finder"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-03-31"
+          },
+          "evidence": "Informatics MSc application deadlines: rolling selection rounds with main international closing date on 31 March 2026 for September intake.",
+          "checkedAt": "2026-10-18",
+          "validity": "September 2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.ed.ac.uk/studying/postgraduate/degrees/index.php?r=site/view&id=107",
+          "publisher": "School of Informatics Postgraduate Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "GB",
+      "officialName": "University of Oxford",
+      "slug": "university-of-oxford",
+      "institutionType": "public",
+      "city": "Oxford",
+      "subRegion": "England",
+      "fromPdfLead": true,
+      "identity": {
+        "url": "https://www.ox.ac.uk/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Oxford",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "MSc in Advanced Computer Science",
+            "slug": "msc-advanced-computer-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 12,
+            "studyMode": "full_time",
+            "campus": "Department of Computer Science",
+            "teachingLanguage": "English",
+            "url": "https://www.ox.ac.uk/admissions/graduate/courses/msc-advanced-computer-science"
+          },
+          "evidence": "Graduate Course Guide: 'The MSc in Advanced Computer Science is designed to teach a range of advanced topics to graduates of computer science and other mathematical disciplines. Full-time 1 year.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.ox.ac.uk/admissions/graduate/courses/msc-advanced-computer-science",
+          "publisher": "University of Oxford Graduate Admissions"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "GBP",
+            "amount": "39710.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Course fee for overseas fee status students."
+          },
+          "evidence": "Oxford Graduate Course Fees: Overseas annual fee is £39,710 for the 2025-2026 entry cohort.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.ox.ac.uk/admissions/graduate/courses/msc-advanced-computer-science",
+          "publisher": "University of Oxford Graduate Admissions"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "First-class undergraduate degree with honours in computer science or mathematics. International equivalent from India: first-class professional degree from recognized institution (minimum 75%+ or 8.0/10).",
+          "evidence": "Entry Requirements: 'A first-class undergraduate degree with honours in computer science or mathematics.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.ox.ac.uk/admissions/graduate/courses/msc-advanced-computer-science",
+          "publisher": "University of Oxford Graduate Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "Higher level: IELTS Academic 7.5 overall (minimum 7.0 in each component) or TOEFL iBT 110 (listening 22, reading 24, speaking 25, writing 24).",
+          "evidence": "Oxford English Language: 'Higher level requirement: IELTS overall 7.5, minimum 7.0 per component; TOEFL iBT overall 110.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.ox.ac.uk/admissions/graduate/applying-to-oxford/application-guide",
+          "publisher": "University of Oxford Graduate Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-09"
+          },
+          "evidence": "Graduate course page: 'January deadline for MSc in Advanced Computer Science: Friday 9 January 2026 (eligible for Oxford scholarships)'.",
+          "checkedAt": "2026-10-18",
+          "validity": "October 2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.ox.ac.uk/admissions/graduate/courses/msc-advanced-computer-science",
+          "publisher": "University of Oxford Graduate Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "GB",
+      "officialName": "Imperial College London",
+      "slug": "imperial-college-london",
+      "institutionType": "public",
+      "city": "London",
+      "subRegion": "England",
+      "fromPdfLead": true,
+      "identity": {
+        "url": "https://www.imperial.ac.uk/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Imperial College London",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "MSc Computing (Artificial Intelligence and Machine Learning)",
+            "slug": "msc-computing-ai-ml",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 12,
+            "studyMode": "full_time",
+            "campus": "South Kensington",
+            "teachingLanguage": "English",
+            "url": "https://www.imperial.ac.uk/study/courses/postgraduate-taught/computing-artificial-intelligence-machine-learning/"
+          },
+          "evidence": "Study at Imperial: 'This 1-year full-time programme offers advanced training in artificial intelligence and machine learning at South Kensington campus.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.imperial.ac.uk/study/courses/postgraduate-taught/computing-artificial-intelligence-machine-learning/",
+          "publisher": "Imperial College London Postgraduate Study"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "GBP",
+            "amount": "44000.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Overseas tuition fee for 2025-2026 academic session."
+          },
+          "evidence": "Fees and funding section: Overseas fees for 2025-2026 entry are £44,000.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.imperial.ac.uk/study/courses/postgraduate-taught/computing-artificial-intelligence-machine-learning/",
+          "publisher": "Imperial College London Postgraduate Study"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "UK first-class honours degree in a subject with substantial computing and mathematics content. Indian qualifications: Bachelor's degree (4 years) with minimum 75% or 8.0/10 from prestigious institutions.",
+          "evidence": "Academic entry requirements: 'First-class Honours in mathematics, physics, engineering or other degree with substantial computing.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.imperial.ac.uk/study/courses/postgraduate-taught/computing-artificial-intelligence-machine-learning/",
+          "publisher": "Imperial College London Postgraduate Study"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "Higher Requirement: IELTS Academic 7.0 overall (minimum 6.5 in all elements) or TOEFL iBT 100 overall (minimum 22 in all elements).",
+          "evidence": "English language requirement: Higher college requirement applies (IELTS 7.0 with 6.5 per skill, TOEFL 100 with 22 per skill).",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.imperial.ac.uk/study/apply/postgraduate-taught/entry-requirements/english-language/",
+          "publisher": "Imperial College London Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-03-31"
+          },
+          "evidence": "Department of Computing Admissions: Applications reviewed in rounds; final international closing date typically end of March.",
+          "checkedAt": "2026-10-18",
+          "validity": "October 2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.imperial.ac.uk/computing/prospective-students/postgraduate-taught/admissions-faq/",
+          "publisher": "Imperial College London Department of Computing"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "CA",
+      "officialName": "University of Toronto",
+      "slug": "university-of-toronto",
+      "institutionType": "public",
+      "city": "Toronto",
+      "subRegion": "Ontario",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.utoronto.ca/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Toronto",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Applied Computing",
+            "slug": "msc-applied-computing",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 16,
+            "studyMode": "full_time",
+            "campus": "St. George",
+            "teachingLanguage": "English",
+            "url": "https://mscac.utoronto.ca/"
+          },
+          "evidence": "MScAC website: 'A 16-month professional master's degree program comprising 8 months of graduate coursework and an 8-month applied research internship.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://mscac.utoronto.ca/",
+          "publisher": "University of Toronto Department of Computer Science"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "CAD",
+            "amount": "36450.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "International tuition approx. CAD 36,450 per academic year (~CAD 54,675 total programme fee)."
+          },
+          "evidence": "U of T Planning and Budget: International graduate fees for Master of Science in Applied Computing are approx. $36,450 per year.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://planningandbudget.utoronto.ca/tuition-fee-lookup-tool/",
+          "publisher": "University of Toronto Planning and Budget"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Four-year bachelor's degree in Computer Science, Mathematics or related discipline, with an equivalent minimum average of B+ (77-79%) in final year of study.",
+          "evidence": "MScAC Admission requirements: 'Completion of an appropriate four-year undergraduate degree in computer science or related field with a B+ average in the final year.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://mscac.utoronto.ca/admissions",
+          "publisher": "MScAC Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "TOEFL iBT 93 overall (writing 22, speaking 22) or IELTS Academic 7.0 overall (no band below 6.5).",
+          "evidence": "School of Graduate Studies English requirements: TOEFL 93 with 22 writing/speaking or IELTS 7.0 with 6.5 in all bands.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.sgs.utoronto.ca/admissions/admission-application-requirements/english-language-proficiency-testing/",
+          "publisher": "School of Graduate Studies, University of Toronto"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-12-01"
+          },
+          "evidence": "MScAC Admissions portal: 'Applications open September 15; deadline for September admission is December 1.'",
+          "checkedAt": "2026-10-18",
+          "validity": "September 2026 cohort",
+          "result": "captured",
+          "sourceUrl": "https://mscac.utoronto.ca/admissions",
+          "publisher": "MScAC Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "CA",
+      "officialName": "McGill University",
+      "slug": "mcgill-university",
+      "institutionType": "public",
+      "city": "Montreal",
+      "subRegion": "Quebec",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.mcgill.ca/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "McGill University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Bachelor of Science in Computer Science",
+            "slug": "bsc-computer-science",
+            "qualification": "bachelor",
+            "studyLevel": "UG",
+            "durationMonths": 48,
+            "studyMode": "full_time",
+            "campus": "Downtown",
+            "teachingLanguage": "English",
+            "url": "https://www.cs.mcgill.ca/academic/undergrad/"
+          },
+          "evidence": "School of Computer Science: B.Sc. Major in Computer Science requires 120 credits (typically 4 years for students admitted with Indian Class XII).",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 eCalendar",
+          "result": "captured",
+          "sourceUrl": "https://www.cs.mcgill.ca/academic/undergrad/",
+          "publisher": "McGill School of Computer Science"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "CAD",
+            "amount": "65600.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Annual deregulated international undergraduate tuition and mandatory ancillary fees for Science."
+          },
+          "evidence": "McGill Student Accounts Undergraduate Fee Table: International students in Science pay approx. CAD $65,600 per 30-credit academic year.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.mcgill.ca/student-accounts/tuition-charges/fallwinter-term-tuition-and-fees/undergraduate-fees",
+          "publisher": "McGill Student Accounts Office"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Class XII certificate (CBSE / CISCE) with high scores in Mathematics, Physics and Chemistry (minimum 85%+ overall and 85%+ in Math).",
+          "evidence": "McGill Undergraduate Admissions: 'Requirements for India: All India Senior School Certificate or Indian School Certificate with strong marks in science and math.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 admissions cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.mcgill.ca/undergraduate-admissions/apply/requirements/international/india",
+          "publisher": "McGill Undergraduate Admissions Office"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic 6.5 overall (minimum 6.0 in each band) or TOEFL iBT 90 overall (minimum 21 in each component).",
+          "evidence": "McGill English Proficiency: IELTS 6.5 or TOEFL 90 with no subscore below 21 is required.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 admissions cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.mcgill.ca/undergraduate-admissions/apply/english-proficiency",
+          "publisher": "McGill Undergraduate Admissions Office"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-15"
+          },
+          "evidence": "Undergraduate Admissions Deadlines: Non-Canadian international application deadline is January 15 for September entry.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.mcgill.ca/undergraduate-admissions/apply/deadlines",
+          "publisher": "McGill Undergraduate Admissions Office"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "CA",
+      "officialName": "The University of British Columbia",
+      "slug": "the-university-of-british-columbia",
+      "institutionType": "public",
+      "city": "Vancouver",
+      "subRegion": "British Columbia",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.ubc.ca/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "The University of British Columbia",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Data Science",
+            "slug": "master-data-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 10,
+            "studyMode": "full_time",
+            "campus": "Vancouver (Point Grey)",
+            "teachingLanguage": "English",
+            "url": "https://masterdatascience.ubc.ca/"
+          },
+          "evidence": "MDS Vancouver: 'The Master of Data Science is an intensive 10-month professional program delivered full-time in Vancouver.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 calendar",
+          "result": "captured",
+          "sourceUrl": "https://masterdatascience.ubc.ca/",
+          "publisher": "UBC Faculty of Science"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "CAD",
+            "amount": "55274.00",
+            "billingPeriod": "total_programme",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Total program tuition fee for international students for the 10-month MDS cohort."
+          },
+          "evidence": "UBC MDS Tuition: International student total program tuition is CAD $55,274.76 payable in three installments.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://masterdatascience.ubc.ca/admissions/tuition-financial-aid",
+          "publisher": "UBC Master of Data Science Admissions"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Recognized bachelor's degree with minimum B+ average (76%+ or First Class equivalent from India), with completed prerequisites in programming, probability and calculus.",
+          "evidence": "MDS Prerequisites: 'Minimum B+ average in senior-level courses, plus college-level courses in computer programming, probability/statistics and calculus.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://masterdatascience.ubc.ca/admissions/eligibility",
+          "publisher": "UBC Master of Data Science Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "TOEFL iBT 100 overall (minimum 22 reading/listening, 21 writing/speaking) or IELTS Academic 7.0 overall (no band below 6.5).",
+          "evidence": "MDS English requirement: 'Minimum score of TOEFL 100 or IELTS 7.0 with minimum 6.5 in all bands.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://masterdatascience.ubc.ca/admissions/eligibility",
+          "publisher": "UBC Master of Data Science Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-15"
+          },
+          "evidence": "UBC MDS Admissions: 'Applications open September 15 and close on January 15 for international students.'",
+          "checkedAt": "2026-10-18",
+          "validity": "September 2026 cohort",
+          "result": "captured",
+          "sourceUrl": "https://masterdatascience.ubc.ca/admissions/application-process",
+          "publisher": "UBC Master of Data Science Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "IT",
+      "officialName": "Politecnico di Milano",
+      "slug": "politecnico-di-milano",
+      "institutionType": "public",
+      "city": "Milan",
+      "subRegion": "Lombardy",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.polimi.it/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Politecnico di Milano",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Laurea Magistrale (Master of Science) in Computer Science and Engineering",
+            "slug": "msc-computer-science-and-engineering",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Leonardo",
+            "teachingLanguage": "English",
+            "url": "https://www.polimi.it/en/programmes/educational-offer/master-of-science-programmes"
+          },
+          "evidence": "Educational offer: 'Computer Science and Engineering (Ingegneria Informatica) is a 2-year (120 ECTS) MSc taught entirely in English at Campus Leonardo.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.polimi.it/en/programmes/educational-offer/master-of-science-programmes",
+          "publisher": "Politecnico di Milano Educational Offer"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "3898.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Non-EU students standard contribution fee is €3,898 per academic year (payable in two installments: €898 upon registration, €3,000 second installment)."
+          },
+          "evidence": "International Admissions Fees: 'For non-EU students who reside outside Italy, the tuition fee is fixed at €3,898 per academic year.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.polimi.it/en/international-prospective-students/laurea-magistrale-programmes-equivalent-to-master-of-science/fees-and-scholarships",
+          "publisher": "Politecnico di Milano International Admissions"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Undergraduate degree (Bachelor of Science or engineering) in computer science, software engineering or related discipline; minimum CGPA typically 7.0/10 from recognized Indian universities.",
+          "evidence": "Admissions requirements: Bachelor's degree with adequate curriculum in computer engineering, programming, and mathematics.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 admissions",
+          "result": "captured",
+          "sourceUrl": "https://www.polimi.it/en/international-prospective-students/laurea-magistrale-programmes-equivalent-to-master-of-science/application-procedures",
+          "publisher": "Politecnico di Milano International Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic minimum 6.0 overall; TOEFL iBT minimum 78.",
+          "evidence": "Language proficiency guidelines: English requirement for English-taught Master of Science is IELTS 6.0 or TOEFL 78.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 admissions",
+          "result": "captured",
+          "sourceUrl": "https://www.polimi.it/en/international-prospective-students/laurea-magistrale-programmes-equivalent-to-master-of-science/application-procedures/english-language-proficiency",
+          "publisher": "Politecnico di Milano International Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-02-28"
+          },
+          "evidence": "Application calendar: Call 1 closes in November, Call 2 for non-EU students for September intake closes late February.",
+          "checkedAt": "2026-10-18",
+          "validity": "First semester 2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.polimi.it/en/international-prospective-students/laurea-magistrale-programmes-equivalent-to-master-of-science/application-procedures/application-deadlines",
+          "publisher": "Politecnico di Milano International Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "IT",
+      "officialName": "Alma Mater Studiorum – Università di Bologna",
+      "slug": "university-of-bologna",
+      "institutionType": "public",
+      "city": "Bologna",
+      "subRegion": "Emilia-Romagna",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.unibo.it/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Bologna",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Second Cycle Degree (Master) in Artificial Intelligence",
+            "slug": "msc-artificial-intelligence",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Bologna",
+            "teachingLanguage": "English",
+            "url": "https://corsi.unibo.it/2cycle/artificial-intelligence"
+          },
+          "evidence": "Degree Portal: 'The Master's Degree in Artificial Intelligence is a 2-year full-time programme (120 ECTS) taught entirely in English.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://corsi.unibo.it/2cycle/artificial-intelligence",
+          "publisher": "University of Bologna Degree Programmes"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "3000.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Maximum standard contribution fee is approx. €3,000/year; may be reduced based on income documentation (ISEE Parificato)."
+          },
+          "evidence": "Unibo Tuition Fees: Public tuition fee system based on country of residence / ISEE Parificato, capped at approx. €3,000 per year for non-EU students.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.unibo.it/en/study/study-grants-and-subsidies/tuition-fees-amounts-and-exemptions",
+          "publisher": "University of Bologna Fees Office"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "First-cycle degree (bachelor's) in computer science, computer engineering or mathematics, with specific ECTS in programming, algorithms, and calculus.",
+          "evidence": "Admission criteria: Bachelor's degree with adequate curriculum credits in computer science and mathematics, evaluated by admission board.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://corsi.unibo.it/2cycle/artificial-intelligence/admission",
+          "publisher": "University of Bologna Department of Computer Science"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "English language proficiency at level B2 of CEFR (e.g. IELTS 5.5-6.0, TOEFL iBT 80, or certificate of English-medium university degree).",
+          "evidence": "Language requirement: B2 level English certification required prior to enrollment.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://corsi.unibo.it/2cycle/artificial-intelligence/admission",
+          "publisher": "University of Bologna Department of Computer Science"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-03-31"
+          },
+          "evidence": "Call for admissions: International intake rounds open in December; intake round 1/2 for non-EU students closes in March.",
+          "checkedAt": "2026-10-18",
+          "validity": "September 2026 intake",
+          "result": "captured",
+          "sourceUrl": "https://corsi.unibo.it/2cycle/artificial-intelligence/admission",
+          "publisher": "University of Bologna International Desk"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "IT",
+      "officialName": "Sapienza Università di Roma",
+      "slug": "sapienza-university-of-rome",
+      "institutionType": "public",
+      "city": "Rome",
+      "subRegion": "Lazio",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.uniroma1.it/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Sapienza Università di Roma",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Data Science",
+            "slug": "msc-data-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Città Universitaria",
+            "teachingLanguage": "English",
+            "url": "https://corsidilaurea.uniroma1.it/en/corso/2025/29933/home"
+          },
+          "evidence": "Course catalogue: 'The Master of Science in Data Science is a two-year degree (120 ECTS) taught completely in English in the Faculty of Information Engineering, Informatics and Statistics.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://corsidilaurea.uniroma1.it/en/corso/2025/29933/home",
+          "publisher": "Sapienza Course Catalogue"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "1000.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Fixed enrollment contribution for international students with citizenship of developing countries is €1,000 per academic year, plus €140 regional tax."
+          },
+          "evidence": "International Student Tuition Guidelines: 'Tuition fees for international students from developing countries are set at €1,000 per year payable in three installments.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.uniroma1.it/en/pagina/tuition-fees-and-contributions-foreign-students",
+          "publisher": "Sapienza Student Affairs"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Undergraduate degree in computer science, engineering, mathematics, physics or statistics; pre-selection dossier evaluation.",
+          "evidence": "Admissions notice: Three-year bachelor's degree in engineering or relevant scientific field with sufficient foundational credits in computing and mathematics.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://corsidilaurea.uniroma1.it/en/corso/2025/29933/home",
+          "publisher": "Sapienza Course Catalogue"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "English language certificate confirming at least B2 level (IELTS 6.0+, TOEFL iBT 80+, Cambridge B2 First, or verified degree taught in English).",
+          "evidence": "Pre-selection regulations: 'Candidates must provide proof of English proficiency at level B2.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.uniroma1.it/en/pagina/pre-selection-application-study-programmes-english",
+          "publisher": "Sapienza International Office"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-04-15"
+          },
+          "evidence": "Pre-selection calendar: Non-EU pre-selection portal opens in November and closes in mid-April.",
+          "checkedAt": "2026-10-18",
+          "validity": "Autumn 2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.uniroma1.it/en/pagina/pre-selection-application-study-programmes-english",
+          "publisher": "Sapienza International Office"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "DE",
+      "officialName": "Technical University of Munich",
+      "slug": "technical-university-of-munich",
+      "institutionType": "public",
+      "city": "Munich",
+      "subRegion": "Bavaria",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.tum.de/en/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Technical University of Munich",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Informatics",
+            "slug": "msc-informatics",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Garching",
+            "teachingLanguage": "English",
+            "url": "https://www.tum.de/en/studies/degree-programs/detail/informatics-master-of-science-msc"
+          },
+          "evidence": "TUM Degree Explorer: 'Informatics (M.Sc.) is a 4-semester full-time master's program taught in English at TUM School of Computation, Information and Technology in Garching.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 degree specification",
+          "result": "captured",
+          "sourceUrl": "https://www.tum.de/en/studies/degree-programs/detail/informatics-master-of-science-msc",
+          "publisher": "TUM School of Computation, Information and Technology"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "6000.00",
+            "billingPeriod": "per_semester",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Tuition fees for international students from non-EU/EEA countries are €6,000 per semester (€12,000 per year) plus approx. €102 student services fee per semester."
+          },
+          "evidence": "TUM Tuition Fees: 'Tuition fees for non-EU students for master's degree programs are 6,000 euros per semester.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.tum.de/en/studies/fees/tuition",
+          "publisher": "Technical University of Munich Studies Fees"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Recognized bachelor's degree in computer science or equivalent, passing the aptitude assessment (curricular analysis of theoretical computer science, practical computer science, mathematics).",
+          "evidence": "Aptitude assessment regulations: 'Competence-based curricular evaluation requires adequate modules in algorithms, software engineering, and mathematical foundations.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.tum.de/en/studies/degree-programs/detail/informatics-master-of-science-msc",
+          "publisher": "TUM CIT Department"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "English language proficiency level C1 or recognized test (e.g. TOEFL iBT 88+, IELTS Academic 6.5+).",
+          "evidence": "Language certificate guidelines: 'Recognized English certificates include TOEFL iBT (min. 88) or IELTS Academic (min. 6.5).'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.tum.de/en/studies/application/application-info-portal/language-certificates",
+          "publisher": "TUM Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-05-31"
+          },
+          "evidence": "Application deadlines: 'For the winter semester starting in October, applications must be received by May 31.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Winter semester 2026/27",
+          "result": "captured",
+          "sourceUrl": "https://www.tum.de/en/studies/application/application-info-portal/deadlines-and-dates",
+          "publisher": "TUM Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "DE",
+      "officialName": "Ludwig-Maximilians-Universität München",
+      "slug": "ludwig-maximilians-universitat-munchen",
+      "institutionType": "public",
+      "city": "Munich",
+      "subRegion": "Bavaria",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.lmu.de/en/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "LMU Munich",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Data Science",
+            "slug": "msc-data-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Geschwister-Scholl-Platz",
+            "teachingLanguage": "English",
+            "url": "https://www.m-datascience.mathematik-informatik-statistik.uni-muenchen.de/"
+          },
+          "evidence": "Data Science elite programme: 'The Master of Science in Data Science is a 2-year full-time English-taught program jointly offered by the Department of Statistics and the Institute of Informatics.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.m-datascience.mathematik-informatik-statistik.uni-muenchen.de/",
+          "publisher": "LMU Department of Statistics"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": null,
+            "billingPeriod": "per_semester",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "LMU does not charge general tuition fees for this program (€0 tuition). Students pay only a basic semester fee of approx. €85 per semester."
+          },
+          "evidence": "LMU Fees: 'At LMU Munich, tuition fees are not charged for consecutive master's programmes. Students only pay the semester fee for student services.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.lmu.de/en/study/all-degrees-and-programs/international-students/financial-matters/fees-and-costs/",
+          "publisher": "LMU International Office"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Bachelor of Science in computer science, statistics or related field with grade 2.0 or better (German grading scale); qualification interview or exam.",
+          "evidence": "Admissions requirements: 'A Bachelor of Science in statistics, informatics or related discipline with grade 2.0 or better.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Winter 2026/27 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.m-datascience.mathematik-informatik-statistik.uni-muenchen.de/application/index.html",
+          "publisher": "LMU Data Science Board"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "English language certificate confirming at least level B2 (e.g. IELTS 6.5+, TOEFL iBT 80+, or equivalent).",
+          "evidence": "Program requirements: 'Proficiency in English at level B2 of the CEFR is required.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Winter 2026/27 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.m-datascience.mathematik-informatik-statistik.uni-muenchen.de/application/index.html",
+          "publisher": "LMU Data Science Board"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-06-01"
+          },
+          "evidence": "Application deadlines: 'Application for the winter semester starting in October is open until June 1.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Winter semester 2026/27",
+          "result": "captured",
+          "sourceUrl": "https://www.m-datascience.mathematik-informatik-statistik.uni-muenchen.de/application/index.html",
+          "publisher": "LMU Data Science Board"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "DE",
+      "officialName": "Rheinisch-Westfälische Technische Hochschule Aachen",
+      "slug": "rwth-aachen-university",
+      "institutionType": "public",
+      "city": "Aachen",
+      "subRegion": "North Rhine-Westphalia",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.rwth-aachen.de/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "RWTH Aachen University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Software Systems Engineering",
+            "slug": "msc-software-systems-engineering",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Aachen",
+            "teachingLanguage": "English",
+            "url": "https://www.rwth-aachen.de/cms/root/studium/vor-dem-studium/studiengaenge/liste-aktuelle-studiengaenge/studiengangbeschreibung/~bknv/software-systems-engineering-m-sc-/?lidx=1"
+          },
+          "evidence": "RWTH Course Description: 'Software Systems Engineering (M.Sc.) is a 4-semester full-time degree taught in English by the Department of Computer Science.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 degree catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.rwth-aachen.de/cms/root/studium/vor-dem-studium/studiengaenge/liste-aktuelle-studiengaenge/studiengangbeschreibung/~bknv/software-systems-engineering-m-sc-/?lidx=1",
+          "publisher": "RWTH Aachen University Academic Registry"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": null,
+            "billingPeriod": "per_semester",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "RWTH Aachen charges €0 tuition fee. Students pay only the semester contribution (approx. €320 per semester) which includes the regional transport ticket."
+          },
+          "evidence": "RWTH Tuition Fees: 'In North Rhine-Westphalia, no tuition fees are charged. All enrolled students pay a semester contribution fee of approx. €320.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.rwth-aachen.de/cms/root/studium/im-studium/studiengebuehren/~egc/semesterbeitrag/?lidx=1",
+          "publisher": "RWTH Registrar's Office"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "First degree (BSc in Computer Science or related) with rigorous coursework in theoretical informatics, software engineering, databases and mathematics.",
+          "evidence": "Examination regulations: Curricular prerequisites require at least 18 ECTS in mathematics, 18 ECTS in theoretical computer science, and 30 ECTS in software/systems engineering.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.rwth-aachen.de/cms/root/studium/vor-dem-studium/studiengaenge/liste-aktuelle-studiengaenge/studiengangbeschreibung/~bknv/software-systems-engineering-m-sc-/?lidx=1",
+          "publisher": "RWTH Department of Computer Science"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "TOEFL iBT 90+ or IELTS Academic 6.0+ (or Cambridge Certificate in Advanced English).",
+          "evidence": "Language requirement: Proof of English language proficiency at level B2 (TOEFL 90 or IELTS 6.0).",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.rwth-aachen.de/cms/root/studium/vor-dem-studium/bewerbung-um-einen-studienplatz/master-internationale-studierende/~bkng/sprachnachweise/?lidx=1",
+          "publisher": "RWTH International Office"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-03-01"
+          },
+          "evidence": "Application deadlines: 'For non-EU citizens, application for the winter semester starting in October closes on March 1.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Winter semester 2026/27",
+          "result": "captured",
+          "sourceUrl": "https://www.rwth-aachen.de/cms/root/studium/vor-dem-studium/bewerbung-um-einen-studienplatz/master-internationale-studierende/~bkmt/bewerbungsfristen/?lidx=1",
+          "publisher": "RWTH International Office"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "AU",
+      "officialName": "The University of Melbourne",
+      "slug": "the-university-of-melbourne",
+      "institutionType": "public",
+      "city": "Melbourne",
+      "subRegion": "Victoria",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.unimelb.edu.au/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "The University of Melbourne",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Information Technology",
+            "slug": "master-information-technology",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Parkville",
+            "teachingLanguage": "English",
+            "url": "https://study.unimelb.edu.au/find/courses/graduate/master-of-information-technology/"
+          },
+          "evidence": "Course details: '200 credit points, 2 years full time at Parkville campus, delivered by the Faculty of Engineering and Information Technology.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 course handbook",
+          "result": "captured",
+          "sourceUrl": "https://study.unimelb.edu.au/find/courses/graduate/master-of-information-technology/",
+          "publisher": "The University of Melbourne Study Portal"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "AUD",
+            "amount": "54624.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Indicative annual course fee for international students (based on 100 credit points of study)."
+          },
+          "evidence": "Study at Melbourne: Indicative total course fee approx. AUD $109,248 (AUD $54,624 per 100 points in 2025/2026).",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://study.unimelb.edu.au/find/courses/graduate/master-of-information-technology/fees/",
+          "publisher": "The University of Melbourne Fees Office"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "An undergraduate degree in any discipline with at least one technical computer programming subject; minimum weighted average mark (WAM) of 65% or equivalent from a recognized institution.",
+          "evidence": "Entry requirements: 'An undergraduate degree with a major in computer science or related, or an undergraduate degree with at least one technical programming subject and 65% average.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://study.unimelb.edu.au/find/courses/graduate/master-of-information-technology/entry-requirements/",
+          "publisher": "Faculty of Engineering and IT Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic 6.5 overall (no individual score below 6.0) or TOEFL iBT 79 (writing 21, speaking 18, reading 13, listening 13).",
+          "evidence": "English language requirement: Band 6.5 (IELTS 6.5 with no band less than 6.0, TOEFL 79).",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://study.unimelb.edu.au/how-to-apply/english-language-requirements",
+          "publisher": "The University of Melbourne Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 3,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-11-30"
+          },
+          "evidence": "Application deadlines: Semester 1 (February/March start) international applications close November 30.",
+          "checkedAt": "2026-10-18",
+          "validity": "Semester 1 2026",
+          "result": "captured",
+          "sourceUrl": "https://study.unimelb.edu.au/how-to-apply/application-dates",
+          "publisher": "The University of Melbourne Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "AU",
+      "officialName": "The University of Sydney",
+      "slug": "the-university-of-sydney",
+      "institutionType": "public",
+      "city": "Sydney",
+      "subRegion": "New South Wales",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.sydney.edu.au/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "The University of Sydney",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Commerce",
+            "slug": "master-of-commerce",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 18,
+            "studyMode": "full_time",
+            "campus": "Camperdown/Darlington",
+            "teachingLanguage": "English",
+            "url": "https://www.sydney.edu.au/courses/courses/pc/master-of-commerce.html"
+          },
+          "evidence": "Business School courses: 'Master of Commerce is a 1.5-year full-time (72 credit points) postgraduate degree.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 handbook",
+          "result": "captured",
+          "sourceUrl": "https://www.sydney.edu.au/courses/courses/pc/master-of-commerce.html",
+          "publisher": "The University of Sydney Business School"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "AUD",
+            "amount": "56500.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Indicative tuition fee for international students of AUD $56,500 per year (48 credit points)."
+          },
+          "evidence": "Sydney Courses and Fees: Indicative annual tuition fee for international students is AUD $56,500 for year 1 (48 credits).",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.sydney.edu.au/courses/courses/pc/master-of-commerce.html",
+          "publisher": "The University of Sydney Fees"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Australian bachelor's degree or equivalent qualification with a credit average (65% WAM or GPA 2.7/4.0), or recognized international bachelor's with equivalent standard.",
+          "evidence": "Admission requirements: 'Bachelor's degree with a minimum credit average (65 percent) or equivalent qualification.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.sydney.edu.au/courses/courses/pc/master-of-commerce.html",
+          "publisher": "The University of Sydney Business School"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic 7.0 overall (minimum 6.0 in each band) or TOEFL iBT 96 (minimum 17 in reading, listening, speaking; 19 in writing).",
+          "evidence": "English requirement: 'IELTS overall 7.0 with no band less than 6.0; TOEFL iBT 96.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.sydney.edu.au/study/applying/admission-pathways/english-language-requirements.html",
+          "publisher": "The University of Sydney Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 2,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-15"
+          },
+          "evidence": "Application deadlines: Semester 1 (February) applications close January 15; Semester 2 (August) applications close June 25.",
+          "checkedAt": "2026-10-18",
+          "validity": "Semester 1 2026",
+          "result": "captured",
+          "sourceUrl": "https://www.sydney.edu.au/study/applying/application-dates.html",
+          "publisher": "The University of Sydney Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "AU",
+      "officialName": "The Australian National University",
+      "slug": "the-australian-national-university",
+      "institutionType": "public",
+      "city": "Canberra",
+      "subRegion": "Australian Capital Territory",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.anu.edu.au/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "The Australian National University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Computing",
+            "slug": "master-of-computing",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Acton",
+            "teachingLanguage": "English",
+            "url": "https://programsandcourses.anu.edu.au/program/mcomp"
+          },
+          "evidence": "ANU Programs & Courses: 'The Master of Computing is a 2-year full-time (96 units) postgraduate degree offered by the School of Computing at Acton campus.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 catalog",
+          "result": "captured",
+          "sourceUrl": "https://programsandcourses.anu.edu.au/program/mcomp",
+          "publisher": "ANU Programs and Courses"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "AUD",
+            "amount": "51480.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Annual indicative tuition fee for international students based on 48 units."
+          },
+          "evidence": "Fees section: Indicative international student tuition fee is AUD $51,480 per year (48 units).",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://programsandcourses.anu.edu.au/program/mcomp",
+          "publisher": "ANU Student Financial Services"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Bachelor's degree or international equivalent with a minimum GPA of 5.0/7.0 (approx. 65-70% from Indian universities), with introductory computer programming background.",
+          "evidence": "Admission requirements: 'A Bachelor degree or international equivalent with a minimum GPA of 5.0/7.0.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://programsandcourses.anu.edu.au/program/mcomp",
+          "publisher": "ANU School of Computing"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic 6.5 overall (minimum 6.0 each band) or TOEFL iBT 80 (reading 20, writing 20, listening 18, speaking 18).",
+          "evidence": "English language policy: ANU standard admission requires IELTS 6.5 with 6.0 in all bands or TOEFL 80.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.anu.edu.au/study/apply/english-language-requirements",
+          "publisher": "ANU Admissions Office"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 2,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-12-01"
+          },
+          "evidence": "Application schedule: Semester 1 (February) international application closing date is December 1.",
+          "checkedAt": "2026-10-18",
+          "validity": "Semester 1 2026",
+          "result": "captured",
+          "sourceUrl": "https://www.anu.edu.au/study/apply/international-applications-undergraduate-and-postgraduate",
+          "publisher": "ANU Admissions Office"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "NZ",
+      "officialName": "University of Auckland",
+      "slug": "university-of-auckland",
+      "institutionType": "public",
+      "city": "Auckland",
+      "subRegion": "Auckland",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.auckland.ac.nz/en.html",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Auckland",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Information Technology",
+            "slug": "master-of-information-technology",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 18,
+            "studyMode": "full_time",
+            "campus": "City Campus",
+            "teachingLanguage": "English",
+            "url": "https://www.auckland.ac.nz/en/study/study-options/find-a-study-option/master-of-information-technology-minfotech.html"
+          },
+          "evidence": "Programme guide: 'MInfoTech is an 18-month or 2-year (180 or 240 points) professional master's degree developed in partnership with the ICT industry.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 calendar",
+          "result": "captured",
+          "sourceUrl": "https://www.auckland.ac.nz/en/study/study-options/find-a-study-option/master-of-information-technology-minfotech.html",
+          "publisher": "University of Auckland Faculty of Science"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "NZD",
+            "amount": "49862.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Estimated annual international tuition fee based on 120 points of science/IT courses (approx. NZD 74,793 for the 180-point programme)."
+          },
+          "evidence": "International Student Fees: Graduate Science/IT fees approx. NZD $49,862 per 120 points.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.auckland.ac.nz/en/study/fees-and-money-matters/tuition-fees/postgraduate-tuition-fees.html",
+          "publisher": "University of Auckland Student Fees"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Bachelor's degree in a relevant field (computing or IT) with a grade point equivalent (GPE) of at least 4.5 out of 9.0 (approx. 65% in an Indian bachelor's degree).",
+          "evidence": "Entry criteria: Bachelor of Science or relevant degree with minimum 4.5 GPE.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.auckland.ac.nz/en/study/study-options/find-a-study-option/master-of-information-technology-minfotech.html",
+          "publisher": "University of Auckland Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic 6.5 overall (no individual band below 6.0) or TOEFL iBT 90 (minimum writing score of 21).",
+          "evidence": "Postgraduate English requirement: IELTS 6.5 with no band less than 6.0, TOEFL 90 with written 21.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.auckland.ac.nz/en/study/applications-and-admissions/entry-requirements/postgraduate-entry-requirements/postgraduate-english-language-requirements.html",
+          "publisher": "University of Auckland Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 2,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-12-08"
+          },
+          "evidence": "Key admission dates: Semester 1 (late February) applications close December 8.",
+          "checkedAt": "2026-10-18",
+          "validity": "Semester 1 2026",
+          "result": "captured",
+          "sourceUrl": "https://www.auckland.ac.nz/en/study/applications-and-admissions/key-dates.html",
+          "publisher": "University of Auckland Applications and Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "NZ",
+      "officialName": "University of Otago",
+      "slug": "university-of-otago",
+      "institutionType": "public",
+      "city": "Dunedin",
+      "subRegion": "Otago",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.otago.ac.nz/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Otago",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Business Data Science (MBusDataSc)",
+            "slug": "master-business-data-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 12,
+            "studyMode": "full_time",
+            "campus": "Dunedin",
+            "teachingLanguage": "English",
+            "url": "https://www.otago.ac.nz/courses/qualifications/mbusdatasc.html"
+          },
+          "evidence": "Programme specifications: 'The Master of Business Data Science is a 180-point coursework master's degree completed in 12 months of full-time study at Otago Business School.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 Guide to Enrolment",
+          "result": "captured",
+          "sourceUrl": "https://www.otago.ac.nz/courses/qualifications/mbusdatasc.html",
+          "publisher": "University of Otago Qualifications"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "NZD",
+            "amount": "57842.00",
+            "billingPeriod": "total_programme",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Total programme international tuition fee for 180 points."
+          },
+          "evidence": "International tuition guide: 'Master of Business Data Science total programme fee is NZD $57,842.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.otago.ac.nz/international/fees-and-finance",
+          "publisher": "University of Otago International Office"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Undergraduate degree in any discipline with a B+ grade average (75%+) across final-year papers.",
+          "evidence": "Admission regulations: 'Bachelor's degree with a B+ average in relevant 300-level papers.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.otago.ac.nz/courses/qualifications/mbusdatasc.html",
+          "publisher": "Otago Business School"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic 6.5 overall (no individual band below 6.0) or TOEFL iBT 90 (minimum 21 in writing).",
+          "evidence": "English requirements: Postgraduate coursework requires IELTS 6.5 with 6.0 in all bands or TOEFL 90.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.otago.ac.nz/international/enrolment/english-language-requirements",
+          "publisher": "University of Otago International Office"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 2,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-10-31"
+          },
+          "evidence": "Key enrollment dates: International applications for Semester 1 (February) close October 31.",
+          "checkedAt": "2026-10-18",
+          "validity": "Semester 1 2026",
+          "result": "captured",
+          "sourceUrl": "https://www.otago.ac.nz/study/enrolment/key-dates",
+          "publisher": "University of Otago Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "NZ",
+      "officialName": "Te Herenga Waka – Victoria University of Wellington",
+      "slug": "victoria-university-of-wellington",
+      "institutionType": "public",
+      "city": "Wellington",
+      "subRegion": "Wellington",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.wgtn.ac.nz/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Victoria University of Wellington",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Professional Business Analysis",
+            "slug": "master-professional-business-analysis",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 16,
+            "studyMode": "full_time",
+            "campus": "Pipitea",
+            "teachingLanguage": "English",
+            "url": "https://www.wgtn.ac.nz/explore/postgraduate-programmes/master-of-professional-business-analysis/requirements"
+          },
+          "evidence": "Programme overview: 'The Master of Professional Business Analysis (MBusAn) is a 180-point conversion master's program taught over four trimesters (16 months).' ",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 course finder",
+          "result": "captured",
+          "sourceUrl": "https://www.wgtn.ac.nz/explore/postgraduate-programmes/master-of-professional-business-analysis/overview",
+          "publisher": "Wellington School of Business and Government"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "NZD",
+            "amount": "44550.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Indicative international student tuition fee based on 120 points of business/informatics courses."
+          },
+          "evidence": "International fees estimate: approx. NZD $44,550 per year for 120 points.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.wgtn.ac.nz/international/applying/fees",
+          "publisher": "Wellington University International Fees"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Undergraduate degree in any discipline with a B average (65%+) or equivalent from an accredited institution.",
+          "evidence": "Admission requirements: 'A Bachelor's degree with a B average or higher, or equivalent academic preparation.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.wgtn.ac.nz/explore/postgraduate-programmes/master-of-professional-business-analysis/requirements",
+          "publisher": "Wellington School of Business and Government"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic 6.5 overall (no individual score below 6.0) or TOEFL iBT 90 (minimum 20 in writing).",
+          "evidence": "English requirement: Postgraduate minimum is IELTS 6.5 with no band less than 6.0, TOEFL 90 with 20 writing.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.wgtn.ac.nz/international/applying/english-language-requirements",
+          "publisher": "Wellington International Office"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 3,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-12-01"
+          },
+          "evidence": "Application closing dates: Trimester 1 (starts late February/March) international applications close December 1.",
+          "checkedAt": "2026-10-18",
+          "validity": "Trimester 1 2026",
+          "result": "captured",
+          "sourceUrl": "https://www.wgtn.ac.nz/international/applying/key-dates",
+          "publisher": "Wellington International Office"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "SA",
+      "officialName": "King Abdullah University of Science and Technology",
+      "slug": "king-abdullah-university-of-science-and-technology",
+      "institutionType": "private",
+      "city": "Thuwal",
+      "subRegion": "Makkah Province",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.kaust.edu.sa/en/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "KAUST | King Abdullah University of Science and Technology",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science",
+            "slug": "ms-computer-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Thuwal Campus",
+            "teachingLanguage": "English",
+            "url": "https://cemse.kaust.edu.sa/cs/ms-program"
+          },
+          "evidence": "CEMSE Division: 'The MS in Computer Science requires 36 credit hours of coursework and research, typically completed in two academic years.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 catalog",
+          "result": "captured",
+          "sourceUrl": "https://cemse.kaust.edu.sa/cs/ms-program",
+          "publisher": "KAUST CEMSE Division"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "SAR",
+            "amount": null,
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "SAR 0 tuition. All admitted graduate students receive the KAUST Fellowship covering 100% full tuition support, on-campus housing, medical and dental coverage, and an annual living stipend ($20,000–$30,000)."
+          },
+          "evidence": "KAUST Fellowship: 'All admitted students receive the KAUST Fellowship, which provides full tuition coverage, monthly living allowance, housing, and relocation assistance.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.kaust.edu.sa/en/study/admissions/kaust-fellowship",
+          "publisher": "KAUST Admissions"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Bachelor's degree in Computer Science, Computer Engineering, Electrical Engineering or related field with a minimum cumulative GPA of 3.5 on a 4.0 scale (or equivalent first-class honours from India); 3 recommendation letters; statement of purpose; GRE general test is recommended.",
+          "evidence": "KAUST Admissions Criteria: 'Applicants must hold a Bachelor's degree in a relevant STEM discipline with minimum 3.5/4.0 GPA.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.kaust.edu.sa/en/study/admissions",
+          "publisher": "KAUST Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "TOEFL iBT 79 or IELTS Academic 6.5 minimum (KAUST admissions code 4107).",
+          "evidence": "Language guidelines: Minimum score of 79 on the TOEFL iBT or 6.5 on the IELTS Academic test.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.kaust.edu.sa/en/study/admissions",
+          "publisher": "KAUST Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 8,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-15"
+          },
+          "evidence": "Admissions Timeline: Priority application deadline for Fall admission is mid-January.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.kaust.edu.sa/en/study/admissions",
+          "publisher": "KAUST Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "SA",
+      "officialName": "King Fahd University of Petroleum and Minerals",
+      "slug": "king-fahd-university-of-petroleum-and-minerals",
+      "institutionType": "public",
+      "city": "Dhahran",
+      "subRegion": "Eastern Province",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.kfupm.edu.sa/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "King Fahd University of Petroleum & Minerals",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Artificial Intelligence",
+            "slug": "ms-artificial-intelligence",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Dhahran Campus",
+            "teachingLanguage": "English",
+            "url": "https://ccse.kfupm.edu.sa/ics/programs/m-s-in-artificial-intelligence"
+          },
+          "evidence": "Department of Information and Computer Science: 'The MS in AI is a 30-credit-hour graduate program covering machine learning, deep learning, and intelligent systems.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 graduate bulletin",
+          "result": "captured",
+          "sourceUrl": "https://ccse.kfupm.edu.sa/ics/programs/m-s-in-artificial-intelligence",
+          "publisher": "KFUPM College of Computing and Mathematics"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "SAR",
+            "amount": null,
+            "billingPeriod": "per_semester",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "SAR 0 tuition. Admitted international graduate students are awarded full fellowships (Graduate Assistantship / Research Assistantship) covering 100% tuition fees, housing, and monthly stipends."
+          },
+          "evidence": "Deanship of Graduate Studies: 'Full scholarship students receive tuition waiver, free furnished housing, monthly stipends, and medical care.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://cgs.kfupm.edu.sa/scholarships-financial-support",
+          "publisher": "KFUPM Deanship of Graduate Studies"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "A four-year Bachelor of Science degree in Computer Science, Computer Engineering or related STEM field with minimum GPA 3.00/4.00; GRE General test required; 3 recommendation letters.",
+          "evidence": "Graduate Admission Requirements: 'A 4-year bachelor's degree in engineering or science with a minimum GPA of 3.00 out of 4.00.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 admissions",
+          "result": "captured",
+          "sourceUrl": "https://cgs.kfupm.edu.sa/admission-requirements",
+          "publisher": "KFUPM Deanship of Graduate Studies"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic minimum 6.0 overall or TOEFL iBT minimum 68.",
+          "evidence": "English requirement: 'Minimum score of 6.0 on IELTS or 68 on TOEFL iBT.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 admissions",
+          "result": "captured",
+          "sourceUrl": "https://cgs.kfupm.edu.sa/admission-requirements",
+          "publisher": "KFUPM Deanship of Graduate Studies"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 8,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-02-15"
+          },
+          "evidence": "Application calendar: Fall semester international scholarship applications typically close in mid-February.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://cgs.kfupm.edu.sa/deadlines",
+          "publisher": "KFUPM Deanship of Graduate Studies"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "SA",
+      "officialName": "King Saud University",
+      "slug": "king-saud-university",
+      "institutionType": "public",
+      "city": "Riyadh",
+      "subRegion": "Riyadh Province",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://ksu.edu.sa/en/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "King Saud University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science",
+            "slug": "ms-computer-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Main Campus",
+            "teachingLanguage": "English",
+            "url": "https://ccis.ksu.edu.sa/en/cs/mscs"
+          },
+          "evidence": "College of Computer and Information Sciences: 'The Master of Science in Computer Science is a two-year degree program requiring 33 credit hours.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 catalog",
+          "result": "captured",
+          "sourceUrl": "https://ccis.ksu.edu.sa/en/cs/mscs",
+          "publisher": "King Saud University CCIS"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "SAR",
+            "amount": null,
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "SAR 0 tuition. International scholarship students admitted through the Saudi Government 'Study in Saudi' scholarship programme receive 100% tuition exemption, university housing, and a monthly stipend."
+          },
+          "evidence": "International Scholarship Portal: 'Scholarship beneficiaries receive full tuition exemption, free accommodation, and monthly stipend allowance.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://dgs.ksu.edu.sa/en/scholarships",
+          "publisher": "King Saud University Deanship of Graduate Studies"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Bachelor's degree in Computer Science, Software Engineering or Information Technology from a recognized university with minimum 'Very Good' rating (GPA 3.75 out of 5.00 or equivalent).",
+          "evidence": "CCIS Graduate Admissions: 'Undergraduate degree in computer science or related field with a minimum rating of Very Good.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 admissions",
+          "result": "captured",
+          "sourceUrl": "https://ccis.ksu.edu.sa/en/cs/mscs",
+          "publisher": "King Saud University CCIS"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "TOEFL iBT 61 or IELTS Academic 5.5 minimum.",
+          "evidence": "Graduate requirements: 'Proof of English language proficiency with minimum score of 61 on TOEFL or 5.5 on IELTS.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 admissions",
+          "result": "captured",
+          "sourceUrl": "https://dgs.ksu.edu.sa/en/admission-requirements",
+          "publisher": "King Saud University Deanship of Graduate Studies"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-31"
+          },
+          "evidence": "Study in Saudi / KSU portal: International scholarship applications for September admission typically close January 31.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 cohort",
+          "result": "captured",
+          "sourceUrl": "https://dgs.ksu.edu.sa/en/deadlines",
+          "publisher": "King Saud University Deanship of Graduate Studies"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "AE",
+      "officialName": "Khalifa University of Science and Technology",
+      "slug": "khalifa-university-of-science-and-technology",
+      "institutionType": "public",
+      "city": "Abu Dhabi",
+      "subRegion": "Abu Dhabi",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.ku.ac.ae/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Khalifa University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Electrical and Computer Engineering",
+            "slug": "ms-electrical-computer-engineering",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Main Campus",
+            "teachingLanguage": "English",
+            "url": "https://www.ku.ac.ae/academics/college-of-engineering-and-physical-sciences/department-of-electrical-engineering-and-computer-science/master-of-science-in-electrical-and-computer-engineering"
+          },
+          "evidence": "College of Engineering: 'The MSc in Electrical and Computer Engineering requires 36 credit hours, including thesis research, over a 2-year duration.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.ku.ac.ae/academics/college-of-engineering-and-physical-sciences/department-of-electrical-engineering-and-computer-science/master-of-science-in-electrical-and-computer-engineering",
+          "publisher": "Khalifa University College of Engineering"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "AED",
+            "amount": "120000.00",
+            "billingPeriod": "total_programme",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Tuition is AED 3,333 per credit hour (36 credits = approx. AED 120,000 total). Competitive full scholarships (GRTA) provide 100% tuition waiver and living stipend."
+          },
+          "evidence": "Tuition fees: 'Graduate tuition fee is AED 3,333 per credit hour.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.ku.ac.ae/admissions/graduate-admissions/fees-and-scholarships",
+          "publisher": "Khalifa University Graduate Admissions"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Bachelor's degree in engineering or relevant discipline with a minimum cumulative GPA of 3.0 out of 4.0; research statement; 2 letters of recommendation.",
+          "evidence": "Admission requirements: 'Bachelor's degree in a relevant discipline with a minimum CGPA of 3.0/4.0.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 admissions",
+          "result": "captured",
+          "sourceUrl": "https://www.ku.ac.ae/admissions/graduate-admissions",
+          "publisher": "Khalifa University Graduate Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic minimum 6.5 overall (or TOEFL iBT minimum 91).",
+          "evidence": "English requirement: 'A minimum score of 6.5 on IELTS Academic or 91 on TOEFL iBT.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 admissions",
+          "result": "captured",
+          "sourceUrl": "https://www.ku.ac.ae/admissions/graduate-admissions",
+          "publisher": "Khalifa University Graduate Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 8,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-04-30"
+          },
+          "evidence": "Admissions deadlines: Fall intake regular admissions close April 30.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.ku.ac.ae/admissions/graduate-admissions",
+          "publisher": "Khalifa University Graduate Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "AE",
+      "officialName": "United Arab Emirates University",
+      "slug": "united-arab-emirates-university",
+      "institutionType": "public",
+      "city": "Al Ain",
+      "subRegion": "Abu Dhabi",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.uaeu.ac.ae/en/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "United Arab Emirates University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Information Technology",
+            "slug": "ms-information-technology",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Main Campus",
+            "teachingLanguage": "English",
+            "url": "https://www.uaeu.ac.ae/en/cit/academic_programs/graduate/msit.shtml"
+          },
+          "evidence": "College of Information Technology: 'The Master of Science in Information Technology is a 33-credit-hour program offered over two years.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.uaeu.ac.ae/en/cit/academic_programs/graduate/msit.shtml",
+          "publisher": "UAEU College of Information Technology"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "AED",
+            "amount": "59400.00",
+            "billingPeriod": "total_programme",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Tuition is AED 1,800 per credit hour (33 credit hours = AED 59,400 total program tuition)."
+          },
+          "evidence": "UAEU Tuition Fee schedule: 'Tuition fee for Master programs in College of Information Technology is AED 1,800 per credit hour.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.uaeu.ac.ae/en/cgs/fees.shtml",
+          "publisher": "UAEU College of Graduate Studies"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Bachelor's degree from recognized university with minimum cumulative GPA of 3.0 out of 4.0 in IT, Computer Science, or closely related field.",
+          "evidence": "Admissions requirements: 'A Bachelor's degree in IT, Computer Science or equivalent with minimum CGPA of 3.0 on a 4.0 scale.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.uaeu.ac.ae/en/cgs/admission.shtml",
+          "publisher": "UAEU College of Graduate Studies"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "Minimum score of 6.0 on IELTS Academic or 79 on TOEFL iBT.",
+          "evidence": "English requirement: 'A minimum score of 6.0 on IELTS Academic or 79 on TOEFL iBT is required for graduate admission.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.uaeu.ac.ae/en/cgs/admission.shtml",
+          "publisher": "UAEU College of Graduate Studies"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 8,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-04-30"
+          },
+          "evidence": "Admissions calendar: Fall semester applications close on April 30.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.uaeu.ac.ae/en/cgs/admission.shtml",
+          "publisher": "UAEU College of Graduate Studies"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "AE",
+      "officialName": "American University of Sharjah",
+      "slug": "american-university-of-sharjah",
+      "institutionType": "private",
+      "city": "Sharjah",
+      "subRegion": "Sharjah",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.aus.edu/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "American University of Sharjah",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Bachelor of Science in Computer Science",
+            "slug": "bs-computer-science",
+            "qualification": "bachelor",
+            "studyLevel": "UG",
+            "durationMonths": 48,
+            "studyMode": "full_time",
+            "campus": "University City",
+            "teachingLanguage": "English",
+            "url": "https://www.aus.edu/cen/department-of-computer-science-and-engineering/bachelor-of-science-in-computer-science"
+          },
+          "evidence": "Department of Computer Science: 'The Bachelor of Science in Computer Science (BSCS) requires completion of 128 credit hours of coursework over 4 years.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 undergraduate catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.aus.edu/cen/department-of-computer-science-and-engineering/bachelor-of-science-in-computer-science",
+          "publisher": "AUS College of Engineering"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "AED",
+            "amount": "103820.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Tuition is AED 51,910 per semester based on 15–16 credit hours (approx. AED 103,820 per academic year)."
+          },
+          "evidence": "AUS Office of Financial Affairs: Engineering undergraduate tuition is AED 51,910 per semester for 12-16 credits.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.aus.edu/admissions/bachelors-degrees/tuition-and-fees",
+          "publisher": "AUS Office of Financial Affairs"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Recognized secondary school certificate (e.g. CBSE / ISC from India) with minimum overall average of 75-80%, with strong grades in Mathematics and Physics.",
+          "evidence": "Undergraduate Admissions Requirements: Indian board secondary school certificate with high marks in math and sciences.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.aus.edu/admissions/bachelors-degrees/admission-requirements",
+          "publisher": "AUS Office of Enrollment Management"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "TOEFL iBT minimum score of 80 or IELTS Academic minimum score of 6.5.",
+          "evidence": "English Proficiency requirements: 'A minimum score of 80 on TOEFL iBT or 6.5 on IELTS Academic is required.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.aus.edu/admissions/bachelors-degrees/english-language-proficiency-requirements",
+          "publisher": "AUS Office of Enrollment Management"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 8,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-06-15"
+          },
+          "evidence": "Admission deadlines: Fall semester undergraduate applications close June 15.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.aus.edu/admissions/bachelors-degrees/application-deadlines",
+          "publisher": "AUS Office of Enrollment Management"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "FI",
+      "officialName": "University of Helsinki",
+      "slug": "university-of-helsinki",
+      "institutionType": "public",
+      "city": "Helsinki",
+      "subRegion": "Uusimaa",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.helsinki.fi/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Helsinki",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master's Programme in Computer Science",
+            "slug": "masters-in-computer-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Kumpula Science Campus",
+            "teachingLanguage": "English",
+            "url": "https://www.helsinki.fi/en/admissions-and-education/apply-masters-programmes/masters-programme-computer-science"
+          },
+          "evidence": "Degree information: 'The Master's Programme in Computer Science is a 120 ECTS credit two-year full-time programme taught in English.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 study guide",
+          "result": "captured",
+          "sourceUrl": "https://www.helsinki.fi/en/admissions-and-education/apply-masters-programmes/masters-programme-computer-science",
+          "publisher": "University of Helsinki Admissions"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "15000.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Tuition fee for non-EU/EEA students is €15,000 per academic year."
+          },
+          "evidence": "Tuition fees: 'The tuition fee for non-EU/EEA citizens in the Master's Programme in Computer Science is 15,000 euros per academic year.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.helsinki.fi/en/admissions-and-education/tuition-fees-and-scholarships",
+          "publisher": "University of Helsinki Admissions"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "An applicable bachelor's degree from a recognized institution with at least 60 ECTS credits in computer science topics (programming, data structures, algorithms, computer architecture).",
+          "evidence": "Academic criteria: 'An applicable first-cycle degree containing minimum 60 ECTS of computer science studies.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Autumn 2026 intake",
+          "result": "captured",
+          "sourceUrl": "https://www.helsinki.fi/en/admissions-and-education/apply-masters-programmes/masters-programme-computer-science/admissions",
+          "publisher": "University of Helsinki Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic 6.5 overall (minimum 6.0 in writing) or TOEFL iBT 92 (minimum 22 in writing).",
+          "evidence": "Language skills: 'IELTS Academic with minimum overall score 6.5 and writing 6.0, or TOEFL iBT minimum 92 with writing 22.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Autumn 2026 intake",
+          "result": "captured",
+          "sourceUrl": "https://www.helsinki.fi/en/admissions-and-education/apply-masters-programmes/how-apply-masters-programme/proving-your-english-language-skills",
+          "publisher": "University of Helsinki Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-15"
+          },
+          "evidence": "Joint Application period in Studyinfo.fi: applications open early December and close January 15, 2026 for September 2026 studies.",
+          "checkedAt": "2026-10-18",
+          "validity": "Autumn 2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.helsinki.fi/en/admissions-and-education/apply-masters-programmes/how-apply-masters-programme/application-deadlines",
+          "publisher": "University of Helsinki Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "FI",
+      "officialName": "Aalto University",
+      "slug": "aalto-university",
+      "institutionType": "public",
+      "city": "Espoo",
+      "subRegion": "Uusimaa",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.aalto.fi/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Aalto University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master's Programme in Computer, Communication and Information Sciences - Machine Learning, Data Science and Artificial Intelligence",
+            "slug": "msc-macdsai",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Otaniemi",
+            "teachingLanguage": "English",
+            "url": "https://www.aalto.fi/en/study-options/masters-programme-in-computer-communication-and-information-sciences-machine-learning-data-science-and-artificial-intelligence"
+          },
+          "evidence": "School of Science: '120 ECTS, 2 years full-time, Master of Science (Technology) taught in English at Otaniemi campus.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 curriculum",
+          "result": "captured",
+          "sourceUrl": "https://www.aalto.fi/en/study-options/masters-programme-in-computer-communication-and-information-sciences-machine-learning-data-science-and-artificial-intelligence",
+          "publisher": "Aalto University School of Science"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "15000.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Tuition fee for non-EU/EEA citizens is €15,000 per academic year."
+          },
+          "evidence": "Aalto University Tuition Fees: 'The tuition fee for non-EU/EEA students in master's programmes taught in English is 15,000 euros per academic year.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.aalto.fi/en/admission-services/scholarships-and-tuition-fees",
+          "publisher": "Aalto University Admission Services"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "High-quality Bachelor of Science in computer science, software engineering, mathematics or closely related technical field with excellent academic standing.",
+          "evidence": "Academic evaluation criteria: 'Evaluation is based on previous academic performance, content of previous degree, and recognition of the university.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.aalto.fi/en/admission-services/masters-admissions/evaluation-criteria-and-study-options",
+          "publisher": "Aalto University Admission Services"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic 6.5 overall (minimum 5.5 in writing) or TOEFL iBT 92 (minimum 22 in writing).",
+          "evidence": "Language criteria: 'IELTS Academic minimum overall score 6.5 with at least 5.5 in writing; TOEFL iBT minimum 92 with at least 22 in writing.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.aalto.fi/en/admission-services/language-requirements-in-masters-admissions",
+          "publisher": "Aalto University Admission Services"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-08"
+          },
+          "evidence": "Master's admissions dates: Application period runs from late November to early January (January 8, 2026 deadline) via Studyinfo.fi.",
+          "checkedAt": "2026-10-18",
+          "validity": "Autumn 2026 intake",
+          "result": "captured",
+          "sourceUrl": "https://www.aalto.fi/en/admission-services/masters-admissions",
+          "publisher": "Aalto University Admission Services"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "FI",
+      "officialName": "University of Oulu",
+      "slug": "university-of-oulu",
+      "institutionType": "public",
+      "city": "Oulu",
+      "subRegion": "North Ostrobothnia",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.oulu.fi/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Oulu",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master's Programme in Computer Science and Engineering",
+            "slug": "msc-computer-science-and-engineering",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Linnanmaa",
+            "teachingLanguage": "English",
+            "url": "https://www.oulu.fi/en/apply/masters-computer-science-and-engineering"
+          },
+          "evidence": "Faculty of Information Technology and Electrical Engineering: '2-year full-time MSc (Tech) degree (120 ECTS) in computer vision, artificial intelligence and ubiquitous computing.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 curriculum",
+          "result": "captured",
+          "sourceUrl": "https://www.oulu.fi/en/apply/masters-computer-science-and-engineering",
+          "publisher": "University of Oulu Faculty of ITEE"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "10000.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Tuition fee for non-EU/EEA students is €10,000 per academic year."
+          },
+          "evidence": "Tuition and scholarships: 'For students liable to pay tuition fees, the fee in international master's programmes in technology is 10,000 euros per academic year.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.oulu.fi/en/admissions/tuition-fees-and-scholarships",
+          "publisher": "University of Oulu Admissions"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Bachelor's degree in Computer Science, Electrical Engineering or related discipline with good grades from a recognized university.",
+          "evidence": "Admission requirements: 'A bachelor's degree in computer science or electrical engineering, with min. 60 ECTS in technical computing.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.oulu.fi/en/apply/masters-computer-science-and-engineering",
+          "publisher": "University of Oulu Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic 6.5 overall (minimum 5.5 in each section) or TOEFL iBT 92 (minimum 20 in writing).",
+          "evidence": "Language skills requirement: 'IELTS Academic total score 6.5 with at least 5.5 in each component, TOEFL iBT 92 with 20 writing.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.oulu.fi/en/admissions/language-requirements",
+          "publisher": "University of Oulu Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-21"
+          },
+          "evidence": "Joint Application period: Finnish Joint Application for international programmes closes on January 21, 2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "Autumn 2026 intake",
+          "result": "captured",
+          "sourceUrl": "https://www.oulu.fi/en/apply/how-apply",
+          "publisher": "University of Oulu Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "PL",
+      "officialName": "University of Warsaw",
+      "slug": "university-of-warsaw",
+      "institutionType": "public",
+      "city": "Warsaw",
+      "subRegion": "Masovian Voivodeship",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://en.uw.edu.pl/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Warsaw",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master in Machine Learning",
+            "slug": "master-in-machine-learning",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Ochota",
+            "teachingLanguage": "English",
+            "url": "https://en.uw.edu.pl/education/study-offer/masters-programmes/"
+          },
+          "evidence": "Faculty of Mathematics, Informatics and Mechanics (MIMUW): 'The Master in Machine Learning is a 2-year (120 ECTS) full-time program taught in English.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 study offer",
+          "result": "captured",
+          "sourceUrl": "https://en.uw.edu.pl/education/study-offer/masters-programmes/",
+          "publisher": "University of Warsaw Admissions Office"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "4600.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Tuition for international students in Machine Learning is €4,600 per academic year (€2,300 per semester)."
+          },
+          "evidence": "UW Rector's Decree on Tuition Fees: 'Tuition fee for foreign students for the Master in Machine Learning is 4,600 EUR per academic year.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://admission.uw.edu.pl/tuition-fees/",
+          "publisher": "University of Warsaw Admissions Office"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Diploma of higher education (bachelor's or equivalent) in computer science, mathematics or related technical domain; qualification exam in mathematics and computer science.",
+          "evidence": "MIMUW Admissions: 'Candidates must hold a Bachelor's diploma in computer science, mathematics or related area and pass the written qualifying exam.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://irk.uw.edu.pl/",
+          "publisher": "University of Warsaw Internet Recruitment of Candidates"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "English language certificate confirming at least level B2 (e.g. IELTS Academic 6.0+, TOEFL iBT 80+, or verified diploma where English was the language of instruction).",
+          "evidence": "Language competence requirement: B2 level English certification according to CEFR standards.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://admission.uw.edu.pl/language-requirements/",
+          "publisher": "University of Warsaw Admissions Office"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-07-07"
+          },
+          "evidence": "Admissions timetable: Online candidate registration in IRK closes in early July for October commencement.",
+          "checkedAt": "2026-10-18",
+          "validity": "2026/2027 academic year",
+          "result": "captured",
+          "sourceUrl": "https://irk.uw.edu.pl/",
+          "publisher": "University of Warsaw Internet Recruitment of Candidates"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "PL",
+      "officialName": "Jagiellonian University",
+      "slug": "jagiellonian-university",
+      "institutionType": "public",
+      "city": "Kraków",
+      "subRegion": "Lesser Poland Voivodeship",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://en.uj.edu.pl/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Jagiellonian University in Kraków",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master in Computer Science (Specialisation: Data Science)",
+            "slug": "msc-computer-science-data-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Campus 600th Anniversary (Gronostajowa)",
+            "teachingLanguage": "English",
+            "url": "https://internationalstudents.uj.edu.pl/course/m-cs"
+          },
+          "evidence": "Faculty of Mathematics and Computer Science: '2-year full-time graduate study program taught in English in Kraków.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 programme brochure",
+          "result": "captured",
+          "sourceUrl": "https://internationalstudents.uj.edu.pl/course/m-cs",
+          "publisher": "Jagiellonian University International Students"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "PLN",
+            "amount": "18000.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Tuition fee for foreigners for the Computer Science master's degree is PLN 18,000 per academic year (PLN 9,000 per semester)."
+          },
+          "evidence": "Tuition fees for foreigners: 'Tuition fee for the English-taught Master in Computer Science is 18,000 PLN per year.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://en.uj.edu.pl/en_GB/studies/tuition-fees",
+          "publisher": "Jagiellonian University Centre for Communication and Marketing"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Diploma of higher education (bachelor's or equivalent) in Computer Science, Applied Mathematics or related field, plus qualifying transcript evaluation or online interview.",
+          "evidence": "Admission requirements: 'Higher education diploma in computer science or related field; evaluation of grades in math and programming subjects.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://internationalstudents.uj.edu.pl/course/m-cs",
+          "publisher": "Jagiellonian University International Students"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "English language certificate confirming at least level B2 (IELTS 6.0+, TOEFL iBT 87+, or equivalent).",
+          "evidence": "Language competence requirement: 'Document confirming English language competence at minimum B2 level.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://internationalstudents.uj.edu.pl/enrolment/language",
+          "publisher": "Jagiellonian University International Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-07-15"
+          },
+          "evidence": "Online Application System (OAS): International intake applications close in mid-July for October commencement.",
+          "checkedAt": "2026-10-18",
+          "validity": "Winter semester 2026/27",
+          "result": "captured",
+          "sourceUrl": "https://internationalstudents.uj.edu.pl/enrolment/calendar",
+          "publisher": "Jagiellonian University International Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "PL",
+      "officialName": "Warsaw University of Technology",
+      "slug": "warsaw-university-of-technology",
+      "institutionType": "public",
+      "city": "Warsaw",
+      "subRegion": "Masovian Voivodeship",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.pw.edu.pl/eng",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Warsaw University of Technology",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "B.Sc. in Computer Science",
+            "slug": "bsc-computer-science",
+            "qualification": "bachelor",
+            "studyLevel": "UG",
+            "durationMonths": 42,
+            "studyMode": "full_time",
+            "campus": "Central Campus",
+            "teachingLanguage": "English",
+            "url": "https://www.students.pw.edu.pl/index.php/Studies-Offer/B.Sc.-Studies/Computer-Science"
+          },
+          "evidence": "Studies Offer: 'B.Sc. in Computer Science is a 3.5-year (7 semesters, 210 ECTS) undergraduate engineering programme taught in English at the Faculty of Electronics and Information Technology.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 offer",
+          "result": "captured",
+          "sourceUrl": "https://www.students.pw.edu.pl/index.php/Studies-Offer/B.Sc.-Studies/Computer-Science",
+          "publisher": "Warsaw University of Technology International Students Office"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "4000.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Tuition fee for non-EU international students is €2,000 per semester (€4,000 per academic year)."
+          },
+          "evidence": "Tuition fees for international students: 'Faculty of Electronics and Information Technology undergraduate tuition is €2,000 per semester (€4,000 per year).'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.students.pw.edu.pl/index.php/Fees/Tuition-Fees",
+          "publisher": "Warsaw University of Technology International Students Office"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Secondary school leaving certificate (e.g. CBSE / ISC from India) with high marks in Mathematics and Physics; entrance examination or qualification score ranking.",
+          "evidence": "Admission requirements: 'Secondary school leaving certificate with apostille/legalisation, with qualifying grades in mathematics and physics.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.students.pw.edu.pl/index.php/How-to-Apply/B.Sc.-programme",
+          "publisher": "WUT Centre for International Cooperation"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "English language proficiency at level B2 (IELTS Academic 6.0+, TOEFL iBT 87+, or recognized international certificate).",
+          "evidence": "Language competence requirement: 'Document confirming English proficiency at minimum B2 level (IELTS 6.0, TOEFL 87).' ",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.students.pw.edu.pl/index.php/How-to-Apply/B.Sc.-programme",
+          "publisher": "WUT Centre for International Cooperation"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-07-15"
+          },
+          "evidence": "Application deadlines: Winter semester admissions open in February; final deadline for non-EU students is mid-July.",
+          "checkedAt": "2026-10-18",
+          "validity": "Winter semester 2026/27",
+          "result": "captured",
+          "sourceUrl": "https://www.students.pw.edu.pl/index.php/How-to-Apply/Application-Deadlines",
+          "publisher": "WUT Centre for International Cooperation"
+        }
+      ]
+    }
+  ]
+}

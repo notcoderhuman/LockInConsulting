@@ -1,0 +1,294 @@
+{
+  "destinationSlug": "australia",
+  "destinationIso2": "AU",
+  "preparedAt": "2026-10-18",
+  "status": "pending_admin_entry",
+  "recordCount": 3,
+  "records": [
+    {
+      "destinationIso2": "AU",
+      "officialName": "The University of Melbourne",
+      "slug": "the-university-of-melbourne",
+      "institutionType": "public",
+      "city": "Melbourne",
+      "subRegion": "Victoria",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.unimelb.edu.au/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "The University of Melbourne",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Information Technology",
+            "slug": "master-information-technology",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Parkville",
+            "teachingLanguage": "English",
+            "url": "https://study.unimelb.edu.au/find/courses/graduate/master-of-information-technology/"
+          },
+          "evidence": "Course details: '200 credit points, 2 years full time at Parkville campus, delivered by the Faculty of Engineering and Information Technology.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 course handbook",
+          "result": "captured",
+          "sourceUrl": "https://study.unimelb.edu.au/find/courses/graduate/master-of-information-technology/",
+          "publisher": "The University of Melbourne Study Portal"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "AUD",
+            "amount": "54624.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Indicative annual course fee for international students (based on 100 credit points of study)."
+          },
+          "evidence": "Study at Melbourne: Indicative total course fee approx. AUD $109,248 (AUD $54,624 per 100 points in 2025/2026).",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://study.unimelb.edu.au/find/courses/graduate/master-of-information-technology/fees/",
+          "publisher": "The University of Melbourne Fees Office"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "An undergraduate degree in any discipline with at least one technical computer programming subject; minimum weighted average mark (WAM) of 65% or equivalent from a recognized institution.",
+          "evidence": "Entry requirements: 'An undergraduate degree with a major in computer science or related, or an undergraduate degree with at least one technical programming subject and 65% average.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://study.unimelb.edu.au/find/courses/graduate/master-of-information-technology/entry-requirements/",
+          "publisher": "Faculty of Engineering and IT Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic 6.5 overall (no individual score below 6.0) or TOEFL iBT 79 (writing 21, speaking 18, reading 13, listening 13).",
+          "evidence": "English language requirement: Band 6.5 (IELTS 6.5 with no band less than 6.0, TOEFL 79).",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://study.unimelb.edu.au/how-to-apply/english-language-requirements",
+          "publisher": "The University of Melbourne Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 3,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-11-30"
+          },
+          "evidence": "Application deadlines: Semester 1 (February/March start) international applications close November 30.",
+          "checkedAt": "2026-10-18",
+          "validity": "Semester 1 2026",
+          "result": "captured",
+          "sourceUrl": "https://study.unimelb.edu.au/how-to-apply/application-dates",
+          "publisher": "The University of Melbourne Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "AU",
+      "officialName": "The University of Sydney",
+      "slug": "the-university-of-sydney",
+      "institutionType": "public",
+      "city": "Sydney",
+      "subRegion": "New South Wales",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.sydney.edu.au/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "The University of Sydney",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Commerce",
+            "slug": "master-of-commerce",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 18,
+            "studyMode": "full_time",
+            "campus": "Camperdown/Darlington",
+            "teachingLanguage": "English",
+            "url": "https://www.sydney.edu.au/courses/courses/pc/master-of-commerce.html"
+          },
+          "evidence": "Business School courses: 'Master of Commerce is a 1.5-year full-time (72 credit points) postgraduate degree.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 handbook",
+          "result": "captured",
+          "sourceUrl": "https://www.sydney.edu.au/courses/courses/pc/master-of-commerce.html",
+          "publisher": "The University of Sydney Business School"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "AUD",
+            "amount": "56500.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Indicative tuition fee for international students of AUD $56,500 per year (48 credit points)."
+          },
+          "evidence": "Sydney Courses and Fees: Indicative annual tuition fee for international students is AUD $56,500 for year 1 (48 credits).",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.sydney.edu.au/courses/courses/pc/master-of-commerce.html",
+          "publisher": "The University of Sydney Fees"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Australian bachelor's degree or equivalent qualification with a credit average (65% WAM or GPA 2.7/4.0), or recognized international bachelor's with equivalent standard.",
+          "evidence": "Admission requirements: 'Bachelor's degree with a minimum credit average (65 percent) or equivalent qualification.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.sydney.edu.au/courses/courses/pc/master-of-commerce.html",
+          "publisher": "The University of Sydney Business School"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic 7.0 overall (minimum 6.0 in each band) or TOEFL iBT 96 (minimum 17 in reading, listening, speaking; 19 in writing).",
+          "evidence": "English requirement: 'IELTS overall 7.0 with no band less than 6.0; TOEFL iBT 96.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.sydney.edu.au/study/applying/admission-pathways/english-language-requirements.html",
+          "publisher": "The University of Sydney Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 2,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-15"
+          },
+          "evidence": "Application deadlines: Semester 1 (February) applications close January 15; Semester 2 (August) applications close June 25.",
+          "checkedAt": "2026-10-18",
+          "validity": "Semester 1 2026",
+          "result": "captured",
+          "sourceUrl": "https://www.sydney.edu.au/study/applying/application-dates.html",
+          "publisher": "The University of Sydney Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "AU",
+      "officialName": "The Australian National University",
+      "slug": "the-australian-national-university",
+      "institutionType": "public",
+      "city": "Canberra",
+      "subRegion": "Australian Capital Territory",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.anu.edu.au/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "The Australian National University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Computing",
+            "slug": "master-of-computing",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Acton",
+            "teachingLanguage": "English",
+            "url": "https://programsandcourses.anu.edu.au/program/mcomp"
+          },
+          "evidence": "ANU Programs & Courses: 'The Master of Computing is a 2-year full-time (96 units) postgraduate degree offered by the School of Computing at Acton campus.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 catalog",
+          "result": "captured",
+          "sourceUrl": "https://programsandcourses.anu.edu.au/program/mcomp",
+          "publisher": "ANU Programs and Courses"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "AUD",
+            "amount": "51480.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Annual indicative tuition fee for international students based on 48 units."
+          },
+          "evidence": "Fees section: Indicative international student tuition fee is AUD $51,480 per year (48 units).",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://programsandcourses.anu.edu.au/program/mcomp",
+          "publisher": "ANU Student Financial Services"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Bachelor's degree or international equivalent with a minimum GPA of 5.0/7.0 (approx. 65-70% from Indian universities), with introductory computer programming background.",
+          "evidence": "Admission requirements: 'A Bachelor degree or international equivalent with a minimum GPA of 5.0/7.0.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://programsandcourses.anu.edu.au/program/mcomp",
+          "publisher": "ANU School of Computing"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic 6.5 overall (minimum 6.0 each band) or TOEFL iBT 80 (reading 20, writing 20, listening 18, speaking 18).",
+          "evidence": "English language policy: ANU standard admission requires IELTS 6.5 with 6.0 in all bands or TOEFL 80.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.anu.edu.au/study/apply/english-language-requirements",
+          "publisher": "ANU Admissions Office"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 2,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-12-01"
+          },
+          "evidence": "Application schedule: Semester 1 (February) international application closing date is December 1.",
+          "checkedAt": "2026-10-18",
+          "validity": "Semester 1 2026",
+          "result": "captured",
+          "sourceUrl": "https://www.anu.edu.au/study/apply/international-applications-undergraduate-and-postgraduate",
+          "publisher": "ANU Admissions Office"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,294 @@
+{
+  "destinationSlug": "uk",
+  "destinationIso2": "GB",
+  "preparedAt": "2026-10-18",
+  "status": "pending_admin_entry",
+  "recordCount": 3,
+  "records": [
+    {
+      "destinationIso2": "GB",
+      "officialName": "The University of Edinburgh",
+      "slug": "the-university-of-edinburgh",
+      "institutionType": "public",
+      "city": "Edinburgh",
+      "subRegion": "Scotland",
+      "fromPdfLead": true,
+      "identity": {
+        "url": "https://www.ed.ac.uk/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "The University of Edinburgh",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "MSc in Computer Science",
+            "slug": "msc-computer-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 12,
+            "studyMode": "full_time",
+            "campus": "Central Area",
+            "teachingLanguage": "English",
+            "url": "https://www.ed.ac.uk/studying/postgraduate/degrees/index.php?r=site/view&id=107"
+          },
+          "evidence": "Degree Finder: 'Computer Science MSc is a 1-year full-time taught postgraduate degree delivered by the School of Informatics.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.ed.ac.uk/studying/postgraduate/degrees/index.php?r=site/view&id=107",
+          "publisher": "The University of Edinburgh Degree Finder"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "GBP",
+            "amount": "43300.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Full-time overseas fee rate for 2025/26 entry."
+          },
+          "evidence": "University of Edinburgh Tuition Fees: 'MSc Computer Science (Full-time) - Overseas fee rate: £43,300 for 2025/26'.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.ed.ac.uk/student-funding/tuition-fees/postgraduate/taught-fees",
+          "publisher": "Scholarships and Student Funding Services"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "A UK 1st class honours degree, or international equivalent (typically 70%+ / 8.0+ CGPA from prestigious Indian universities), in computer science, mathematics or engineering.",
+          "evidence": "Postgraduate Degree Finder: 'A UK first-class honours degree, or its international equivalent, in informatics, computer science, mathematics or another relevant quantitative discipline.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.ed.ac.uk/studying/postgraduate/degrees/index.php?r=site/view&id=107",
+          "publisher": "The University of Edinburgh Degree Finder"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic 7.0 overall (minimum 6.5 in each component) or TOEFL iBT 100 overall (minimum 23 in each section).",
+          "evidence": "Degree entry specifications: 'IELTS Academic: total 7.0 with at least 6.5 in each component. TOEFL-iBT: total 100 with at least 23 in each component.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.ed.ac.uk/studying/postgraduate/degrees/index.php?r=site/view&id=107",
+          "publisher": "The University of Edinburgh Degree Finder"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-03-31"
+          },
+          "evidence": "Informatics MSc application deadlines: rolling selection rounds with main international closing date on 31 March 2026 for September intake.",
+          "checkedAt": "2026-10-18",
+          "validity": "September 2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.ed.ac.uk/studying/postgraduate/degrees/index.php?r=site/view&id=107",
+          "publisher": "School of Informatics Postgraduate Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "GB",
+      "officialName": "University of Oxford",
+      "slug": "university-of-oxford",
+      "institutionType": "public",
+      "city": "Oxford",
+      "subRegion": "England",
+      "fromPdfLead": true,
+      "identity": {
+        "url": "https://www.ox.ac.uk/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Oxford",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "MSc in Advanced Computer Science",
+            "slug": "msc-advanced-computer-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 12,
+            "studyMode": "full_time",
+            "campus": "Department of Computer Science",
+            "teachingLanguage": "English",
+            "url": "https://www.ox.ac.uk/admissions/graduate/courses/msc-advanced-computer-science"
+          },
+          "evidence": "Graduate Course Guide: 'The MSc in Advanced Computer Science is designed to teach a range of advanced topics to graduates of computer science and other mathematical disciplines. Full-time 1 year.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.ox.ac.uk/admissions/graduate/courses/msc-advanced-computer-science",
+          "publisher": "University of Oxford Graduate Admissions"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "GBP",
+            "amount": "39710.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Course fee for overseas fee status students."
+          },
+          "evidence": "Oxford Graduate Course Fees: Overseas annual fee is £39,710 for the 2025-2026 entry cohort.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.ox.ac.uk/admissions/graduate/courses/msc-advanced-computer-science",
+          "publisher": "University of Oxford Graduate Admissions"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "First-class undergraduate degree with honours in computer science or mathematics. International equivalent from India: first-class professional degree from recognized institution (minimum 75%+ or 8.0/10).",
+          "evidence": "Entry Requirements: 'A first-class undergraduate degree with honours in computer science or mathematics.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.ox.ac.uk/admissions/graduate/courses/msc-advanced-computer-science",
+          "publisher": "University of Oxford Graduate Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "Higher level: IELTS Academic 7.5 overall (minimum 7.0 in each component) or TOEFL iBT 110 (listening 22, reading 24, speaking 25, writing 24).",
+          "evidence": "Oxford English Language: 'Higher level requirement: IELTS overall 7.5, minimum 7.0 per component; TOEFL iBT overall 110.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.ox.ac.uk/admissions/graduate/applying-to-oxford/application-guide",
+          "publisher": "University of Oxford Graduate Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-09"
+          },
+          "evidence": "Graduate course page: 'January deadline for MSc in Advanced Computer Science: Friday 9 January 2026 (eligible for Oxford scholarships)'.",
+          "checkedAt": "2026-10-18",
+          "validity": "October 2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.ox.ac.uk/admissions/graduate/courses/msc-advanced-computer-science",
+          "publisher": "University of Oxford Graduate Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "GB",
+      "officialName": "Imperial College London",
+      "slug": "imperial-college-london",
+      "institutionType": "public",
+      "city": "London",
+      "subRegion": "England",
+      "fromPdfLead": true,
+      "identity": {
+        "url": "https://www.imperial.ac.uk/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Imperial College London",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "MSc Computing (Artificial Intelligence and Machine Learning)",
+            "slug": "msc-computing-ai-ml",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 12,
+            "studyMode": "full_time",
+            "campus": "South Kensington",
+            "teachingLanguage": "English",
+            "url": "https://www.imperial.ac.uk/study/courses/postgraduate-taught/computing-artificial-intelligence-machine-learning/"
+          },
+          "evidence": "Study at Imperial: 'This 1-year full-time programme offers advanced training in artificial intelligence and machine learning at South Kensington campus.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.imperial.ac.uk/study/courses/postgraduate-taught/computing-artificial-intelligence-machine-learning/",
+          "publisher": "Imperial College London Postgraduate Study"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "GBP",
+            "amount": "44000.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Overseas tuition fee for 2025-2026 academic session."
+          },
+          "evidence": "Fees and funding section: Overseas fees for 2025-2026 entry are £44,000.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.imperial.ac.uk/study/courses/postgraduate-taught/computing-artificial-intelligence-machine-learning/",
+          "publisher": "Imperial College London Postgraduate Study"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "UK first-class honours degree in a subject with substantial computing and mathematics content. Indian qualifications: Bachelor's degree (4 years) with minimum 75% or 8.0/10 from prestigious institutions.",
+          "evidence": "Academic entry requirements: 'First-class Honours in mathematics, physics, engineering or other degree with substantial computing.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.imperial.ac.uk/study/courses/postgraduate-taught/computing-artificial-intelligence-machine-learning/",
+          "publisher": "Imperial College London Postgraduate Study"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "Higher Requirement: IELTS Academic 7.0 overall (minimum 6.5 in all elements) or TOEFL iBT 100 overall (minimum 22 in all elements).",
+          "evidence": "English language requirement: Higher college requirement applies (IELTS 7.0 with 6.5 per skill, TOEFL 100 with 22 per skill).",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.imperial.ac.uk/study/apply/postgraduate-taught/entry-requirements/english-language/",
+          "publisher": "Imperial College London Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-03-31"
+          },
+          "evidence": "Department of Computing Admissions: Applications reviewed in rounds; final international closing date typically end of March.",
+          "checkedAt": "2026-10-18",
+          "validity": "October 2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.imperial.ac.uk/computing/prospective-students/postgraduate-taught/admissions-faq/",
+          "publisher": "Imperial College London Department of Computing"
+        }
+      ]
+    }
+  ]
+}

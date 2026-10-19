@@ -1,0 +1,294 @@
+{
+  "destinationSlug": "italy",
+  "destinationIso2": "IT",
+  "preparedAt": "2026-10-18",
+  "status": "pending_admin_entry",
+  "recordCount": 3,
+  "records": [
+    {
+      "destinationIso2": "IT",
+      "officialName": "Politecnico di Milano",
+      "slug": "politecnico-di-milano",
+      "institutionType": "public",
+      "city": "Milan",
+      "subRegion": "Lombardy",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.polimi.it/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Politecnico di Milano",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Laurea Magistrale (Master of Science) in Computer Science and Engineering",
+            "slug": "msc-computer-science-and-engineering",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Leonardo",
+            "teachingLanguage": "English",
+            "url": "https://www.polimi.it/en/programmes/educational-offer/master-of-science-programmes"
+          },
+          "evidence": "Educational offer: 'Computer Science and Engineering (Ingegneria Informatica) is a 2-year (120 ECTS) MSc taught entirely in English at Campus Leonardo.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.polimi.it/en/programmes/educational-offer/master-of-science-programmes",
+          "publisher": "Politecnico di Milano Educational Offer"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "3898.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Non-EU students standard contribution fee is €3,898 per academic year (payable in two installments: €898 upon registration, €3,000 second installment)."
+          },
+          "evidence": "International Admissions Fees: 'For non-EU students who reside outside Italy, the tuition fee is fixed at €3,898 per academic year.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.polimi.it/en/international-prospective-students/laurea-magistrale-programmes-equivalent-to-master-of-science/fees-and-scholarships",
+          "publisher": "Politecnico di Milano International Admissions"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Undergraduate degree (Bachelor of Science or engineering) in computer science, software engineering or related discipline; minimum CGPA typically 7.0/10 from recognized Indian universities.",
+          "evidence": "Admissions requirements: Bachelor's degree with adequate curriculum in computer engineering, programming, and mathematics.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 admissions",
+          "result": "captured",
+          "sourceUrl": "https://www.polimi.it/en/international-prospective-students/laurea-magistrale-programmes-equivalent-to-master-of-science/application-procedures",
+          "publisher": "Politecnico di Milano International Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic minimum 6.0 overall; TOEFL iBT minimum 78.",
+          "evidence": "Language proficiency guidelines: English requirement for English-taught Master of Science is IELTS 6.0 or TOEFL 78.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 admissions",
+          "result": "captured",
+          "sourceUrl": "https://www.polimi.it/en/international-prospective-students/laurea-magistrale-programmes-equivalent-to-master-of-science/application-procedures/english-language-proficiency",
+          "publisher": "Politecnico di Milano International Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-02-28"
+          },
+          "evidence": "Application calendar: Call 1 closes in November, Call 2 for non-EU students for September intake closes late February.",
+          "checkedAt": "2026-10-18",
+          "validity": "First semester 2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.polimi.it/en/international-prospective-students/laurea-magistrale-programmes-equivalent-to-master-of-science/application-procedures/application-deadlines",
+          "publisher": "Politecnico di Milano International Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "IT",
+      "officialName": "Alma Mater Studiorum – Università di Bologna",
+      "slug": "university-of-bologna",
+      "institutionType": "public",
+      "city": "Bologna",
+      "subRegion": "Emilia-Romagna",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.unibo.it/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Bologna",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Second Cycle Degree (Master) in Artificial Intelligence",
+            "slug": "msc-artificial-intelligence",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Bologna",
+            "teachingLanguage": "English",
+            "url": "https://corsi.unibo.it/2cycle/artificial-intelligence"
+          },
+          "evidence": "Degree Portal: 'The Master's Degree in Artificial Intelligence is a 2-year full-time programme (120 ECTS) taught entirely in English.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://corsi.unibo.it/2cycle/artificial-intelligence",
+          "publisher": "University of Bologna Degree Programmes"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "3000.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Maximum standard contribution fee is approx. €3,000/year; may be reduced based on income documentation (ISEE Parificato)."
+          },
+          "evidence": "Unibo Tuition Fees: Public tuition fee system based on country of residence / ISEE Parificato, capped at approx. €3,000 per year for non-EU students.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.unibo.it/en/study/study-grants-and-subsidies/tuition-fees-amounts-and-exemptions",
+          "publisher": "University of Bologna Fees Office"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "First-cycle degree (bachelor's) in computer science, computer engineering or mathematics, with specific ECTS in programming, algorithms, and calculus.",
+          "evidence": "Admission criteria: Bachelor's degree with adequate curriculum credits in computer science and mathematics, evaluated by admission board.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://corsi.unibo.it/2cycle/artificial-intelligence/admission",
+          "publisher": "University of Bologna Department of Computer Science"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "English language proficiency at level B2 of CEFR (e.g. IELTS 5.5-6.0, TOEFL iBT 80, or certificate of English-medium university degree).",
+          "evidence": "Language requirement: B2 level English certification required prior to enrollment.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://corsi.unibo.it/2cycle/artificial-intelligence/admission",
+          "publisher": "University of Bologna Department of Computer Science"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-03-31"
+          },
+          "evidence": "Call for admissions: International intake rounds open in December; intake round 1/2 for non-EU students closes in March.",
+          "checkedAt": "2026-10-18",
+          "validity": "September 2026 intake",
+          "result": "captured",
+          "sourceUrl": "https://corsi.unibo.it/2cycle/artificial-intelligence/admission",
+          "publisher": "University of Bologna International Desk"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "IT",
+      "officialName": "Sapienza Università di Roma",
+      "slug": "sapienza-university-of-rome",
+      "institutionType": "public",
+      "city": "Rome",
+      "subRegion": "Lazio",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.uniroma1.it/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Sapienza Università di Roma",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Data Science",
+            "slug": "msc-data-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Città Universitaria",
+            "teachingLanguage": "English",
+            "url": "https://corsidilaurea.uniroma1.it/en/corso/2025/29933/home"
+          },
+          "evidence": "Course catalogue: 'The Master of Science in Data Science is a two-year degree (120 ECTS) taught completely in English in the Faculty of Information Engineering, Informatics and Statistics.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://corsidilaurea.uniroma1.it/en/corso/2025/29933/home",
+          "publisher": "Sapienza Course Catalogue"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "1000.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Fixed enrollment contribution for international students with citizenship of developing countries is €1,000 per academic year, plus €140 regional tax."
+          },
+          "evidence": "International Student Tuition Guidelines: 'Tuition fees for international students from developing countries are set at €1,000 per year payable in three installments.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.uniroma1.it/en/pagina/tuition-fees-and-contributions-foreign-students",
+          "publisher": "Sapienza Student Affairs"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Undergraduate degree in computer science, engineering, mathematics, physics or statistics; pre-selection dossier evaluation.",
+          "evidence": "Admissions notice: Three-year bachelor's degree in engineering or relevant scientific field with sufficient foundational credits in computing and mathematics.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://corsidilaurea.uniroma1.it/en/corso/2025/29933/home",
+          "publisher": "Sapienza Course Catalogue"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "English language certificate confirming at least B2 level (IELTS 6.0+, TOEFL iBT 80+, Cambridge B2 First, or verified degree taught in English).",
+          "evidence": "Pre-selection regulations: 'Candidates must provide proof of English proficiency at level B2.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.uniroma1.it/en/pagina/pre-selection-application-study-programmes-english",
+          "publisher": "Sapienza International Office"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-04-15"
+          },
+          "evidence": "Pre-selection calendar: Non-EU pre-selection portal opens in November and closes in mid-April.",
+          "checkedAt": "2026-10-18",
+          "validity": "Autumn 2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.uniroma1.it/en/pagina/pre-selection-application-study-programmes-english",
+          "publisher": "Sapienza International Office"
+        }
+      ]
+    }
+  ]
+}

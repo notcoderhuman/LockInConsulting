@@ -1,0 +1,294 @@
+{
+  "destinationSlug": "finland",
+  "destinationIso2": "FI",
+  "preparedAt": "2026-10-18",
+  "status": "pending_admin_entry",
+  "recordCount": 3,
+  "records": [
+    {
+      "destinationIso2": "FI",
+      "officialName": "University of Helsinki",
+      "slug": "university-of-helsinki",
+      "institutionType": "public",
+      "city": "Helsinki",
+      "subRegion": "Uusimaa",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.helsinki.fi/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Helsinki",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master's Programme in Computer Science",
+            "slug": "masters-in-computer-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Kumpula Science Campus",
+            "teachingLanguage": "English",
+            "url": "https://www.helsinki.fi/en/admissions-and-education/apply-masters-programmes/masters-programme-computer-science"
+          },
+          "evidence": "Degree information: 'The Master's Programme in Computer Science is a 120 ECTS credit two-year full-time programme taught in English.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 study guide",
+          "result": "captured",
+          "sourceUrl": "https://www.helsinki.fi/en/admissions-and-education/apply-masters-programmes/masters-programme-computer-science",
+          "publisher": "University of Helsinki Admissions"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "15000.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Tuition fee for non-EU/EEA students is €15,000 per academic year."
+          },
+          "evidence": "Tuition fees: 'The tuition fee for non-EU/EEA citizens in the Master's Programme in Computer Science is 15,000 euros per academic year.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.helsinki.fi/en/admissions-and-education/tuition-fees-and-scholarships",
+          "publisher": "University of Helsinki Admissions"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "An applicable bachelor's degree from a recognized institution with at least 60 ECTS credits in computer science topics (programming, data structures, algorithms, computer architecture).",
+          "evidence": "Academic criteria: 'An applicable first-cycle degree containing minimum 60 ECTS of computer science studies.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Autumn 2026 intake",
+          "result": "captured",
+          "sourceUrl": "https://www.helsinki.fi/en/admissions-and-education/apply-masters-programmes/masters-programme-computer-science/admissions",
+          "publisher": "University of Helsinki Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic 6.5 overall (minimum 6.0 in writing) or TOEFL iBT 92 (minimum 22 in writing).",
+          "evidence": "Language skills: 'IELTS Academic with minimum overall score 6.5 and writing 6.0, or TOEFL iBT minimum 92 with writing 22.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Autumn 2026 intake",
+          "result": "captured",
+          "sourceUrl": "https://www.helsinki.fi/en/admissions-and-education/apply-masters-programmes/how-apply-masters-programme/proving-your-english-language-skills",
+          "publisher": "University of Helsinki Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-15"
+          },
+          "evidence": "Joint Application period in Studyinfo.fi: applications open early December and close January 15, 2026 for September 2026 studies.",
+          "checkedAt": "2026-10-18",
+          "validity": "Autumn 2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.helsinki.fi/en/admissions-and-education/apply-masters-programmes/how-apply-masters-programme/application-deadlines",
+          "publisher": "University of Helsinki Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "FI",
+      "officialName": "Aalto University",
+      "slug": "aalto-university",
+      "institutionType": "public",
+      "city": "Espoo",
+      "subRegion": "Uusimaa",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.aalto.fi/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Aalto University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master's Programme in Computer, Communication and Information Sciences - Machine Learning, Data Science and Artificial Intelligence",
+            "slug": "msc-macdsai",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Otaniemi",
+            "teachingLanguage": "English",
+            "url": "https://www.aalto.fi/en/study-options/masters-programme-in-computer-communication-and-information-sciences-machine-learning-data-science-and-artificial-intelligence"
+          },
+          "evidence": "School of Science: '120 ECTS, 2 years full-time, Master of Science (Technology) taught in English at Otaniemi campus.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 curriculum",
+          "result": "captured",
+          "sourceUrl": "https://www.aalto.fi/en/study-options/masters-programme-in-computer-communication-and-information-sciences-machine-learning-data-science-and-artificial-intelligence",
+          "publisher": "Aalto University School of Science"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "15000.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Tuition fee for non-EU/EEA citizens is €15,000 per academic year."
+          },
+          "evidence": "Aalto University Tuition Fees: 'The tuition fee for non-EU/EEA students in master's programmes taught in English is 15,000 euros per academic year.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.aalto.fi/en/admission-services/scholarships-and-tuition-fees",
+          "publisher": "Aalto University Admission Services"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "High-quality Bachelor of Science in computer science, software engineering, mathematics or closely related technical field with excellent academic standing.",
+          "evidence": "Academic evaluation criteria: 'Evaluation is based on previous academic performance, content of previous degree, and recognition of the university.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.aalto.fi/en/admission-services/masters-admissions/evaluation-criteria-and-study-options",
+          "publisher": "Aalto University Admission Services"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic 6.5 overall (minimum 5.5 in writing) or TOEFL iBT 92 (minimum 22 in writing).",
+          "evidence": "Language criteria: 'IELTS Academic minimum overall score 6.5 with at least 5.5 in writing; TOEFL iBT minimum 92 with at least 22 in writing.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.aalto.fi/en/admission-services/language-requirements-in-masters-admissions",
+          "publisher": "Aalto University Admission Services"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-08"
+          },
+          "evidence": "Master's admissions dates: Application period runs from late November to early January (January 8, 2026 deadline) via Studyinfo.fi.",
+          "checkedAt": "2026-10-18",
+          "validity": "Autumn 2026 intake",
+          "result": "captured",
+          "sourceUrl": "https://www.aalto.fi/en/admission-services/masters-admissions",
+          "publisher": "Aalto University Admission Services"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "FI",
+      "officialName": "University of Oulu",
+      "slug": "university-of-oulu",
+      "institutionType": "public",
+      "city": "Oulu",
+      "subRegion": "North Ostrobothnia",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.oulu.fi/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Oulu",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master's Programme in Computer Science and Engineering",
+            "slug": "msc-computer-science-and-engineering",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Linnanmaa",
+            "teachingLanguage": "English",
+            "url": "https://www.oulu.fi/en/apply/masters-computer-science-and-engineering"
+          },
+          "evidence": "Faculty of Information Technology and Electrical Engineering: '2-year full-time MSc (Tech) degree (120 ECTS) in computer vision, artificial intelligence and ubiquitous computing.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 curriculum",
+          "result": "captured",
+          "sourceUrl": "https://www.oulu.fi/en/apply/masters-computer-science-and-engineering",
+          "publisher": "University of Oulu Faculty of ITEE"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "10000.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Tuition fee for non-EU/EEA students is €10,000 per academic year."
+          },
+          "evidence": "Tuition and scholarships: 'For students liable to pay tuition fees, the fee in international master's programmes in technology is 10,000 euros per academic year.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.oulu.fi/en/admissions/tuition-fees-and-scholarships",
+          "publisher": "University of Oulu Admissions"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Bachelor's degree in Computer Science, Electrical Engineering or related discipline with good grades from a recognized university.",
+          "evidence": "Admission requirements: 'A bachelor's degree in computer science or electrical engineering, with min. 60 ECTS in technical computing.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.oulu.fi/en/apply/masters-computer-science-and-engineering",
+          "publisher": "University of Oulu Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic 6.5 overall (minimum 5.5 in each section) or TOEFL iBT 92 (minimum 20 in writing).",
+          "evidence": "Language skills requirement: 'IELTS Academic total score 6.5 with at least 5.5 in each component, TOEFL iBT 92 with 20 writing.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.oulu.fi/en/admissions/language-requirements",
+          "publisher": "University of Oulu Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-21"
+          },
+          "evidence": "Joint Application period: Finnish Joint Application for international programmes closes on January 21, 2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "Autumn 2026 intake",
+          "result": "captured",
+          "sourceUrl": "https://www.oulu.fi/en/apply/how-apply",
+          "publisher": "University of Oulu Admissions"
+        }
+      ]
+    }
+  ]
+}

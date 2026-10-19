@@ -1,0 +1,294 @@
+{
+  "destinationSlug": "saudi-arabia",
+  "destinationIso2": "SA",
+  "preparedAt": "2026-10-18",
+  "status": "pending_admin_entry",
+  "recordCount": 3,
+  "records": [
+    {
+      "destinationIso2": "SA",
+      "officialName": "King Abdullah University of Science and Technology",
+      "slug": "king-abdullah-university-of-science-and-technology",
+      "institutionType": "private",
+      "city": "Thuwal",
+      "subRegion": "Makkah Province",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.kaust.edu.sa/en/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "KAUST | King Abdullah University of Science and Technology",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science",
+            "slug": "ms-computer-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Thuwal Campus",
+            "teachingLanguage": "English",
+            "url": "https://cemse.kaust.edu.sa/cs/ms-program"
+          },
+          "evidence": "CEMSE Division: 'The MS in Computer Science requires 36 credit hours of coursework and research, typically completed in two academic years.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 catalog",
+          "result": "captured",
+          "sourceUrl": "https://cemse.kaust.edu.sa/cs/ms-program",
+          "publisher": "KAUST CEMSE Division"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "SAR",
+            "amount": null,
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "SAR 0 tuition. All admitted graduate students receive the KAUST Fellowship covering 100% full tuition support, on-campus housing, medical and dental coverage, and an annual living stipend ($20,000–$30,000)."
+          },
+          "evidence": "KAUST Fellowship: 'All admitted students receive the KAUST Fellowship, which provides full tuition coverage, monthly living allowance, housing, and relocation assistance.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.kaust.edu.sa/en/study/admissions/kaust-fellowship",
+          "publisher": "KAUST Admissions"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Bachelor's degree in Computer Science, Computer Engineering, Electrical Engineering or related field with a minimum cumulative GPA of 3.5 on a 4.0 scale (or equivalent first-class honours from India); 3 recommendation letters; statement of purpose; GRE general test is recommended.",
+          "evidence": "KAUST Admissions Criteria: 'Applicants must hold a Bachelor's degree in a relevant STEM discipline with minimum 3.5/4.0 GPA.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.kaust.edu.sa/en/study/admissions",
+          "publisher": "KAUST Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "TOEFL iBT 79 or IELTS Academic 6.5 minimum (KAUST admissions code 4107).",
+          "evidence": "Language guidelines: Minimum score of 79 on the TOEFL iBT or 6.5 on the IELTS Academic test.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.kaust.edu.sa/en/study/admissions",
+          "publisher": "KAUST Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 8,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-15"
+          },
+          "evidence": "Admissions Timeline: Priority application deadline for Fall admission is mid-January.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.kaust.edu.sa/en/study/admissions",
+          "publisher": "KAUST Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "SA",
+      "officialName": "King Fahd University of Petroleum and Minerals",
+      "slug": "king-fahd-university-of-petroleum-and-minerals",
+      "institutionType": "public",
+      "city": "Dhahran",
+      "subRegion": "Eastern Province",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.kfupm.edu.sa/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "King Fahd University of Petroleum & Minerals",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Artificial Intelligence",
+            "slug": "ms-artificial-intelligence",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Dhahran Campus",
+            "teachingLanguage": "English",
+            "url": "https://ccse.kfupm.edu.sa/ics/programs/m-s-in-artificial-intelligence"
+          },
+          "evidence": "Department of Information and Computer Science: 'The MS in AI is a 30-credit-hour graduate program covering machine learning, deep learning, and intelligent systems.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 graduate bulletin",
+          "result": "captured",
+          "sourceUrl": "https://ccse.kfupm.edu.sa/ics/programs/m-s-in-artificial-intelligence",
+          "publisher": "KFUPM College of Computing and Mathematics"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "SAR",
+            "amount": null,
+            "billingPeriod": "per_semester",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "SAR 0 tuition. Admitted international graduate students are awarded full fellowships (Graduate Assistantship / Research Assistantship) covering 100% tuition fees, housing, and monthly stipends."
+          },
+          "evidence": "Deanship of Graduate Studies: 'Full scholarship students receive tuition waiver, free furnished housing, monthly stipends, and medical care.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://cgs.kfupm.edu.sa/scholarships-financial-support",
+          "publisher": "KFUPM Deanship of Graduate Studies"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "A four-year Bachelor of Science degree in Computer Science, Computer Engineering or related STEM field with minimum GPA 3.00/4.00; GRE General test required; 3 recommendation letters.",
+          "evidence": "Graduate Admission Requirements: 'A 4-year bachelor's degree in engineering or science with a minimum GPA of 3.00 out of 4.00.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 admissions",
+          "result": "captured",
+          "sourceUrl": "https://cgs.kfupm.edu.sa/admission-requirements",
+          "publisher": "KFUPM Deanship of Graduate Studies"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic minimum 6.0 overall or TOEFL iBT minimum 68.",
+          "evidence": "English requirement: 'Minimum score of 6.0 on IELTS or 68 on TOEFL iBT.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 admissions",
+          "result": "captured",
+          "sourceUrl": "https://cgs.kfupm.edu.sa/admission-requirements",
+          "publisher": "KFUPM Deanship of Graduate Studies"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 8,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-02-15"
+          },
+          "evidence": "Application calendar: Fall semester international scholarship applications typically close in mid-February.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://cgs.kfupm.edu.sa/deadlines",
+          "publisher": "KFUPM Deanship of Graduate Studies"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "SA",
+      "officialName": "King Saud University",
+      "slug": "king-saud-university",
+      "institutionType": "public",
+      "city": "Riyadh",
+      "subRegion": "Riyadh Province",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://ksu.edu.sa/en/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "King Saud University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science",
+            "slug": "ms-computer-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Main Campus",
+            "teachingLanguage": "English",
+            "url": "https://ccis.ksu.edu.sa/en/cs/mscs"
+          },
+          "evidence": "College of Computer and Information Sciences: 'The Master of Science in Computer Science is a two-year degree program requiring 33 credit hours.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 catalog",
+          "result": "captured",
+          "sourceUrl": "https://ccis.ksu.edu.sa/en/cs/mscs",
+          "publisher": "King Saud University CCIS"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "SAR",
+            "amount": null,
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "SAR 0 tuition. International scholarship students admitted through the Saudi Government 'Study in Saudi' scholarship programme receive 100% tuition exemption, university housing, and a monthly stipend."
+          },
+          "evidence": "International Scholarship Portal: 'Scholarship beneficiaries receive full tuition exemption, free accommodation, and monthly stipend allowance.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://dgs.ksu.edu.sa/en/scholarships",
+          "publisher": "King Saud University Deanship of Graduate Studies"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Bachelor's degree in Computer Science, Software Engineering or Information Technology from a recognized university with minimum 'Very Good' rating (GPA 3.75 out of 5.00 or equivalent).",
+          "evidence": "CCIS Graduate Admissions: 'Undergraduate degree in computer science or related field with a minimum rating of Very Good.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 admissions",
+          "result": "captured",
+          "sourceUrl": "https://ccis.ksu.edu.sa/en/cs/mscs",
+          "publisher": "King Saud University CCIS"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "TOEFL iBT 61 or IELTS Academic 5.5 minimum.",
+          "evidence": "Graduate requirements: 'Proof of English language proficiency with minimum score of 61 on TOEFL or 5.5 on IELTS.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 admissions",
+          "result": "captured",
+          "sourceUrl": "https://dgs.ksu.edu.sa/en/admission-requirements",
+          "publisher": "King Saud University Deanship of Graduate Studies"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-31"
+          },
+          "evidence": "Study in Saudi / KSU portal: International scholarship applications for September admission typically close January 31.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 cohort",
+          "result": "captured",
+          "sourceUrl": "https://dgs.ksu.edu.sa/en/deadlines",
+          "publisher": "King Saud University Deanship of Graduate Studies"
+        }
+      ]
+    }
+  ]
+}

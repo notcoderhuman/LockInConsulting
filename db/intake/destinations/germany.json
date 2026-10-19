@@ -1,0 +1,294 @@
+{
+  "destinationSlug": "germany",
+  "destinationIso2": "DE",
+  "preparedAt": "2026-10-18",
+  "status": "pending_admin_entry",
+  "recordCount": 3,
+  "records": [
+    {
+      "destinationIso2": "DE",
+      "officialName": "Technical University of Munich",
+      "slug": "technical-university-of-munich",
+      "institutionType": "public",
+      "city": "Munich",
+      "subRegion": "Bavaria",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.tum.de/en/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Technical University of Munich",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Informatics",
+            "slug": "msc-informatics",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Garching",
+            "teachingLanguage": "English",
+            "url": "https://www.tum.de/en/studies/degree-programs/detail/informatics-master-of-science-msc"
+          },
+          "evidence": "TUM Degree Explorer: 'Informatics (M.Sc.) is a 4-semester full-time master's program taught in English at TUM School of Computation, Information and Technology in Garching.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 degree specification",
+          "result": "captured",
+          "sourceUrl": "https://www.tum.de/en/studies/degree-programs/detail/informatics-master-of-science-msc",
+          "publisher": "TUM School of Computation, Information and Technology"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "6000.00",
+            "billingPeriod": "per_semester",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Tuition fees for international students from non-EU/EEA countries are €6,000 per semester (€12,000 per year) plus approx. €102 student services fee per semester."
+          },
+          "evidence": "TUM Tuition Fees: 'Tuition fees for non-EU students for master's degree programs are 6,000 euros per semester.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.tum.de/en/studies/fees/tuition",
+          "publisher": "Technical University of Munich Studies Fees"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Recognized bachelor's degree in computer science or equivalent, passing the aptitude assessment (curricular analysis of theoretical computer science, practical computer science, mathematics).",
+          "evidence": "Aptitude assessment regulations: 'Competence-based curricular evaluation requires adequate modules in algorithms, software engineering, and mathematical foundations.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.tum.de/en/studies/degree-programs/detail/informatics-master-of-science-msc",
+          "publisher": "TUM CIT Department"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "English language proficiency level C1 or recognized test (e.g. TOEFL iBT 88+, IELTS Academic 6.5+).",
+          "evidence": "Language certificate guidelines: 'Recognized English certificates include TOEFL iBT (min. 88) or IELTS Academic (min. 6.5).'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.tum.de/en/studies/application/application-info-portal/language-certificates",
+          "publisher": "TUM Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-05-31"
+          },
+          "evidence": "Application deadlines: 'For the winter semester starting in October, applications must be received by May 31.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Winter semester 2026/27",
+          "result": "captured",
+          "sourceUrl": "https://www.tum.de/en/studies/application/application-info-portal/deadlines-and-dates",
+          "publisher": "TUM Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "DE",
+      "officialName": "Ludwig-Maximilians-Universität München",
+      "slug": "ludwig-maximilians-universitat-munchen",
+      "institutionType": "public",
+      "city": "Munich",
+      "subRegion": "Bavaria",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.lmu.de/en/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "LMU Munich",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Data Science",
+            "slug": "msc-data-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Geschwister-Scholl-Platz",
+            "teachingLanguage": "English",
+            "url": "https://www.m-datascience.mathematik-informatik-statistik.uni-muenchen.de/"
+          },
+          "evidence": "Data Science elite programme: 'The Master of Science in Data Science is a 2-year full-time English-taught program jointly offered by the Department of Statistics and the Institute of Informatics.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.m-datascience.mathematik-informatik-statistik.uni-muenchen.de/",
+          "publisher": "LMU Department of Statistics"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": null,
+            "billingPeriod": "per_semester",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "LMU does not charge general tuition fees for this program (€0 tuition). Students pay only a basic semester fee of approx. €85 per semester."
+          },
+          "evidence": "LMU Fees: 'At LMU Munich, tuition fees are not charged for consecutive master's programmes. Students only pay the semester fee for student services.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.lmu.de/en/study/all-degrees-and-programs/international-students/financial-matters/fees-and-costs/",
+          "publisher": "LMU International Office"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Bachelor of Science in computer science, statistics or related field with grade 2.0 or better (German grading scale); qualification interview or exam.",
+          "evidence": "Admissions requirements: 'A Bachelor of Science in statistics, informatics or related discipline with grade 2.0 or better.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Winter 2026/27 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.m-datascience.mathematik-informatik-statistik.uni-muenchen.de/application/index.html",
+          "publisher": "LMU Data Science Board"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "English language certificate confirming at least level B2 (e.g. IELTS 6.5+, TOEFL iBT 80+, or equivalent).",
+          "evidence": "Program requirements: 'Proficiency in English at level B2 of the CEFR is required.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Winter 2026/27 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.m-datascience.mathematik-informatik-statistik.uni-muenchen.de/application/index.html",
+          "publisher": "LMU Data Science Board"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-06-01"
+          },
+          "evidence": "Application deadlines: 'Application for the winter semester starting in October is open until June 1.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Winter semester 2026/27",
+          "result": "captured",
+          "sourceUrl": "https://www.m-datascience.mathematik-informatik-statistik.uni-muenchen.de/application/index.html",
+          "publisher": "LMU Data Science Board"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "DE",
+      "officialName": "Rheinisch-Westfälische Technische Hochschule Aachen",
+      "slug": "rwth-aachen-university",
+      "institutionType": "public",
+      "city": "Aachen",
+      "subRegion": "North Rhine-Westphalia",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.rwth-aachen.de/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "RWTH Aachen University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Software Systems Engineering",
+            "slug": "msc-software-systems-engineering",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Aachen",
+            "teachingLanguage": "English",
+            "url": "https://www.rwth-aachen.de/cms/root/studium/vor-dem-studium/studiengaenge/liste-aktuelle-studiengaenge/studiengangbeschreibung/~bknv/software-systems-engineering-m-sc-/?lidx=1"
+          },
+          "evidence": "RWTH Course Description: 'Software Systems Engineering (M.Sc.) is a 4-semester full-time degree taught in English by the Department of Computer Science.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 degree catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.rwth-aachen.de/cms/root/studium/vor-dem-studium/studiengaenge/liste-aktuelle-studiengaenge/studiengangbeschreibung/~bknv/software-systems-engineering-m-sc-/?lidx=1",
+          "publisher": "RWTH Aachen University Academic Registry"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": null,
+            "billingPeriod": "per_semester",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "RWTH Aachen charges €0 tuition fee. Students pay only the semester contribution (approx. €320 per semester) which includes the regional transport ticket."
+          },
+          "evidence": "RWTH Tuition Fees: 'In North Rhine-Westphalia, no tuition fees are charged. All enrolled students pay a semester contribution fee of approx. €320.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.rwth-aachen.de/cms/root/studium/im-studium/studiengebuehren/~egc/semesterbeitrag/?lidx=1",
+          "publisher": "RWTH Registrar's Office"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "First degree (BSc in Computer Science or related) with rigorous coursework in theoretical informatics, software engineering, databases and mathematics.",
+          "evidence": "Examination regulations: Curricular prerequisites require at least 18 ECTS in mathematics, 18 ECTS in theoretical computer science, and 30 ECTS in software/systems engineering.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.rwth-aachen.de/cms/root/studium/vor-dem-studium/studiengaenge/liste-aktuelle-studiengaenge/studiengangbeschreibung/~bknv/software-systems-engineering-m-sc-/?lidx=1",
+          "publisher": "RWTH Department of Computer Science"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "TOEFL iBT 90+ or IELTS Academic 6.0+ (or Cambridge Certificate in Advanced English).",
+          "evidence": "Language requirement: Proof of English language proficiency at level B2 (TOEFL 90 or IELTS 6.0).",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.rwth-aachen.de/cms/root/studium/vor-dem-studium/bewerbung-um-einen-studienplatz/master-internationale-studierende/~bkng/sprachnachweise/?lidx=1",
+          "publisher": "RWTH International Office"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-03-01"
+          },
+          "evidence": "Application deadlines: 'For non-EU citizens, application for the winter semester starting in October closes on March 1.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Winter semester 2026/27",
+          "result": "captured",
+          "sourceUrl": "https://www.rwth-aachen.de/cms/root/studium/vor-dem-studium/bewerbung-um-einen-studienplatz/master-internationale-studierende/~bkmt/bewerbungsfristen/?lidx=1",
+          "publisher": "RWTH International Office"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,294 @@
+{
+  "destinationSlug": "canada",
+  "destinationIso2": "CA",
+  "preparedAt": "2026-10-18",
+  "status": "pending_admin_entry",
+  "recordCount": 3,
+  "records": [
+    {
+      "destinationIso2": "CA",
+      "officialName": "University of Toronto",
+      "slug": "university-of-toronto",
+      "institutionType": "public",
+      "city": "Toronto",
+      "subRegion": "Ontario",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.utoronto.ca/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Toronto",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Applied Computing",
+            "slug": "msc-applied-computing",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 16,
+            "studyMode": "full_time",
+            "campus": "St. George",
+            "teachingLanguage": "English",
+            "url": "https://mscac.utoronto.ca/"
+          },
+          "evidence": "MScAC website: 'A 16-month professional master's degree program comprising 8 months of graduate coursework and an 8-month applied research internship.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://mscac.utoronto.ca/",
+          "publisher": "University of Toronto Department of Computer Science"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "CAD",
+            "amount": "36450.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "International tuition approx. CAD 36,450 per academic year (~CAD 54,675 total programme fee)."
+          },
+          "evidence": "U of T Planning and Budget: International graduate fees for Master of Science in Applied Computing are approx. $36,450 per year.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://planningandbudget.utoronto.ca/tuition-fee-lookup-tool/",
+          "publisher": "University of Toronto Planning and Budget"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Four-year bachelor's degree in Computer Science, Mathematics or related discipline, with an equivalent minimum average of B+ (77-79%) in final year of study.",
+          "evidence": "MScAC Admission requirements: 'Completion of an appropriate four-year undergraduate degree in computer science or related field with a B+ average in the final year.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://mscac.utoronto.ca/admissions",
+          "publisher": "MScAC Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "TOEFL iBT 93 overall (writing 22, speaking 22) or IELTS Academic 7.0 overall (no band below 6.5).",
+          "evidence": "School of Graduate Studies English requirements: TOEFL 93 with 22 writing/speaking or IELTS 7.0 with 6.5 in all bands.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.sgs.utoronto.ca/admissions/admission-application-requirements/english-language-proficiency-testing/",
+          "publisher": "School of Graduate Studies, University of Toronto"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-12-01"
+          },
+          "evidence": "MScAC Admissions portal: 'Applications open September 15; deadline for September admission is December 1.'",
+          "checkedAt": "2026-10-18",
+          "validity": "September 2026 cohort",
+          "result": "captured",
+          "sourceUrl": "https://mscac.utoronto.ca/admissions",
+          "publisher": "MScAC Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "CA",
+      "officialName": "McGill University",
+      "slug": "mcgill-university",
+      "institutionType": "public",
+      "city": "Montreal",
+      "subRegion": "Quebec",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.mcgill.ca/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "McGill University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Bachelor of Science in Computer Science",
+            "slug": "bsc-computer-science",
+            "qualification": "bachelor",
+            "studyLevel": "UG",
+            "durationMonths": 48,
+            "studyMode": "full_time",
+            "campus": "Downtown",
+            "teachingLanguage": "English",
+            "url": "https://www.cs.mcgill.ca/academic/undergrad/"
+          },
+          "evidence": "School of Computer Science: B.Sc. Major in Computer Science requires 120 credits (typically 4 years for students admitted with Indian Class XII).",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 eCalendar",
+          "result": "captured",
+          "sourceUrl": "https://www.cs.mcgill.ca/academic/undergrad/",
+          "publisher": "McGill School of Computer Science"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "CAD",
+            "amount": "65600.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Annual deregulated international undergraduate tuition and mandatory ancillary fees for Science."
+          },
+          "evidence": "McGill Student Accounts Undergraduate Fee Table: International students in Science pay approx. CAD $65,600 per 30-credit academic year.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.mcgill.ca/student-accounts/tuition-charges/fallwinter-term-tuition-and-fees/undergraduate-fees",
+          "publisher": "McGill Student Accounts Office"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Class XII certificate (CBSE / CISCE) with high scores in Mathematics, Physics and Chemistry (minimum 85%+ overall and 85%+ in Math).",
+          "evidence": "McGill Undergraduate Admissions: 'Requirements for India: All India Senior School Certificate or Indian School Certificate with strong marks in science and math.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 admissions cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.mcgill.ca/undergraduate-admissions/apply/requirements/international/india",
+          "publisher": "McGill Undergraduate Admissions Office"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic 6.5 overall (minimum 6.0 in each band) or TOEFL iBT 90 overall (minimum 21 in each component).",
+          "evidence": "McGill English Proficiency: IELTS 6.5 or TOEFL 90 with no subscore below 21 is required.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 admissions cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.mcgill.ca/undergraduate-admissions/apply/english-proficiency",
+          "publisher": "McGill Undergraduate Admissions Office"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-15"
+          },
+          "evidence": "Undergraduate Admissions Deadlines: Non-Canadian international application deadline is January 15 for September entry.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.mcgill.ca/undergraduate-admissions/apply/deadlines",
+          "publisher": "McGill Undergraduate Admissions Office"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "CA",
+      "officialName": "The University of British Columbia",
+      "slug": "the-university-of-british-columbia",
+      "institutionType": "public",
+      "city": "Vancouver",
+      "subRegion": "British Columbia",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.ubc.ca/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "The University of British Columbia",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Data Science",
+            "slug": "master-data-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 10,
+            "studyMode": "full_time",
+            "campus": "Vancouver (Point Grey)",
+            "teachingLanguage": "English",
+            "url": "https://masterdatascience.ubc.ca/"
+          },
+          "evidence": "MDS Vancouver: 'The Master of Data Science is an intensive 10-month professional program delivered full-time in Vancouver.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 calendar",
+          "result": "captured",
+          "sourceUrl": "https://masterdatascience.ubc.ca/",
+          "publisher": "UBC Faculty of Science"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "CAD",
+            "amount": "55274.00",
+            "billingPeriod": "total_programme",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Total program tuition fee for international students for the 10-month MDS cohort."
+          },
+          "evidence": "UBC MDS Tuition: International student total program tuition is CAD $55,274.76 payable in three installments.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://masterdatascience.ubc.ca/admissions/tuition-financial-aid",
+          "publisher": "UBC Master of Data Science Admissions"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Recognized bachelor's degree with minimum B+ average (76%+ or First Class equivalent from India), with completed prerequisites in programming, probability and calculus.",
+          "evidence": "MDS Prerequisites: 'Minimum B+ average in senior-level courses, plus college-level courses in computer programming, probability/statistics and calculus.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://masterdatascience.ubc.ca/admissions/eligibility",
+          "publisher": "UBC Master of Data Science Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "TOEFL iBT 100 overall (minimum 22 reading/listening, 21 writing/speaking) or IELTS Academic 7.0 overall (no band below 6.5).",
+          "evidence": "MDS English requirement: 'Minimum score of TOEFL 100 or IELTS 7.0 with minimum 6.5 in all bands.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://masterdatascience.ubc.ca/admissions/eligibility",
+          "publisher": "UBC Master of Data Science Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-15"
+          },
+          "evidence": "UBC MDS Admissions: 'Applications open September 15 and close on January 15 for international students.'",
+          "checkedAt": "2026-10-18",
+          "validity": "September 2026 cohort",
+          "result": "captured",
+          "sourceUrl": "https://masterdatascience.ubc.ca/admissions/application-process",
+          "publisher": "UBC Master of Data Science Admissions"
+        }
+      ]
+    }
+  ]
+}

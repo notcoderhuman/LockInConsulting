@@ -1,0 +1,294 @@
+{
+  "destinationSlug": "uae",
+  "destinationIso2": "AE",
+  "preparedAt": "2026-10-18",
+  "status": "pending_admin_entry",
+  "recordCount": 3,
+  "records": [
+    {
+      "destinationIso2": "AE",
+      "officialName": "Khalifa University of Science and Technology",
+      "slug": "khalifa-university-of-science-and-technology",
+      "institutionType": "public",
+      "city": "Abu Dhabi",
+      "subRegion": "Abu Dhabi",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.ku.ac.ae/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Khalifa University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Electrical and Computer Engineering",
+            "slug": "ms-electrical-computer-engineering",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Main Campus",
+            "teachingLanguage": "English",
+            "url": "https://www.ku.ac.ae/academics/college-of-engineering-and-physical-sciences/department-of-electrical-engineering-and-computer-science/master-of-science-in-electrical-and-computer-engineering"
+          },
+          "evidence": "College of Engineering: 'The MSc in Electrical and Computer Engineering requires 36 credit hours, including thesis research, over a 2-year duration.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.ku.ac.ae/academics/college-of-engineering-and-physical-sciences/department-of-electrical-engineering-and-computer-science/master-of-science-in-electrical-and-computer-engineering",
+          "publisher": "Khalifa University College of Engineering"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "AED",
+            "amount": "120000.00",
+            "billingPeriod": "total_programme",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Tuition is AED 3,333 per credit hour (36 credits = approx. AED 120,000 total). Competitive full scholarships (GRTA) provide 100% tuition waiver and living stipend."
+          },
+          "evidence": "Tuition fees: 'Graduate tuition fee is AED 3,333 per credit hour.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.ku.ac.ae/admissions/graduate-admissions/fees-and-scholarships",
+          "publisher": "Khalifa University Graduate Admissions"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Bachelor's degree in engineering or relevant discipline with a minimum cumulative GPA of 3.0 out of 4.0; research statement; 2 letters of recommendation.",
+          "evidence": "Admission requirements: 'Bachelor's degree in a relevant discipline with a minimum CGPA of 3.0/4.0.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 admissions",
+          "result": "captured",
+          "sourceUrl": "https://www.ku.ac.ae/admissions/graduate-admissions",
+          "publisher": "Khalifa University Graduate Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic minimum 6.5 overall (or TOEFL iBT minimum 91).",
+          "evidence": "English requirement: 'A minimum score of 6.5 on IELTS Academic or 91 on TOEFL iBT.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 admissions",
+          "result": "captured",
+          "sourceUrl": "https://www.ku.ac.ae/admissions/graduate-admissions",
+          "publisher": "Khalifa University Graduate Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 8,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-04-30"
+          },
+          "evidence": "Admissions deadlines: Fall intake regular admissions close April 30.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.ku.ac.ae/admissions/graduate-admissions",
+          "publisher": "Khalifa University Graduate Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "AE",
+      "officialName": "United Arab Emirates University",
+      "slug": "united-arab-emirates-university",
+      "institutionType": "public",
+      "city": "Al Ain",
+      "subRegion": "Abu Dhabi",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.uaeu.ac.ae/en/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "United Arab Emirates University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Information Technology",
+            "slug": "ms-information-technology",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Main Campus",
+            "teachingLanguage": "English",
+            "url": "https://www.uaeu.ac.ae/en/cit/academic_programs/graduate/msit.shtml"
+          },
+          "evidence": "College of Information Technology: 'The Master of Science in Information Technology is a 33-credit-hour program offered over two years.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.uaeu.ac.ae/en/cit/academic_programs/graduate/msit.shtml",
+          "publisher": "UAEU College of Information Technology"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "AED",
+            "amount": "59400.00",
+            "billingPeriod": "total_programme",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Tuition is AED 1,800 per credit hour (33 credit hours = AED 59,400 total program tuition)."
+          },
+          "evidence": "UAEU Tuition Fee schedule: 'Tuition fee for Master programs in College of Information Technology is AED 1,800 per credit hour.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.uaeu.ac.ae/en/cgs/fees.shtml",
+          "publisher": "UAEU College of Graduate Studies"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Bachelor's degree from recognized university with minimum cumulative GPA of 3.0 out of 4.0 in IT, Computer Science, or closely related field.",
+          "evidence": "Admissions requirements: 'A Bachelor's degree in IT, Computer Science or equivalent with minimum CGPA of 3.0 on a 4.0 scale.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.uaeu.ac.ae/en/cgs/admission.shtml",
+          "publisher": "UAEU College of Graduate Studies"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "Minimum score of 6.0 on IELTS Academic or 79 on TOEFL iBT.",
+          "evidence": "English requirement: 'A minimum score of 6.0 on IELTS Academic or 79 on TOEFL iBT is required for graduate admission.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.uaeu.ac.ae/en/cgs/admission.shtml",
+          "publisher": "UAEU College of Graduate Studies"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 8,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-04-30"
+          },
+          "evidence": "Admissions calendar: Fall semester applications close on April 30.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.uaeu.ac.ae/en/cgs/admission.shtml",
+          "publisher": "UAEU College of Graduate Studies"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "AE",
+      "officialName": "American University of Sharjah",
+      "slug": "american-university-of-sharjah",
+      "institutionType": "private",
+      "city": "Sharjah",
+      "subRegion": "Sharjah",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.aus.edu/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "American University of Sharjah",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Bachelor of Science in Computer Science",
+            "slug": "bs-computer-science",
+            "qualification": "bachelor",
+            "studyLevel": "UG",
+            "durationMonths": 48,
+            "studyMode": "full_time",
+            "campus": "University City",
+            "teachingLanguage": "English",
+            "url": "https://www.aus.edu/cen/department-of-computer-science-and-engineering/bachelor-of-science-in-computer-science"
+          },
+          "evidence": "Department of Computer Science: 'The Bachelor of Science in Computer Science (BSCS) requires completion of 128 credit hours of coursework over 4 years.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 undergraduate catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.aus.edu/cen/department-of-computer-science-and-engineering/bachelor-of-science-in-computer-science",
+          "publisher": "AUS College of Engineering"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "AED",
+            "amount": "103820.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Tuition is AED 51,910 per semester based on 15–16 credit hours (approx. AED 103,820 per academic year)."
+          },
+          "evidence": "AUS Office of Financial Affairs: Engineering undergraduate tuition is AED 51,910 per semester for 12-16 credits.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.aus.edu/admissions/bachelors-degrees/tuition-and-fees",
+          "publisher": "AUS Office of Financial Affairs"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Recognized secondary school certificate (e.g. CBSE / ISC from India) with minimum overall average of 75-80%, with strong grades in Mathematics and Physics.",
+          "evidence": "Undergraduate Admissions Requirements: Indian board secondary school certificate with high marks in math and sciences.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.aus.edu/admissions/bachelors-degrees/admission-requirements",
+          "publisher": "AUS Office of Enrollment Management"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "TOEFL iBT minimum score of 80 or IELTS Academic minimum score of 6.5.",
+          "evidence": "English Proficiency requirements: 'A minimum score of 80 on TOEFL iBT or 6.5 on IELTS Academic is required.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.aus.edu/admissions/bachelors-degrees/english-language-proficiency-requirements",
+          "publisher": "AUS Office of Enrollment Management"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 8,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-06-15"
+          },
+          "evidence": "Admission deadlines: Fall semester undergraduate applications close June 15.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.aus.edu/admissions/bachelors-degrees/application-deadlines",
+          "publisher": "AUS Office of Enrollment Management"
+        }
+      ]
+    }
+  ]
+}

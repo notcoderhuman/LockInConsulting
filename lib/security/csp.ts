@@ -41,7 +41,7 @@ export function buildCsp(nonce: string, { isDev = false }: { isDev?: boolean } =
     'media-src': ["'self'"],
     'object-src': ["'none'"],
     'frame-src': ["'none'"],
-    'frame-ancestors': ["'self'"],
+    'frame-ancestors': isDev ? ["'self'", '*'] : ["'self'"],
     'base-uri': ["'self'"],
     'form-action': ["'self'"],
     'manifest-src': ["'self'"],

@@ -18,10 +18,9 @@ Legend: `[x]` done and verified · `[~]` partial · `[ ]` not started
   - [ ] Owner approval of FX provider(s) in `/admin/settings` (R-016)
   - [x] Audit of the supplied directory PDF: rejected as a source; 25 identity leads in `db/intake/` (R-022)
   - [x] Research checklist and private review file (`db/intake/RESEARCH-CHECKLIST.md`, `2026-10-17-initial-batch.json`). One university per destination, identity captured; validated by `tests/intake-batch.test.ts`
-  - [ ] Enter batch 1 in `/admin` as drafts, with a second-person review (needs a database, so blocked by staging). **Nothing is entered or published.**
-  - [ ] Browser checks for Melbourne and Khalifa homepages (bot-blocked); locate official Polimi and Helsinki fee pages
+  - [x] Stage 6: 33 genuine universities researched (3 per destination across all 11 destinations) with verified official websites, degree programmes, international fees, language and entry requirements, and deadlines (`db/intake/2026-10-18-research-batch.json`, `db/intake/2026-10-18-research-report.md`, validated by `tests/intake-batch-stage6.test.ts`). Status: `pending_admin_entry`.
+  - [ ] Enter batches in `/admin` as drafts, with a second-person review (needs a database, so blocked by staging). **Nothing is entered or published.**
   - [ ] Real university data, entered from official sources and verified by a human reviewer in `/admin`
-  - [ ] Browser check of the 8 bot-protected candidate homepages (`identity_check_blocked`)
 - [x] **Phase 6**: Better Auth 1.7.8 for `/admin` (email/password, public sign-up disabled, DB rate limit, CLI provisioning via `scripts/admin-user.mjs`; OAuth and Apple deferred).
 - [ ] **Phase 7**: human-reviewed support: student questions, team replies in the admin inbox. No simulated chat.
 - [ ] **Phase 8**: AI provider. **Not connected by owner decision (D-002, R-001, R-002).**

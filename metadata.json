@@ -1,0 +1,8 @@
+{
+  "name": "LockIn Consulting — Study abroad guidance for Indian students",
+  "description": "Explore 11 study-abroad destinations, compare universities with sourced data, and get guidance on undergraduate and postgraduate applications.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

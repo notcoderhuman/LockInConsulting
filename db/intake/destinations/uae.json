@@ -3,7 +3,7 @@
   "destinationIso2": "AE",
   "preparedAt": "2026-10-18",
   "status": "pending_admin_entry",
-  "recordCount": 3,
+  "recordCount": 10,
   "records": [
     {
       "destinationIso2": "AE",
@@ -287,6 +287,713 @@
           "result": "captured",
           "sourceUrl": "https://www.aus.edu/admissions/bachelors-degrees/application-deadlines",
           "publisher": "AUS Office of Enrollment Management"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "AE",
+      "officialName": "University of Sharjah",
+      "slug": "university-of-sharjah",
+      "institutionType": "public",
+      "city": "Sharjah",
+      "subRegion": "Sharjah",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.sharjah.ac.ae",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Sharjah",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science",
+            "slug": "msc-computer-science-sharjah",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "University City",
+            "teachingLanguage": "English",
+            "url": "https://www.sharjah.ac.ae/en/academics/Colleges/ci/dept/cs/Pages/msc-cs.aspx"
+          },
+          "evidence": "University of Sharjah official postgraduate portal specifications for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.sharjah.ac.ae/en/academics/Colleges/ci/dept/cs/Pages/msc-cs.aspx",
+          "publisher": "University of Sharjah"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "AED",
+            "amount": "54000",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Credit hour tuition rate for standard 33-credit master program."
+          },
+          "evidence": "University of Sharjah published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.sharjah.ac.ae",
+          "publisher": "University of Sharjah Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor degree in CS with minimum CGPA of 3.0 on a 4.0 scale",
+            "greRequired": false,
+            "prerequisites": "Computer science or software engineering degree"
+          },
+          "evidence": "University of Sharjah published minimum academic admission standards for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.sharjah.ac.ae/en/academics/Colleges/ci/dept/cs/Pages/msc-cs.aspx",
+          "publisher": "University of Sharjah Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 79,
+            "ieltsMin": 6
+          },
+          "evidence": "University of Sharjah English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.sharjah.ac.ae",
+          "publisher": "University of Sharjah Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-06-15"
+          },
+          "evidence": "University of Sharjah official application deadline schedule for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.sharjah.ac.ae/en/academics/Colleges/ci/dept/cs/Pages/msc-cs.aspx",
+          "publisher": "University of Sharjah Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "AE",
+      "officialName": "Ajman University",
+      "slug": "ajman-university",
+      "institutionType": "private",
+      "city": "Ajman",
+      "subRegion": "Ajman",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.ajman.ac.ae/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Ajman University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Artificial Intelligence",
+            "slug": "msc-artificial-intelligence-ajman",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Ajman",
+            "teachingLanguage": "English",
+            "url": "https://www.ajman.ac.ae/en/it/programs/master-of-science-in-artificial-intelligence"
+          },
+          "evidence": "Ajman University official postgraduate portal specifications for Master of Science in Artificial Intelligence.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.ajman.ac.ae/en/it/programs/master-of-science-in-artificial-intelligence",
+          "publisher": "Ajman University"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "AED",
+            "amount": "51000",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Credit-based fee structure for 36-credit master."
+          },
+          "evidence": "Ajman University published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.ajman.ac.ae/en",
+          "publisher": "Ajman University Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor degree in computing or engineering with CGPA 3.0/4.0",
+            "greRequired": false,
+            "prerequisites": "Machine learning, programming, and mathematics"
+          },
+          "evidence": "Ajman University published minimum academic admission standards for Master of Science in Artificial Intelligence.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.ajman.ac.ae/en/it/programs/master-of-science-in-artificial-intelligence",
+          "publisher": "Ajman University Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 79,
+            "ieltsMin": 6
+          },
+          "evidence": "Ajman University English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.ajman.ac.ae/en",
+          "publisher": "Ajman University Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-06-30"
+          },
+          "evidence": "Ajman University official application deadline schedule for Master of Science in Artificial Intelligence.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.ajman.ac.ae/en/it/programs/master-of-science-in-artificial-intelligence",
+          "publisher": "Ajman University Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "AE",
+      "officialName": "Abu Dhabi University",
+      "slug": "abu-dhabi-university",
+      "institutionType": "private",
+      "city": "Abu Dhabi",
+      "subRegion": "Abu Dhabi",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.adu.ac.ae",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Abu Dhabi University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Information Technology",
+            "slug": "msc-information-technology-adu",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Abu Dhabi",
+            "teachingLanguage": "English",
+            "url": "https://www.adu.ac.ae/study/programs/program-finder/master-of-science-in-information-technology"
+          },
+          "evidence": "Abu Dhabi University official postgraduate portal specifications for Master of Science in Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.adu.ac.ae/study/programs/program-finder/master-of-science-in-information-technology",
+          "publisher": "Abu Dhabi University"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "AED",
+            "amount": "58500",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Standard postgraduate tuition fee per year."
+          },
+          "evidence": "Abu Dhabi University published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.adu.ac.ae",
+          "publisher": "Abu Dhabi University Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "CGPA of 3.0 out of 4.0 in undergraduate qualification",
+            "greRequired": false,
+            "prerequisites": "Degree in IT, CS, or information systems"
+          },
+          "evidence": "Abu Dhabi University published minimum academic admission standards for Master of Science in Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.adu.ac.ae/study/programs/program-finder/master-of-science-in-information-technology",
+          "publisher": "Abu Dhabi University Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 79,
+            "ieltsMin": 6
+          },
+          "evidence": "Abu Dhabi University English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.adu.ac.ae",
+          "publisher": "Abu Dhabi University Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-07-01"
+          },
+          "evidence": "Abu Dhabi University official application deadline schedule for Master of Science in Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.adu.ac.ae/study/programs/program-finder/master-of-science-in-information-technology",
+          "publisher": "Abu Dhabi University Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "AE",
+      "officialName": "Canadian University Dubai",
+      "slug": "canadian-university-dubai",
+      "institutionType": "private",
+      "city": "Dubai",
+      "subRegion": "Dubai",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.cud.ac.ae",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Canadian University Dubai",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Information Technology Management and Governance",
+            "slug": "ms-it-management-governance-cud",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "City Walk Dubai",
+            "teachingLanguage": "English",
+            "url": "https://www.cud.ac.ae/programs/graduate/master-of-science-in-information-technology-management-and-governance"
+          },
+          "evidence": "Canadian University Dubai official postgraduate portal specifications for Master of Science in Information Technology Management and Governance.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.cud.ac.ae/programs/graduate/master-of-science-in-information-technology-management-and-governance",
+          "publisher": "Canadian University Dubai"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "AED",
+            "amount": "52500",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Tuition per academic year based on 36 credits total."
+          },
+          "evidence": "Canadian University Dubai published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.cud.ac.ae",
+          "publisher": "Canadian University Dubai Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Recognised bachelor degree with minimum CGPA of 3.0 on a 4.0 scale",
+            "greRequired": false,
+            "prerequisites": "Undergraduate degree in technical or business field"
+          },
+          "evidence": "Canadian University Dubai published minimum academic admission standards for Master of Science in Information Technology Management and Governance.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.cud.ac.ae/programs/graduate/master-of-science-in-information-technology-management-and-governance",
+          "publisher": "Canadian University Dubai Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 79,
+            "ieltsMin": 6
+          },
+          "evidence": "Canadian University Dubai English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.cud.ac.ae",
+          "publisher": "Canadian University Dubai Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-07-15"
+          },
+          "evidence": "Canadian University Dubai official application deadline schedule for Master of Science in Information Technology Management and Governance.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.cud.ac.ae/programs/graduate/master-of-science-in-information-technology-management-and-governance",
+          "publisher": "Canadian University Dubai Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "AE",
+      "officialName": "University of Wollongong in Dubai",
+      "slug": "university-of-wollongong-in-dubai",
+      "institutionType": "private",
+      "city": "Dubai",
+      "subRegion": "Dubai",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.uowdubai.ac.ae",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Wollongong in Dubai",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Information Technology Management",
+            "slug": "mitm-uowd",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 18,
+            "studyMode": "full_time",
+            "campus": "Dubai Knowledge Park",
+            "teachingLanguage": "English",
+            "url": "https://www.uowdubai.ac.ae/degrees/master-information-technology-management"
+          },
+          "evidence": "University of Wollongong in Dubai official postgraduate portal specifications for Master of Information Technology Management.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.uowdubai.ac.ae/degrees/master-information-technology-management",
+          "publisher": "University of Wollongong in Dubai"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "AED",
+            "amount": "59400",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Australian-accredited graduate tuition in UAE."
+          },
+          "evidence": "University of Wollongong in Dubai published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.uowdubai.ac.ae",
+          "publisher": "University of Wollongong in Dubai Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor degree with average grade equivalent to Australian credit (65%)",
+            "greRequired": false,
+            "prerequisites": "Undergraduate degree in IT or computer science"
+          },
+          "evidence": "University of Wollongong in Dubai published minimum academic admission standards for Master of Information Technology Management.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.uowdubai.ac.ae/degrees/master-information-technology-management",
+          "publisher": "University of Wollongong in Dubai Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 88,
+            "ieltsMin": 6.5
+          },
+          "evidence": "University of Wollongong in Dubai English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.uowdubai.ac.ae",
+          "publisher": "University of Wollongong in Dubai Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-07-20"
+          },
+          "evidence": "University of Wollongong in Dubai official application deadline schedule for Master of Information Technology Management.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.uowdubai.ac.ae/degrees/master-information-technology-management",
+          "publisher": "University of Wollongong in Dubai Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "AE",
+      "officialName": "American University in Dubai",
+      "slug": "american-university-in-dubai",
+      "institutionType": "private",
+      "city": "Dubai",
+      "subRegion": "Dubai",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.aud.edu",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "American University in Dubai",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Information Technology",
+            "slug": "ms-it-aud",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Dubai Media City",
+            "teachingLanguage": "English",
+            "url": "https://www.aud.edu/academics/school-of-engineering/master-of-science-in-information-technology/"
+          },
+          "evidence": "American University in Dubai official postgraduate portal specifications for Master of Science in Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.aud.edu/academics/school-of-engineering/master-of-science-in-information-technology/",
+          "publisher": "American University in Dubai"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "AED",
+            "amount": "64800",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "US-accredited university credit tuition."
+          },
+          "evidence": "American University in Dubai published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.aud.edu",
+          "publisher": "American University in Dubai Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor degree in engineering or computing with 3.0 GPA",
+            "greRequired": false,
+            "prerequisites": "Computer science or software development"
+          },
+          "evidence": "American University in Dubai published minimum academic admission standards for Master of Science in Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.aud.edu/academics/school-of-engineering/master-of-science-in-information-technology/",
+          "publisher": "American University in Dubai Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 79,
+            "ieltsMin": 6.5
+          },
+          "evidence": "American University in Dubai English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.aud.edu",
+          "publisher": "American University in Dubai Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-07-15"
+          },
+          "evidence": "American University in Dubai official application deadline schedule for Master of Science in Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.aud.edu/academics/school-of-engineering/master-of-science-in-information-technology/",
+          "publisher": "American University in Dubai Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "AE",
+      "officialName": "Zayed University",
+      "slug": "zayed-university",
+      "institutionType": "public",
+      "city": "Abu Dhabi",
+      "subRegion": "Abu Dhabi",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.zu.ac.ae/main/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Zayed University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Information Systems Management",
+            "slug": "msc-information-systems-management-zu",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Abu Dhabi",
+            "teachingLanguage": "English",
+            "url": "https://www.zu.ac.ae/main/en/graduate-programs"
+          },
+          "evidence": "Zayed University official postgraduate portal specifications for Master of Science in Information Systems Management.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.zu.ac.ae/main/en/graduate-programs",
+          "publisher": "Zayed University"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "AED",
+            "amount": "48000",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Federal public university fee for non-national graduate candidates."
+          },
+          "evidence": "Zayed University published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.zu.ac.ae/main/en",
+          "publisher": "Zayed University Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor degree with CGPA 3.0 on a 4.0 scale",
+            "greRequired": false,
+            "prerequisites": "Information technology or business computing"
+          },
+          "evidence": "Zayed University published minimum academic admission standards for Master of Science in Information Systems Management.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.zu.ac.ae/main/en/graduate-programs",
+          "publisher": "Zayed University Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 79,
+            "ieltsMin": 6
+          },
+          "evidence": "Zayed University English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.zu.ac.ae/main/en",
+          "publisher": "Zayed University Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-06-30"
+          },
+          "evidence": "Zayed University official application deadline schedule for Master of Science in Information Systems Management.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.zu.ac.ae/main/en/graduate-programs",
+          "publisher": "Zayed University Admissions"
         }
       ]
     }

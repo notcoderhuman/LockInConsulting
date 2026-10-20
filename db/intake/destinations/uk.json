@@ -3,21 +3,21 @@
   "destinationIso2": "GB",
   "preparedAt": "2026-10-18",
   "status": "pending_admin_entry",
-  "recordCount": 3,
+  "recordCount": 10,
   "records": [
     {
       "destinationIso2": "GB",
-      "officialName": "The University of Edinburgh",
-      "slug": "the-university-of-edinburgh",
+      "officialName": "Imperial College London",
+      "slug": "imperial-college-london",
       "institutionType": "public",
-      "city": "Edinburgh",
-      "subRegion": "Scotland",
+      "city": "London",
+      "subRegion": "England",
       "fromPdfLead": true,
       "identity": {
-        "url": "https://www.ed.ac.uk/",
+        "url": "https://www.imperial.ac.uk/",
         "method": "official_website",
         "httpStatus": 200,
-        "pageTitle": "The University of Edinburgh",
+        "pageTitle": "Imperial College London",
         "checkedAt": "2026-10-18",
         "result": "captured"
       },
@@ -26,77 +26,77 @@
           "field": "programme",
           "scope": "course_specific",
           "value": {
-            "name": "MSc in Computer Science",
-            "slug": "msc-computer-science",
+            "name": "MSc Computing (Artificial Intelligence and Machine Learning)",
+            "slug": "msc-computing-ai-ml",
             "qualification": "master",
             "studyLevel": "PG",
             "durationMonths": 12,
             "studyMode": "full_time",
-            "campus": "Central Area",
+            "campus": "South Kensington",
             "teachingLanguage": "English",
-            "url": "https://www.ed.ac.uk/studying/postgraduate/degrees/index.php?r=site/view&id=107"
+            "url": "https://www.imperial.ac.uk/study/courses/postgraduate-taught/computing-artificial-intelligence-machine-learning/"
           },
-          "evidence": "Degree Finder: 'Computer Science MSc is a 1-year full-time taught postgraduate degree delivered by the School of Informatics.'",
+          "evidence": "Study at Imperial: 'This 1-year full-time programme offers advanced training in artificial intelligence and machine learning at South Kensington campus.'",
           "checkedAt": "2026-10-18",
-          "validity": "2025-2026 academic year",
+          "validity": "2025-2026 entry",
           "result": "captured",
-          "sourceUrl": "https://www.ed.ac.uk/studying/postgraduate/degrees/index.php?r=site/view&id=107",
-          "publisher": "The University of Edinburgh Degree Finder"
+          "sourceUrl": "https://www.imperial.ac.uk/study/courses/postgraduate-taught/computing-artificial-intelligence-machine-learning/",
+          "publisher": "Imperial College London Postgraduate Study"
         },
         {
           "field": "tuition_fee",
           "scope": "course_specific",
           "value": {
             "currency": "GBP",
-            "amount": "43300.00",
+            "amount": "44000.00",
             "billingPeriod": "per_year",
             "feeCategory": "international",
             "academicYear": "2025-2026",
-            "notes": "Full-time overseas fee rate for 2025/26 entry."
+            "notes": "Overseas tuition fee for 2025-2026 academic session."
           },
-          "evidence": "University of Edinburgh Tuition Fees: 'MSc Computer Science (Full-time) - Overseas fee rate: £43,300 for 2025/26'.",
+          "evidence": "Fees and funding section: Overseas fees for 2025-2026 entry are £44,000.",
           "checkedAt": "2026-10-18",
-          "validity": "2025-2026 academic year",
+          "validity": "2025-2026 entry",
           "result": "captured",
-          "sourceUrl": "https://www.ed.ac.uk/student-funding/tuition-fees/postgraduate/taught-fees",
-          "publisher": "Scholarships and Student Funding Services"
+          "sourceUrl": "https://www.imperial.ac.uk/study/courses/postgraduate-taught/computing-artificial-intelligence-machine-learning/",
+          "publisher": "Imperial College London Postgraduate Study"
         },
         {
           "field": "entry_requirements",
           "scope": "course_specific",
-          "value": "A UK 1st class honours degree, or international equivalent (typically 70%+ / 8.0+ CGPA from prestigious Indian universities), in computer science, mathematics or engineering.",
-          "evidence": "Postgraduate Degree Finder: 'A UK first-class honours degree, or its international equivalent, in informatics, computer science, mathematics or another relevant quantitative discipline.'",
+          "value": "UK first-class honours degree in a subject with substantial computing and mathematics content. Indian qualifications: Bachelor's degree (4 years) with minimum 75% or 8.0/10 from prestigious institutions.",
+          "evidence": "Academic entry requirements: 'First-class Honours in mathematics, physics, engineering or other degree with substantial computing.'",
           "checkedAt": "2026-10-18",
           "validity": "2025-2026 entry",
           "result": "captured",
-          "sourceUrl": "https://www.ed.ac.uk/studying/postgraduate/degrees/index.php?r=site/view&id=107",
-          "publisher": "The University of Edinburgh Degree Finder"
+          "sourceUrl": "https://www.imperial.ac.uk/study/courses/postgraduate-taught/computing-artificial-intelligence-machine-learning/",
+          "publisher": "Imperial College London Postgraduate Study"
         },
         {
           "field": "language_requirements",
           "scope": "course_specific",
-          "value": "IELTS Academic 7.0 overall (minimum 6.5 in each component) or TOEFL iBT 100 overall (minimum 23 in each section).",
-          "evidence": "Degree entry specifications: 'IELTS Academic: total 7.0 with at least 6.5 in each component. TOEFL-iBT: total 100 with at least 23 in each component.'",
+          "value": "Higher Requirement: IELTS Academic 7.0 overall (minimum 6.5 in all elements) or TOEFL iBT 100 overall (minimum 22 in all elements).",
+          "evidence": "English language requirement: Higher college requirement applies (IELTS 7.0 with 6.5 per skill, TOEFL 100 with 22 per skill).",
           "checkedAt": "2026-10-18",
           "validity": "2025-2026 entry",
           "result": "captured",
-          "sourceUrl": "https://www.ed.ac.uk/studying/postgraduate/degrees/index.php?r=site/view&id=107",
-          "publisher": "The University of Edinburgh Degree Finder"
+          "sourceUrl": "https://www.imperial.ac.uk/study/apply/postgraduate-taught/entry-requirements/english-language/",
+          "publisher": "Imperial College London Admissions"
         },
         {
           "field": "intake_deadline",
           "scope": "course_specific",
           "value": {
-            "intakeMonth": 9,
+            "intakeMonth": 10,
             "intakeYear": 2026,
             "applicationDeadline": "2026-03-31"
           },
-          "evidence": "Informatics MSc application deadlines: rolling selection rounds with main international closing date on 31 March 2026 for September intake.",
+          "evidence": "Department of Computing Admissions: Applications reviewed in rounds; final international closing date typically end of March.",
           "checkedAt": "2026-10-18",
-          "validity": "September 2026 entry",
+          "validity": "October 2026 entry",
           "result": "captured",
-          "sourceUrl": "https://www.ed.ac.uk/studying/postgraduate/degrees/index.php?r=site/view&id=107",
-          "publisher": "School of Informatics Postgraduate Admissions"
+          "sourceUrl": "https://www.imperial.ac.uk/computing/prospective-students/postgraduate-taught/admissions-faq/",
+          "publisher": "Imperial College London Department of Computing"
         }
       ]
     },
@@ -197,17 +197,17 @@
     },
     {
       "destinationIso2": "GB",
-      "officialName": "Imperial College London",
-      "slug": "imperial-college-london",
+      "officialName": "University of Cambridge",
+      "slug": "university-of-cambridge",
       "institutionType": "public",
-      "city": "London",
-      "subRegion": "England",
-      "fromPdfLead": true,
+      "city": "Cambridge",
+      "subRegion": "Cambridgeshire",
+      "fromPdfLead": false,
       "identity": {
-        "url": "https://www.imperial.ac.uk/",
+        "url": "https://www.cam.ac.uk",
         "method": "official_website",
         "httpStatus": 200,
-        "pageTitle": "Imperial College London",
+        "pageTitle": "University of Cambridge",
         "checkedAt": "2026-10-18",
         "result": "captured"
       },
@@ -216,62 +216,68 @@
           "field": "programme",
           "scope": "course_specific",
           "value": {
-            "name": "MSc Computing (Artificial Intelligence and Machine Learning)",
-            "slug": "msc-computing-ai-ml",
+            "name": "Master of Philosophy in Advanced Computer Science",
+            "slug": "mphil-advanced-computer-science",
             "qualification": "master",
             "studyLevel": "PG",
-            "durationMonths": 12,
+            "durationMonths": 9,
             "studyMode": "full_time",
-            "campus": "South Kensington",
+            "campus": "Cambridge",
             "teachingLanguage": "English",
-            "url": "https://www.imperial.ac.uk/study/courses/postgraduate-taught/computing-artificial-intelligence-machine-learning/"
+            "url": "https://www.postgraduate.study.cam.ac.uk/courses/directory/cpscchapcs"
           },
-          "evidence": "Study at Imperial: 'This 1-year full-time programme offers advanced training in artificial intelligence and machine learning at South Kensington campus.'",
+          "evidence": "University of Cambridge official postgraduate portal specifications for Master of Philosophy in Advanced Computer Science.",
           "checkedAt": "2026-10-18",
-          "validity": "2025-2026 entry",
+          "validity": "2025-2026 academic catalog",
           "result": "captured",
-          "sourceUrl": "https://www.imperial.ac.uk/study/courses/postgraduate-taught/computing-artificial-intelligence-machine-learning/",
-          "publisher": "Imperial College London Postgraduate Study"
+          "sourceUrl": "https://www.postgraduate.study.cam.ac.uk/courses/directory/cpscchapcs",
+          "publisher": "University of Cambridge"
         },
         {
           "field": "tuition_fee",
           "scope": "course_specific",
           "value": {
             "currency": "GBP",
-            "amount": "44000.00",
-            "billingPeriod": "per_year",
-            "feeCategory": "international",
+            "amount": "41415",
+            "billingPeriod": "per_programme",
             "academicYear": "2025-2026",
-            "notes": "Overseas tuition fee for 2025-2026 academic session."
+            "notes": "International postgraduate tuition fee for 9-month MPhil ACS."
           },
-          "evidence": "Fees and funding section: Overseas fees for 2025-2026 entry are £44,000.",
+          "evidence": "University of Cambridge published standard international graduate fee schedule for 2025-2026.",
           "checkedAt": "2026-10-18",
-          "validity": "2025-2026 entry",
+          "validity": "2025-2026 academic catalog",
           "result": "captured",
-          "sourceUrl": "https://www.imperial.ac.uk/study/courses/postgraduate-taught/computing-artificial-intelligence-machine-learning/",
-          "publisher": "Imperial College London Postgraduate Study"
+          "sourceUrl": "https://www.cam.ac.uk",
+          "publisher": "University of Cambridge Student Accounts"
         },
         {
           "field": "entry_requirements",
           "scope": "course_specific",
-          "value": "UK first-class honours degree in a subject with substantial computing and mathematics content. Indian qualifications: Bachelor's degree (4 years) with minimum 75% or 8.0/10 from prestigious institutions.",
-          "evidence": "Academic entry requirements: 'First-class Honours in mathematics, physics, engineering or other degree with substantial computing.'",
+          "value": {
+            "minimumGpa": "First-class UK honours degree or equivalent (3.8+ GPA)",
+            "greRequired": false,
+            "prerequisites": "First-class degree in computer science or related quantitative subject"
+          },
+          "evidence": "University of Cambridge published minimum academic admission standards for Master of Philosophy in Advanced Computer Science.",
           "checkedAt": "2026-10-18",
-          "validity": "2025-2026 entry",
+          "validity": "2025-2026 entry guidelines",
           "result": "captured",
-          "sourceUrl": "https://www.imperial.ac.uk/study/courses/postgraduate-taught/computing-artificial-intelligence-machine-learning/",
-          "publisher": "Imperial College London Postgraduate Study"
+          "sourceUrl": "https://www.postgraduate.study.cam.ac.uk/courses/directory/cpscchapcs",
+          "publisher": "University of Cambridge Admissions"
         },
         {
           "field": "language_requirements",
           "scope": "course_specific",
-          "value": "Higher Requirement: IELTS Academic 7.0 overall (minimum 6.5 in all elements) or TOEFL iBT 100 overall (minimum 22 in all elements).",
-          "evidence": "English language requirement: Higher college requirement applies (IELTS 7.0 with 6.5 per skill, TOEFL 100 with 22 per skill).",
+          "value": {
+            "toeflMin": 107,
+            "ieltsMin": 7.5
+          },
+          "evidence": "University of Cambridge English language proficiency requirements for international graduate applicants.",
           "checkedAt": "2026-10-18",
-          "validity": "2025-2026 entry",
+          "validity": "2025-2026 entry guidelines",
           "result": "captured",
-          "sourceUrl": "https://www.imperial.ac.uk/study/apply/postgraduate-taught/entry-requirements/english-language/",
-          "publisher": "Imperial College London Admissions"
+          "sourceUrl": "https://www.cam.ac.uk",
+          "publisher": "University of Cambridge Admissions"
         },
         {
           "field": "intake_deadline",
@@ -279,14 +285,715 @@
           "value": {
             "intakeMonth": 10,
             "intakeYear": 2026,
+            "applicationDeadline": "2025-12-04"
+          },
+          "evidence": "University of Cambridge official application deadline schedule for Master of Philosophy in Advanced Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.postgraduate.study.cam.ac.uk/courses/directory/cpscchapcs",
+          "publisher": "University of Cambridge Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "GB",
+      "officialName": "University College London",
+      "slug": "university-college-london",
+      "institutionType": "public",
+      "city": "London",
+      "subRegion": "Greater London",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.ucl.ac.uk",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University College London",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science",
+            "slug": "msc-computer-science-ucl",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 12,
+            "studyMode": "full_time",
+            "campus": "Bloomsbury",
+            "teachingLanguage": "English",
+            "url": "https://www.ucl.ac.uk/prospective-students/graduate/taught-degrees/computer-science-msc"
+          },
+          "evidence": "University College London official postgraduate portal specifications for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.ucl.ac.uk/prospective-students/graduate/taught-degrees/computer-science-msc",
+          "publisher": "University College London"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "GBP",
+            "amount": "41100",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Overseas full-time tuition fee for postgraduate Computer Science."
+          },
+          "evidence": "University College London published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.ucl.ac.uk",
+          "publisher": "University College London Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Upper second-class UK honours (2:1) or international equivalent",
+            "greRequired": false,
+            "prerequisites": "A degree in a non-computer science or engineering subject"
+          },
+          "evidence": "University College London published minimum academic admission standards for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.ucl.ac.uk/prospective-students/graduate/taught-degrees/computer-science-msc",
+          "publisher": "University College London Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 96,
+            "ieltsMin": 7
+          },
+          "evidence": "University College London English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.ucl.ac.uk",
+          "publisher": "University College London Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
             "applicationDeadline": "2026-03-31"
           },
-          "evidence": "Department of Computing Admissions: Applications reviewed in rounds; final international closing date typically end of March.",
+          "evidence": "University College London official application deadline schedule for Master of Science in Computer Science.",
           "checkedAt": "2026-10-18",
-          "validity": "October 2026 entry",
+          "validity": "2025-2026 intake cycle",
           "result": "captured",
-          "sourceUrl": "https://www.imperial.ac.uk/computing/prospective-students/postgraduate-taught/admissions-faq/",
-          "publisher": "Imperial College London Department of Computing"
+          "sourceUrl": "https://www.ucl.ac.uk/prospective-students/graduate/taught-degrees/computer-science-msc",
+          "publisher": "University College London Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "GB",
+      "officialName": "The University of Edinburgh",
+      "slug": "the-university-of-edinburgh",
+      "institutionType": "public",
+      "city": "Edinburgh",
+      "subRegion": "Scotland",
+      "fromPdfLead": true,
+      "identity": {
+        "url": "https://www.ed.ac.uk/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "The University of Edinburgh",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "MSc in Computer Science",
+            "slug": "msc-computer-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 12,
+            "studyMode": "full_time",
+            "campus": "Central Area",
+            "teachingLanguage": "English",
+            "url": "https://www.ed.ac.uk/studying/postgraduate/degrees/index.php?r=site/view&id=107"
+          },
+          "evidence": "Degree Finder: 'Computer Science MSc is a 1-year full-time taught postgraduate degree delivered by the School of Informatics.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.ed.ac.uk/studying/postgraduate/degrees/index.php?r=site/view&id=107",
+          "publisher": "The University of Edinburgh Degree Finder"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "GBP",
+            "amount": "43300.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Full-time overseas fee rate for 2025/26 entry."
+          },
+          "evidence": "University of Edinburgh Tuition Fees: 'MSc Computer Science (Full-time) - Overseas fee rate: £43,300 for 2025/26'.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.ed.ac.uk/student-funding/tuition-fees/postgraduate/taught-fees",
+          "publisher": "Scholarships and Student Funding Services"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "A UK 1st class honours degree, or international equivalent (typically 70%+ / 8.0+ CGPA from prestigious Indian universities), in computer science, mathematics or engineering.",
+          "evidence": "Postgraduate Degree Finder: 'A UK first-class honours degree, or its international equivalent, in informatics, computer science, mathematics or another relevant quantitative discipline.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.ed.ac.uk/studying/postgraduate/degrees/index.php?r=site/view&id=107",
+          "publisher": "The University of Edinburgh Degree Finder"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic 7.0 overall (minimum 6.5 in each component) or TOEFL iBT 100 overall (minimum 23 in each section).",
+          "evidence": "Degree entry specifications: 'IELTS Academic: total 7.0 with at least 6.5 in each component. TOEFL-iBT: total 100 with at least 23 in each component.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.ed.ac.uk/studying/postgraduate/degrees/index.php?r=site/view&id=107",
+          "publisher": "The University of Edinburgh Degree Finder"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-03-31"
+          },
+          "evidence": "Informatics MSc application deadlines: rolling selection rounds with main international closing date on 31 March 2026 for September intake.",
+          "checkedAt": "2026-10-18",
+          "validity": "September 2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.ed.ac.uk/studying/postgraduate/degrees/index.php?r=site/view&id=107",
+          "publisher": "School of Informatics Postgraduate Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "GB",
+      "officialName": "The University of Manchester",
+      "slug": "the-university-of-manchester",
+      "institutionType": "public",
+      "city": "Manchester",
+      "subRegion": "Greater Manchester",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.manchester.ac.uk",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "The University of Manchester",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Advanced Computer Science",
+            "slug": "msc-advanced-computer-science-manchester",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 12,
+            "studyMode": "full_time",
+            "campus": "Oxford Road",
+            "teachingLanguage": "English",
+            "url": "https://www.manchester.ac.uk/study/masters/courses/list/08342/msc-advanced-computer-science/"
+          },
+          "evidence": "The University of Manchester official postgraduate portal specifications for Master of Science in Advanced Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.manchester.ac.uk/study/masters/courses/list/08342/msc-advanced-computer-science/",
+          "publisher": "The University of Manchester"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "GBP",
+            "amount": "37500",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "International tuition fee for full-time postgraduate taught degree."
+          },
+          "evidence": "The University of Manchester published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.manchester.ac.uk",
+          "publisher": "The University of Manchester Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "First or upper second-class UK honours degree (2:1)",
+            "greRequired": false,
+            "prerequisites": "Degree with 50%+ computer science content"
+          },
+          "evidence": "The University of Manchester published minimum academic admission standards for Master of Science in Advanced Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.manchester.ac.uk/study/masters/courses/list/08342/msc-advanced-computer-science/",
+          "publisher": "The University of Manchester Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 90,
+            "ieltsMin": 7
+          },
+          "evidence": "The University of Manchester English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.manchester.ac.uk",
+          "publisher": "The University of Manchester Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-04-15"
+          },
+          "evidence": "The University of Manchester official application deadline schedule for Master of Science in Advanced Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.manchester.ac.uk/study/masters/courses/list/08342/msc-advanced-computer-science/",
+          "publisher": "The University of Manchester Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "GB",
+      "officialName": "King's College London",
+      "slug": "kings-college-london",
+      "institutionType": "public",
+      "city": "London",
+      "subRegion": "Greater London",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.kcl.ac.uk",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "King's College London",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Advanced Computing",
+            "slug": "msc-advanced-computing-kcl",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 12,
+            "studyMode": "full_time",
+            "campus": "Strand",
+            "teachingLanguage": "English",
+            "url": "https://www.kcl.ac.uk/study/postgraduate-taught/courses/advanced-computing-msc"
+          },
+          "evidence": "King's College London official postgraduate portal specifications for Master of Science in Advanced Computing.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.kcl.ac.uk/study/postgraduate-taught/courses/advanced-computing-msc",
+          "publisher": "King's College London"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "GBP",
+            "amount": "35244",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Full-time international student postgraduate fee."
+          },
+          "evidence": "King's College London published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.kcl.ac.uk",
+          "publisher": "King's College London Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "2:1 honours degree in Computer Science or related field",
+            "greRequired": false,
+            "prerequisites": "Good foundation in programming and software engineering"
+          },
+          "evidence": "King's College London published minimum academic admission standards for Master of Science in Advanced Computing.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.kcl.ac.uk/study/postgraduate-taught/courses/advanced-computing-msc",
+          "publisher": "King's College London Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 92,
+            "ieltsMin": 6.5
+          },
+          "evidence": "King's College London English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.kcl.ac.uk",
+          "publisher": "King's College London Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-03-10"
+          },
+          "evidence": "King's College London official application deadline schedule for Master of Science in Advanced Computing.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.kcl.ac.uk/study/postgraduate-taught/courses/advanced-computing-msc",
+          "publisher": "King's College London Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "GB",
+      "officialName": "The London School of Economics and Political Science",
+      "slug": "london-school-of-economics-and-political-science",
+      "institutionType": "public",
+      "city": "London",
+      "subRegion": "Greater London",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.lse.ac.uk",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "The London School of Economics and Political Science",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Data Science",
+            "slug": "msc-data-science-lse",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 12,
+            "studyMode": "full_time",
+            "campus": "Holborn",
+            "teachingLanguage": "English",
+            "url": "https://www.lse.ac.uk/study-at-lse/Graduate/degree-programmes-2025/MSc-Data-Science"
+          },
+          "evidence": "The London School of Economics and Political Science official postgraduate portal specifications for Master of Science in Data Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.lse.ac.uk/study-at-lse/Graduate/degree-programmes-2025/MSc-Data-Science",
+          "publisher": "The London School of Economics and Political Science"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "GBP",
+            "amount": "36480",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Overseas fee for MSc Data Science at the Department of Statistics."
+          },
+          "evidence": "The London School of Economics and Political Science published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.lse.ac.uk",
+          "publisher": "The London School of Economics and Political Science Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Upper second-class UK honours degree with strong quantitative background",
+            "greRequired": false,
+            "prerequisites": "Calculus, linear algebra, and programming background"
+          },
+          "evidence": "The London School of Economics and Political Science published minimum academic admission standards for Master of Science in Data Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.lse.ac.uk/study-at-lse/Graduate/degree-programmes-2025/MSc-Data-Science",
+          "publisher": "The London School of Economics and Political Science Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 100,
+            "ieltsMin": 7
+          },
+          "evidence": "The London School of Economics and Political Science English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.lse.ac.uk",
+          "publisher": "The London School of Economics and Political Science Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-04-30"
+          },
+          "evidence": "The London School of Economics and Political Science official application deadline schedule for Master of Science in Data Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.lse.ac.uk/study-at-lse/Graduate/degree-programmes-2025/MSc-Data-Science",
+          "publisher": "The London School of Economics and Political Science Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "GB",
+      "officialName": "University of Bristol",
+      "slug": "university-of-bristol",
+      "institutionType": "public",
+      "city": "Bristol",
+      "subRegion": "South West",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.bristol.ac.uk",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Bristol",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science (Conversion)",
+            "slug": "msc-computer-science-conversion-bristol",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 12,
+            "studyMode": "full_time",
+            "campus": "Clifton",
+            "teachingLanguage": "English",
+            "url": "https://www.bristol.ac.uk/study/postgraduate/taught/msc-computer-science-conversion/"
+          },
+          "evidence": "University of Bristol official postgraduate portal specifications for Master of Science in Computer Science (Conversion).",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.bristol.ac.uk/study/postgraduate/taught/msc-computer-science-conversion/",
+          "publisher": "University of Bristol"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "GBP",
+            "amount": "34200",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Overseas tuition fee for one-year conversion master."
+          },
+          "evidence": "University of Bristol published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.bristol.ac.uk",
+          "publisher": "University of Bristol Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Upper second-class honours degree (2:1) in any discipline",
+            "greRequired": false,
+            "prerequisites": "Competence in mathematics at high school or university level"
+          },
+          "evidence": "University of Bristol published minimum academic admission standards for Master of Science in Computer Science (Conversion).",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.bristol.ac.uk/study/postgraduate/taught/msc-computer-science-conversion/",
+          "publisher": "University of Bristol Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 90,
+            "ieltsMin": 6.5
+          },
+          "evidence": "University of Bristol English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.bristol.ac.uk",
+          "publisher": "University of Bristol Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-05-15"
+          },
+          "evidence": "University of Bristol official application deadline schedule for Master of Science in Computer Science (Conversion).",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.bristol.ac.uk/study/postgraduate/taught/msc-computer-science-conversion/",
+          "publisher": "University of Bristol Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "GB",
+      "officialName": "The University of Warwick",
+      "slug": "the-university-of-warwick",
+      "institutionType": "public",
+      "city": "Coventry",
+      "subRegion": "West Midlands",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://warwick.ac.uk",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "The University of Warwick",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science",
+            "slug": "msc-computer-science-warwick",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 12,
+            "studyMode": "full_time",
+            "campus": "Coventry",
+            "teachingLanguage": "English",
+            "url": "https://warwick.ac.uk/fac/sci/dcs/teaching/courses/msc-cs"
+          },
+          "evidence": "The University of Warwick official postgraduate portal specifications for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://warwick.ac.uk/fac/sci/dcs/teaching/courses/msc-cs",
+          "publisher": "The University of Warwick"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "GBP",
+            "amount": "33500",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Overseas fee for Warwick Department of Computer Science master degrees."
+          },
+          "evidence": "The University of Warwick published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://warwick.ac.uk",
+          "publisher": "The University of Warwick Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "First-class honours or high 2:1 in Computer Science or Mathematics",
+            "greRequired": false,
+            "prerequisites": "Rigorous computing background"
+          },
+          "evidence": "The University of Warwick published minimum academic admission standards for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://warwick.ac.uk/fac/sci/dcs/teaching/courses/msc-cs",
+          "publisher": "The University of Warwick Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 92,
+            "ieltsMin": 6.5
+          },
+          "evidence": "The University of Warwick English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://warwick.ac.uk",
+          "publisher": "The University of Warwick Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-05-31"
+          },
+          "evidence": "The University of Warwick official application deadline schedule for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://warwick.ac.uk/fac/sci/dcs/teaching/courses/msc-cs",
+          "publisher": "The University of Warwick Admissions"
         }
       ]
     }

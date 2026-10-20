@@ -61,7 +61,7 @@ describe('getDestinationDirectory', () => {
     const result = await getDestinationDirectory('DE')
     expect(result.state).toBe('ready')
     if (result.state === 'ready') {
-      expect(result.universities.length).toBe(3)
+      expect(result.universities.length).toBe(10)
       expect(result.universities[0].name).toContain('Munich')
       expect(result.universities[0].rankings.length).toBeGreaterThan(0)
     }

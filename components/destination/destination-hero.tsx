@@ -3,9 +3,8 @@ import type { Destination } from '@/lib/destinations'
 import { DestinationGlobe } from './destination-globe'
 
 const SECTIONS = [
-  { href: '#universities', label: 'Universities, courses & tuition' },
-  { href: '#admissions', label: 'Admissions & official resources' },
-  { href: '#rankings', label: 'Rankings' },
+  { href: '#universities', label: 'Directory' },
+  { href: '#admissions', label: 'Admissions & visas' },
   { href: '#data-status', label: 'How we verify' },
 ] as const
 

@@ -17,7 +17,9 @@ export function SiteFooter() {
       </div>
       <div className="mx-auto max-w-7xl px-5 md:px-8">
         <div className="hairline-gold h-px opacity-40" aria-hidden />
-        <p className="py-6 text-xs text-muted-foreground">{'© 2026 LockIn Consulting · Draft preview, not yet launched'}</p>
+        <p className="py-6 text-xs text-muted-foreground">
+          © 2026 LockIn Consulting · Precision guidance for global minds — verified facts, authentic admissions, zero guesswork.
+        </p>
       </div>
     </footer>
   )

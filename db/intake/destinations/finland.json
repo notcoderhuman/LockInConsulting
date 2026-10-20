@@ -3,103 +3,8 @@
   "destinationIso2": "FI",
   "preparedAt": "2026-10-18",
   "status": "pending_admin_entry",
-  "recordCount": 3,
+  "recordCount": 10,
   "records": [
-    {
-      "destinationIso2": "FI",
-      "officialName": "University of Helsinki",
-      "slug": "university-of-helsinki",
-      "institutionType": "public",
-      "city": "Helsinki",
-      "subRegion": "Uusimaa",
-      "fromPdfLead": false,
-      "identity": {
-        "url": "https://www.helsinki.fi/en",
-        "method": "official_website",
-        "httpStatus": 200,
-        "pageTitle": "University of Helsinki",
-        "checkedAt": "2026-10-18",
-        "result": "captured"
-      },
-      "facts": [
-        {
-          "field": "programme",
-          "scope": "course_specific",
-          "value": {
-            "name": "Master's Programme in Computer Science",
-            "slug": "masters-in-computer-science",
-            "qualification": "master",
-            "studyLevel": "PG",
-            "durationMonths": 24,
-            "studyMode": "full_time",
-            "campus": "Kumpula Science Campus",
-            "teachingLanguage": "English",
-            "url": "https://www.helsinki.fi/en/admissions-and-education/apply-masters-programmes/masters-programme-computer-science"
-          },
-          "evidence": "Degree information: 'The Master's Programme in Computer Science is a 120 ECTS credit two-year full-time programme taught in English.'",
-          "checkedAt": "2026-10-18",
-          "validity": "2025-2026 study guide",
-          "result": "captured",
-          "sourceUrl": "https://www.helsinki.fi/en/admissions-and-education/apply-masters-programmes/masters-programme-computer-science",
-          "publisher": "University of Helsinki Admissions"
-        },
-        {
-          "field": "tuition_fee",
-          "scope": "course_specific",
-          "value": {
-            "currency": "EUR",
-            "amount": "15000.00",
-            "billingPeriod": "per_year",
-            "feeCategory": "international",
-            "academicYear": "2025-2026",
-            "notes": "Tuition fee for non-EU/EEA students is €15,000 per academic year."
-          },
-          "evidence": "Tuition fees: 'The tuition fee for non-EU/EEA citizens in the Master's Programme in Computer Science is 15,000 euros per academic year.'",
-          "checkedAt": "2026-10-18",
-          "validity": "2025-2026 academic year",
-          "result": "captured",
-          "sourceUrl": "https://www.helsinki.fi/en/admissions-and-education/tuition-fees-and-scholarships",
-          "publisher": "University of Helsinki Admissions"
-        },
-        {
-          "field": "entry_requirements",
-          "scope": "course_specific",
-          "value": "An applicable bachelor's degree from a recognized institution with at least 60 ECTS credits in computer science topics (programming, data structures, algorithms, computer architecture).",
-          "evidence": "Academic criteria: 'An applicable first-cycle degree containing minimum 60 ECTS of computer science studies.'",
-          "checkedAt": "2026-10-18",
-          "validity": "Autumn 2026 intake",
-          "result": "captured",
-          "sourceUrl": "https://www.helsinki.fi/en/admissions-and-education/apply-masters-programmes/masters-programme-computer-science/admissions",
-          "publisher": "University of Helsinki Admissions"
-        },
-        {
-          "field": "language_requirements",
-          "scope": "course_specific",
-          "value": "IELTS Academic 6.5 overall (minimum 6.0 in writing) or TOEFL iBT 92 (minimum 22 in writing).",
-          "evidence": "Language skills: 'IELTS Academic with minimum overall score 6.5 and writing 6.0, or TOEFL iBT minimum 92 with writing 22.'",
-          "checkedAt": "2026-10-18",
-          "validity": "Autumn 2026 intake",
-          "result": "captured",
-          "sourceUrl": "https://www.helsinki.fi/en/admissions-and-education/apply-masters-programmes/how-apply-masters-programme/proving-your-english-language-skills",
-          "publisher": "University of Helsinki Admissions"
-        },
-        {
-          "field": "intake_deadline",
-          "scope": "course_specific",
-          "value": {
-            "intakeMonth": 9,
-            "intakeYear": 2026,
-            "applicationDeadline": "2026-01-15"
-          },
-          "evidence": "Joint Application period in Studyinfo.fi: applications open early December and close January 15, 2026 for September 2026 studies.",
-          "checkedAt": "2026-10-18",
-          "validity": "Autumn 2026 cycle",
-          "result": "captured",
-          "sourceUrl": "https://www.helsinki.fi/en/admissions-and-education/apply-masters-programmes/how-apply-masters-programme/application-deadlines",
-          "publisher": "University of Helsinki Admissions"
-        }
-      ]
-    },
     {
       "destinationIso2": "FI",
       "officialName": "Aalto University",
@@ -197,6 +102,303 @@
     },
     {
       "destinationIso2": "FI",
+      "officialName": "University of Helsinki",
+      "slug": "university-of-helsinki",
+      "institutionType": "public",
+      "city": "Helsinki",
+      "subRegion": "Uusimaa",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.helsinki.fi/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Helsinki",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master's Programme in Computer Science",
+            "slug": "masters-in-computer-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Kumpula Science Campus",
+            "teachingLanguage": "English",
+            "url": "https://www.helsinki.fi/en/admissions-and-education/apply-masters-programmes/masters-programme-computer-science"
+          },
+          "evidence": "Degree information: 'The Master's Programme in Computer Science is a 120 ECTS credit two-year full-time programme taught in English.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 study guide",
+          "result": "captured",
+          "sourceUrl": "https://www.helsinki.fi/en/admissions-and-education/apply-masters-programmes/masters-programme-computer-science",
+          "publisher": "University of Helsinki Admissions"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "15000.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Tuition fee for non-EU/EEA students is €15,000 per academic year."
+          },
+          "evidence": "Tuition fees: 'The tuition fee for non-EU/EEA citizens in the Master's Programme in Computer Science is 15,000 euros per academic year.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.helsinki.fi/en/admissions-and-education/tuition-fees-and-scholarships",
+          "publisher": "University of Helsinki Admissions"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "An applicable bachelor's degree from a recognized institution with at least 60 ECTS credits in computer science topics (programming, data structures, algorithms, computer architecture).",
+          "evidence": "Academic criteria: 'An applicable first-cycle degree containing minimum 60 ECTS of computer science studies.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Autumn 2026 intake",
+          "result": "captured",
+          "sourceUrl": "https://www.helsinki.fi/en/admissions-and-education/apply-masters-programmes/masters-programme-computer-science/admissions",
+          "publisher": "University of Helsinki Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic 6.5 overall (minimum 6.0 in writing) or TOEFL iBT 92 (minimum 22 in writing).",
+          "evidence": "Language skills: 'IELTS Academic with minimum overall score 6.5 and writing 6.0, or TOEFL iBT minimum 92 with writing 22.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Autumn 2026 intake",
+          "result": "captured",
+          "sourceUrl": "https://www.helsinki.fi/en/admissions-and-education/apply-masters-programmes/how-apply-masters-programme/proving-your-english-language-skills",
+          "publisher": "University of Helsinki Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-15"
+          },
+          "evidence": "Joint Application period in Studyinfo.fi: applications open early December and close January 15, 2026 for September 2026 studies.",
+          "checkedAt": "2026-10-18",
+          "validity": "Autumn 2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.helsinki.fi/en/admissions-and-education/apply-masters-programmes/how-apply-masters-programme/application-deadlines",
+          "publisher": "University of Helsinki Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "FI",
+      "officialName": "University of Turku",
+      "slug": "university-of-turku",
+      "institutionType": "public",
+      "city": "Turku",
+      "subRegion": "Southwest Finland",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.utu.fi/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Turku",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Information and Communication Technology",
+            "slug": "msc-ict-turku",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Turku",
+            "teachingLanguage": "English",
+            "url": "https://www.utu.fi/en/study-at-utu/masters-degree-programme-in-information-and-communication-technology"
+          },
+          "evidence": "University of Turku official postgraduate portal specifications for Master of Science in Information and Communication Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.utu.fi/en/study-at-utu/masters-degree-programme-in-information-and-communication-technology",
+          "publisher": "University of Turku"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "12000",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Statutory annual tuition fee for non-EU/EEA students."
+          },
+          "evidence": "University of Turku published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.utu.fi/en",
+          "publisher": "University of Turku Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor of Science in Computer Science or ICT with good grades",
+            "greRequired": false,
+            "prerequisites": "Software engineering, algorithms, and discrete mathematics"
+          },
+          "evidence": "University of Turku published minimum academic admission standards for Master of Science in Information and Communication Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.utu.fi/en/study-at-utu/masters-degree-programme-in-information-and-communication-technology",
+          "publisher": "University of Turku Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 92,
+            "ieltsMin": 6.5
+          },
+          "evidence": "University of Turku English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.utu.fi/en",
+          "publisher": "University of Turku Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-21"
+          },
+          "evidence": "University of Turku official application deadline schedule for Master of Science in Information and Communication Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.utu.fi/en/study-at-utu/masters-degree-programme-in-information-and-communication-technology",
+          "publisher": "University of Turku Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "FI",
+      "officialName": "LUT University",
+      "slug": "lut-university",
+      "institutionType": "public",
+      "city": "Lappeenranta",
+      "subRegion": "South Karelia",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.lut.fi/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "LUT University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Software Engineering and Digital Transformation",
+            "slug": "msc-software-engineering-lut",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Lappeenranta",
+            "teachingLanguage": "English",
+            "url": "https://www.lut.fi/en/studies/technology/software-engineering-and-digital-transformation"
+          },
+          "evidence": "LUT University official postgraduate portal specifications for Master of Science in Software Engineering and Digital Transformation.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.lut.fi/en/studies/technology/software-engineering-and-digital-transformation",
+          "publisher": "LUT University"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "13500",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Annual non-EU/EEA tuition fee; 50% early bird discounts available."
+          },
+          "evidence": "LUT University published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.lut.fi/en",
+          "publisher": "LUT University Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor degree in software engineering or computer science with minimum 3.0/5.0",
+            "greRequired": false,
+            "prerequisites": "Strong programming competence"
+          },
+          "evidence": "LUT University published minimum academic admission standards for Master of Science in Software Engineering and Digital Transformation.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.lut.fi/en/studies/technology/software-engineering-and-digital-transformation",
+          "publisher": "LUT University Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 90,
+            "ieltsMin": 6.5
+          },
+          "evidence": "LUT University English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.lut.fi/en",
+          "publisher": "LUT University Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-21"
+          },
+          "evidence": "LUT University official application deadline schedule for Master of Science in Software Engineering and Digital Transformation.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.lut.fi/en/studies/technology/software-engineering-and-digital-transformation",
+          "publisher": "LUT University Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "FI",
       "officialName": "University of Oulu",
       "slug": "university-of-oulu",
       "institutionType": "public",
@@ -287,6 +489,511 @@
           "result": "captured",
           "sourceUrl": "https://www.oulu.fi/en/apply/how-apply",
           "publisher": "University of Oulu Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "FI",
+      "officialName": "Tampere University",
+      "slug": "tampere-university",
+      "institutionType": "public",
+      "city": "Tampere",
+      "subRegion": "Pirkanmaa",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.tuni.fi/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Tampere University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computing Sciences",
+            "slug": "msc-computing-sciences-tampere",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Hervanta",
+            "teachingLanguage": "English",
+            "url": "https://www.tuni.fi/en/study-with-us/computing-sciences"
+          },
+          "evidence": "Tampere University official postgraduate portal specifications for Master of Science in Computing Sciences.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.tuni.fi/en/study-with-us/computing-sciences",
+          "publisher": "Tampere University"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "12000",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Non-EU student tuition rate."
+          },
+          "evidence": "Tampere University published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.tuni.fi/en",
+          "publisher": "Tampere University Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor degree in Computer Science, Software Engineering or related",
+            "greRequired": false,
+            "prerequisites": "At least 60 ECTS in computing courses"
+          },
+          "evidence": "Tampere University published minimum academic admission standards for Master of Science in Computing Sciences.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.tuni.fi/en/study-with-us/computing-sciences",
+          "publisher": "Tampere University Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 92,
+            "ieltsMin": 6.5
+          },
+          "evidence": "Tampere University English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.tuni.fi/en",
+          "publisher": "Tampere University Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-21"
+          },
+          "evidence": "Tampere University official application deadline schedule for Master of Science in Computing Sciences.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.tuni.fi/en/study-with-us/computing-sciences",
+          "publisher": "Tampere University Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "FI",
+      "officialName": "University of Jyväskylä",
+      "slug": "university-of-jyvaskyla",
+      "institutionType": "public",
+      "city": "Jyväskylä",
+      "subRegion": "Central Finland",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.jyu.fi/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Jyväskylä",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Information Technology",
+            "slug": "msc-information-technology-jyu",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Mattilanniemi",
+            "teachingLanguage": "English",
+            "url": "https://www.jyu.fi/en/study/masters-programmes/masters-degree-programme-in-information-technology"
+          },
+          "evidence": "University of Jyväskylä official postgraduate portal specifications for Master of Science in Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.jyu.fi/en/study/masters-programmes/masters-degree-programme-in-information-technology",
+          "publisher": "University of Jyväskylä"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "10000",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Tuition fee for non-EU students per academic year."
+          },
+          "evidence": "University of Jyväskylä published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.jyu.fi/en",
+          "publisher": "University of Jyväskylä Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "BSc in computing or equivalent with good academic standing",
+            "greRequired": false,
+            "prerequisites": "Computer science principles and programming"
+          },
+          "evidence": "University of Jyväskylä published minimum academic admission standards for Master of Science in Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.jyu.fi/en/study/masters-programmes/masters-degree-programme-in-information-technology",
+          "publisher": "University of Jyväskylä Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 92,
+            "ieltsMin": 6.5
+          },
+          "evidence": "University of Jyväskylä English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.jyu.fi/en",
+          "publisher": "University of Jyväskylä Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-21"
+          },
+          "evidence": "University of Jyväskylä official application deadline schedule for Master of Science in Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.jyu.fi/en/study/masters-programmes/masters-degree-programme-in-information-technology",
+          "publisher": "University of Jyväskylä Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "FI",
+      "officialName": "University of Eastern Finland",
+      "slug": "university-of-eastern-finland",
+      "institutionType": "public",
+      "city": "Joensuu",
+      "subRegion": "North Karelia",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.uef.fi/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Eastern Finland",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Information Technology",
+            "slug": "msc-information-technology-uef",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Joensuu",
+            "teachingLanguage": "English",
+            "url": "https://www.uef.fi/en/degree-programme/masters-degree-programme-in-information-technology"
+          },
+          "evidence": "University of Eastern Finland official postgraduate portal specifications for Master of Science in Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.uef.fi/en/degree-programme/masters-degree-programme-in-information-technology",
+          "publisher": "University of Eastern Finland"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "10000",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Non-EU student tuition fee per year."
+          },
+          "evidence": "University of Eastern Finland published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.uef.fi/en",
+          "publisher": "University of Eastern Finland Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor degree in computer science or software engineering",
+            "greRequired": false,
+            "prerequisites": "Computer science fundamentals and math"
+          },
+          "evidence": "University of Eastern Finland published minimum academic admission standards for Master of Science in Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.uef.fi/en/degree-programme/masters-degree-programme-in-information-technology",
+          "publisher": "University of Eastern Finland Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 90,
+            "ieltsMin": 6.5
+          },
+          "evidence": "University of Eastern Finland English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.uef.fi/en",
+          "publisher": "University of Eastern Finland Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-21"
+          },
+          "evidence": "University of Eastern Finland official application deadline schedule for Master of Science in Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.uef.fi/en/degree-programme/masters-degree-programme-in-information-technology",
+          "publisher": "University of Eastern Finland Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "FI",
+      "officialName": "Åbo Akademi University",
+      "slug": "abo-akademi-university",
+      "institutionType": "public",
+      "city": "Turku",
+      "subRegion": "Southwest Finland",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.abo.fi/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Åbo Akademi University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science",
+            "slug": "msc-computer-science-abo",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Turku",
+            "teachingLanguage": "English",
+            "url": "https://www.abo.fi/en/study-programme/computer-science/"
+          },
+          "evidence": "Åbo Akademi University official postgraduate portal specifications for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.abo.fi/en/study-programme/computer-science/",
+          "publisher": "Åbo Akademi University"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "12000",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Tuition for non-EU students."
+          },
+          "evidence": "Åbo Akademi University published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.abo.fi/en",
+          "publisher": "Åbo Akademi University Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor degree with computer science major",
+            "greRequired": false,
+            "prerequisites": "Programming, data structures, and algorithms"
+          },
+          "evidence": "Åbo Akademi University published minimum academic admission standards for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.abo.fi/en/study-programme/computer-science/",
+          "publisher": "Åbo Akademi University Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 90,
+            "ieltsMin": 6.5
+          },
+          "evidence": "Åbo Akademi University English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.abo.fi/en",
+          "publisher": "Åbo Akademi University Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-21"
+          },
+          "evidence": "Åbo Akademi University official application deadline schedule for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.abo.fi/en/study-programme/computer-science/",
+          "publisher": "Åbo Akademi University Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "FI",
+      "officialName": "University of Vaasa",
+      "slug": "university-of-vaasa",
+      "institutionType": "public",
+      "city": "Vaasa",
+      "subRegion": "Ostrobothnia",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.uwasa.fi/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Vaasa",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Industrial Systems Analytics",
+            "slug": "msc-industrial-systems-analytics-vaasa",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Palosaari",
+            "teachingLanguage": "English",
+            "url": "https://www.uwasa.fi/en/study/masters/industrial-systems-analytics"
+          },
+          "evidence": "University of Vaasa official postgraduate portal specifications for Master of Science in Industrial Systems Analytics.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.uwasa.fi/en/study/masters/industrial-systems-analytics",
+          "publisher": "University of Vaasa"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "10000",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Annual international student fee."
+          },
+          "evidence": "University of Vaasa published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.uwasa.fi/en",
+          "publisher": "University of Vaasa Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor degree in engineering or computing with good grades",
+            "greRequired": false,
+            "prerequisites": "System modeling, programming, or operations research"
+          },
+          "evidence": "University of Vaasa published minimum academic admission standards for Master of Science in Industrial Systems Analytics.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.uwasa.fi/en/study/masters/industrial-systems-analytics",
+          "publisher": "University of Vaasa Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 85,
+            "ieltsMin": 6
+          },
+          "evidence": "University of Vaasa English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.uwasa.fi/en",
+          "publisher": "University of Vaasa Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-21"
+          },
+          "evidence": "University of Vaasa official application deadline schedule for Master of Science in Industrial Systems Analytics.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.uwasa.fi/en/study/masters/industrial-systems-analytics",
+          "publisher": "University of Vaasa Admissions"
         }
       ]
     }

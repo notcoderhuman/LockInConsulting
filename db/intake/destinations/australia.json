@@ -3,7 +3,7 @@
   "destinationIso2": "AU",
   "preparedAt": "2026-10-18",
   "status": "pending_admin_entry",
-  "recordCount": 3,
+  "recordCount": 10,
   "records": [
     {
       "destinationIso2": "AU",
@@ -197,6 +197,107 @@
     },
     {
       "destinationIso2": "AU",
+      "officialName": "University of New South Wales",
+      "slug": "university-of-new-south-wales",
+      "institutionType": "public",
+      "city": "Sydney",
+      "subRegion": "New South Wales",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.unsw.edu.au",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of New South Wales",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Information Technology",
+            "slug": "master-information-technology-unsw",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Kensington",
+            "teachingLanguage": "English",
+            "url": "https://www.unsw.edu.au/study/postgraduate/master-of-information-technology"
+          },
+          "evidence": "University of New South Wales official postgraduate portal specifications for Master of Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.unsw.edu.au/study/postgraduate/master-of-information-technology",
+          "publisher": "University of New South Wales"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "AUD",
+            "amount": "54000",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Indicative annual fee for international coursework students."
+          },
+          "evidence": "University of New South Wales published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.unsw.edu.au",
+          "publisher": "University of New South Wales Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Equivalent of UNSW 65% credit average",
+            "greRequired": false,
+            "prerequisites": "Three-year undergraduate degree with mathematics component"
+          },
+          "evidence": "University of New South Wales published minimum academic admission standards for Master of Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.unsw.edu.au/study/postgraduate/master-of-information-technology",
+          "publisher": "University of New South Wales Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 90,
+            "ieltsMin": 6.5
+          },
+          "evidence": "University of New South Wales English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.unsw.edu.au",
+          "publisher": "University of New South Wales Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 2,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-11-30"
+          },
+          "evidence": "University of New South Wales official application deadline schedule for Master of Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.unsw.edu.au/study/postgraduate/master-of-information-technology",
+          "publisher": "University of New South Wales Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "AU",
       "officialName": "The Australian National University",
       "slug": "the-australian-national-university",
       "institutionType": "public",
@@ -287,6 +388,612 @@
           "result": "captured",
           "sourceUrl": "https://www.anu.edu.au/study/apply/international-applications-undergraduate-and-postgraduate",
           "publisher": "ANU Admissions Office"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "AU",
+      "officialName": "Monash University",
+      "slug": "monash-university",
+      "institutionType": "public",
+      "city": "Melbourne",
+      "subRegion": "Victoria",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.monash.edu",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Monash University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Computer Science",
+            "slug": "master-computer-science-monash",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Clayton",
+            "teachingLanguage": "English",
+            "url": "https://www.monash.edu/study/courses/find-a-course/computer-science-c6001"
+          },
+          "evidence": "Monash University official postgraduate portal specifications for Master of Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.monash.edu/study/courses/find-a-course/computer-science-c6001",
+          "publisher": "Monash University"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "AUD",
+            "amount": "53200",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Annual fee for 48 credit points of study."
+          },
+          "evidence": "Monash University published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.monash.edu",
+          "publisher": "Monash University Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Australian undergraduate degree with 65% weighted average mark",
+            "greRequired": false,
+            "prerequisites": "Computer science or programming background"
+          },
+          "evidence": "Monash University published minimum academic admission standards for Master of Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.monash.edu/study/courses/find-a-course/computer-science-c6001",
+          "publisher": "Monash University Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 79,
+            "ieltsMin": 6.5
+          },
+          "evidence": "Monash University English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.monash.edu",
+          "publisher": "Monash University Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 2,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-11-30"
+          },
+          "evidence": "Monash University official application deadline schedule for Master of Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.monash.edu/study/courses/find-a-course/computer-science-c6001",
+          "publisher": "Monash University Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "AU",
+      "officialName": "The University of Queensland",
+      "slug": "the-university-of-queensland",
+      "institutionType": "public",
+      "city": "Brisbane",
+      "subRegion": "Queensland",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.uq.edu.au",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "The University of Queensland",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Computer Science",
+            "slug": "master-computer-science-uq",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "St Lucia",
+            "teachingLanguage": "English",
+            "url": "https://study.uq.edu.au/study-options/programs/master-computer-science-5688"
+          },
+          "evidence": "The University of Queensland official postgraduate portal specifications for Master of Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://study.uq.edu.au/study-options/programs/master-computer-science-5688",
+          "publisher": "The University of Queensland"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "AUD",
+            "amount": "51200",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Indicative annual fee for international postgraduate students."
+          },
+          "evidence": "The University of Queensland published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.uq.edu.au",
+          "publisher": "The University of Queensland Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "GPA of 5.0 on a 7.0 scale",
+            "greRequired": false,
+            "prerequisites": "Bachelor degree in computer science or information technology"
+          },
+          "evidence": "The University of Queensland published minimum academic admission standards for Master of Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://study.uq.edu.au/study-options/programs/master-computer-science-5688",
+          "publisher": "The University of Queensland Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 87,
+            "ieltsMin": 6.5
+          },
+          "evidence": "The University of Queensland English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.uq.edu.au",
+          "publisher": "The University of Queensland Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 2,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-11-30"
+          },
+          "evidence": "The University of Queensland official application deadline schedule for Master of Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://study.uq.edu.au/study-options/programs/master-computer-science-5688",
+          "publisher": "The University of Queensland Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "AU",
+      "officialName": "The University of Western Australia",
+      "slug": "the-university-of-western-australia",
+      "institutionType": "public",
+      "city": "Perth",
+      "subRegion": "Western Australia",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.uwa.edu.au",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "The University of Western Australia",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Information Technology",
+            "slug": "master-information-technology-uwa",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Crawley",
+            "teachingLanguage": "English",
+            "url": "https://www.uwa.edu.au/study/courses/master-of-information-technology"
+          },
+          "evidence": "The University of Western Australia official postgraduate portal specifications for Master of Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.uwa.edu.au/study/courses/master-of-information-technology",
+          "publisher": "The University of Western Australia"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "AUD",
+            "amount": "47300",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Annual course fee based on standard 48 credit points."
+          },
+          "evidence": "The University of Western Australia published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.uwa.edu.au",
+          "publisher": "The University of Western Australia Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "UWA weighted average mark of at least 65%",
+            "greRequired": false,
+            "prerequisites": "Recognised bachelor degree with computing foundation"
+          },
+          "evidence": "The University of Western Australia published minimum academic admission standards for Master of Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.uwa.edu.au/study/courses/master-of-information-technology",
+          "publisher": "The University of Western Australia Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 82,
+            "ieltsMin": 6.5
+          },
+          "evidence": "The University of Western Australia English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.uwa.edu.au",
+          "publisher": "The University of Western Australia Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 2,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-12-15"
+          },
+          "evidence": "The University of Western Australia official application deadline schedule for Master of Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.uwa.edu.au/study/courses/master-of-information-technology",
+          "publisher": "The University of Western Australia Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "AU",
+      "officialName": "The University of Adelaide",
+      "slug": "the-university-of-adelaide",
+      "institutionType": "public",
+      "city": "Adelaide",
+      "subRegion": "South Australia",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.adelaide.edu.au",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "The University of Adelaide",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Computer Science",
+            "slug": "master-computer-science-adelaide",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "North Terrace",
+            "teachingLanguage": "English",
+            "url": "https://www.adelaide.edu.au/degree-finder/2025/mcmsc_mcompsci.html"
+          },
+          "evidence": "The University of Adelaide official postgraduate portal specifications for Master of Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.adelaide.edu.au/degree-finder/2025/mcmsc_mcompsci.html",
+          "publisher": "The University of Adelaide"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "AUD",
+            "amount": "49500",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "International tuition fee quoted per academic year."
+          },
+          "evidence": "The University of Adelaide published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.adelaide.edu.au",
+          "publisher": "The University of Adelaide Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "GPA of 4.5 out of 7.0 or equivalent",
+            "greRequired": false,
+            "prerequisites": "Bachelor degree in computer science"
+          },
+          "evidence": "The University of Adelaide published minimum academic admission standards for Master of Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.adelaide.edu.au/degree-finder/2025/mcmsc_mcompsci.html",
+          "publisher": "The University of Adelaide Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 79,
+            "ieltsMin": 6.5
+          },
+          "evidence": "The University of Adelaide English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.adelaide.edu.au",
+          "publisher": "The University of Adelaide Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 2,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-12-01"
+          },
+          "evidence": "The University of Adelaide official application deadline schedule for Master of Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.adelaide.edu.au/degree-finder/2025/mcmsc_mcompsci.html",
+          "publisher": "The University of Adelaide Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "AU",
+      "officialName": "University of Technology Sydney",
+      "slug": "university-of-technology-sydney",
+      "institutionType": "public",
+      "city": "Sydney",
+      "subRegion": "New South Wales",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.uts.edu.au",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Technology Sydney",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Information Technology",
+            "slug": "master-science-information-technology-uts",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "City Campus",
+            "teachingLanguage": "English",
+            "url": "https://www.uts.edu.au/study/find-a-course/master-of-science-in-information-technology"
+          },
+          "evidence": "University of Technology Sydney official postgraduate portal specifications for Master of Science in Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.uts.edu.au/study/find-a-course/master-of-science-in-information-technology",
+          "publisher": "University of Technology Sydney"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "AUD",
+            "amount": "48120",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "International fee based on standard 48 credit points."
+          },
+          "evidence": "University of Technology Sydney published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.uts.edu.au",
+          "publisher": "University of Technology Sydney Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Recognised bachelor degree with credit average",
+            "greRequired": false,
+            "prerequisites": "Bachelor degree in IT or relevant working experience"
+          },
+          "evidence": "University of Technology Sydney published minimum academic admission standards for Master of Science in Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.uts.edu.au/study/find-a-course/master-of-science-in-information-technology",
+          "publisher": "University of Technology Sydney Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 79,
+            "ieltsMin": 6.5
+          },
+          "evidence": "University of Technology Sydney English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.uts.edu.au",
+          "publisher": "University of Technology Sydney Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 2,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-11-30"
+          },
+          "evidence": "University of Technology Sydney official application deadline schedule for Master of Science in Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.uts.edu.au/study/find-a-course/master-of-science-in-information-technology",
+          "publisher": "University of Technology Sydney Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "AU",
+      "officialName": "RMIT University",
+      "slug": "rmit-university",
+      "institutionType": "public",
+      "city": "Melbourne",
+      "subRegion": "Victoria",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.rmit.edu.au",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "RMIT University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Computer Science",
+            "slug": "master-computer-science-rmit",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Melbourne City",
+            "teachingLanguage": "English",
+            "url": "https://www.rmit.edu.au/study-with-us/levels-of-study/postgraduate-study/masters-by-coursework/master-of-computer-science-mc267"
+          },
+          "evidence": "RMIT University official postgraduate portal specifications for Master of Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.rmit.edu.au/study-with-us/levels-of-study/postgraduate-study/masters-by-coursework/master-of-computer-science-mc267",
+          "publisher": "RMIT University"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "AUD",
+            "amount": "44160",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Annual fee for 96 credit points of coursework."
+          },
+          "evidence": "RMIT University published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.rmit.edu.au",
+          "publisher": "RMIT University Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Australian bachelor degree with GPA 2.0 out of 4.0",
+            "greRequired": false,
+            "prerequisites": "Computing degree or significant coding experience"
+          },
+          "evidence": "RMIT University published minimum academic admission standards for Master of Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.rmit.edu.au/study-with-us/levels-of-study/postgraduate-study/masters-by-coursework/master-of-computer-science-mc267",
+          "publisher": "RMIT University Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 79,
+            "ieltsMin": 6.5
+          },
+          "evidence": "RMIT University English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.rmit.edu.au",
+          "publisher": "RMIT University Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 2,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-12-01"
+          },
+          "evidence": "RMIT University official application deadline schedule for Master of Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.rmit.edu.au/study-with-us/levels-of-study/postgraduate-study/masters-by-coursework/master-of-computer-science-mc267",
+          "publisher": "RMIT University Admissions"
         }
       ]
     }

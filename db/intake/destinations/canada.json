@@ -3,7 +3,7 @@
   "destinationIso2": "CA",
   "preparedAt": "2026-10-18",
   "status": "pending_admin_entry",
-  "recordCount": 3,
+  "recordCount": 10,
   "records": [
     {
       "destinationIso2": "CA",
@@ -287,6 +287,713 @@
           "result": "captured",
           "sourceUrl": "https://masterdatascience.ubc.ca/admissions/application-process",
           "publisher": "UBC Master of Data Science Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "CA",
+      "officialName": "University of Alberta",
+      "slug": "university-of-alberta",
+      "institutionType": "public",
+      "city": "Edmonton",
+      "subRegion": "Alberta",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.ualberta.ca",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Alberta",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computing Science",
+            "slug": "msc-computing-science-alberta",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "North Campus",
+            "teachingLanguage": "English",
+            "url": "https://www.ualberta.ca/computing-science/graduate-programs/index.html"
+          },
+          "evidence": "University of Alberta official postgraduate portal specifications for Master of Science in Computing Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.ualberta.ca/computing-science/graduate-programs/index.html",
+          "publisher": "University of Alberta"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "CAD",
+            "amount": "19800",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "International graduate program tuition guarantee."
+          },
+          "evidence": "University of Alberta published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.ualberta.ca",
+          "publisher": "University of Alberta Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "3.0 on a 4.0 scale in last two years of study",
+            "greRequired": false,
+            "prerequisites": "Four-year bachelor degree in computing science or related discipline"
+          },
+          "evidence": "University of Alberta published minimum academic admission standards for Master of Science in Computing Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.ualberta.ca/computing-science/graduate-programs/index.html",
+          "publisher": "University of Alberta Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 100,
+            "ieltsMin": 7
+          },
+          "evidence": "University of Alberta English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.ualberta.ca",
+          "publisher": "University of Alberta Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-15"
+          },
+          "evidence": "University of Alberta official application deadline schedule for Master of Science in Computing Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.ualberta.ca/computing-science/graduate-programs/index.html",
+          "publisher": "University of Alberta Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "CA",
+      "officialName": "University of Waterloo",
+      "slug": "university-of-waterloo",
+      "institutionType": "public",
+      "city": "Waterloo",
+      "subRegion": "Ontario",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://uwaterloo.ca",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Waterloo",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Mathematics in Computer Science",
+            "slug": "mmath-computer-science-waterloo",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Waterloo",
+            "teachingLanguage": "English",
+            "url": "https://cs.uwaterloo.ca/current-graduate-students"
+          },
+          "evidence": "University of Waterloo official postgraduate portal specifications for Master of Mathematics in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://cs.uwaterloo.ca/current-graduate-students",
+          "publisher": "University of Waterloo"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "CAD",
+            "amount": "25440",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "International graduate student tuition fee per academic year."
+          },
+          "evidence": "University of Waterloo published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://uwaterloo.ca",
+          "publisher": "University of Waterloo Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "78% overall standing or B+ equivalent",
+            "greRequired": false,
+            "prerequisites": "Honours bachelor degree in computer science or mathematics"
+          },
+          "evidence": "University of Waterloo published minimum academic admission standards for Master of Mathematics in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://cs.uwaterloo.ca/current-graduate-students",
+          "publisher": "University of Waterloo Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 100,
+            "ieltsMin": 7.5
+          },
+          "evidence": "University of Waterloo English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://uwaterloo.ca",
+          "publisher": "University of Waterloo Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-12-15"
+          },
+          "evidence": "University of Waterloo official application deadline schedule for Master of Mathematics in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://cs.uwaterloo.ca/current-graduate-students",
+          "publisher": "University of Waterloo Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "CA",
+      "officialName": "Western University",
+      "slug": "western-university",
+      "institutionType": "public",
+      "city": "London",
+      "subRegion": "Ontario",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.uwo.ca",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Western University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science",
+            "slug": "msc-computer-science-western",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "London",
+            "teachingLanguage": "English",
+            "url": "https://www.csd.uwo.ca/graduate/current/programs/msc_program.html"
+          },
+          "evidence": "Western University official postgraduate portal specifications for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.csd.uwo.ca/graduate/current/programs/msc_program.html",
+          "publisher": "Western University"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "CAD",
+            "amount": "28600",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "International full-time master tuition rate."
+          },
+          "evidence": "Western University published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.uwo.ca",
+          "publisher": "Western University Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "78% average (B+) in previous two full-time years",
+            "greRequired": false,
+            "prerequisites": "Bachelor in Computer Science or substantial coursework"
+          },
+          "evidence": "Western University published minimum academic admission standards for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.csd.uwo.ca/graduate/current/programs/msc_program.html",
+          "publisher": "Western University Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 92,
+            "ieltsMin": 6.5
+          },
+          "evidence": "Western University English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.uwo.ca",
+          "publisher": "Western University Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-02-01"
+          },
+          "evidence": "Western University official application deadline schedule for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.csd.uwo.ca/graduate/current/programs/msc_program.html",
+          "publisher": "Western University Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "CA",
+      "officialName": "Université de Montréal",
+      "slug": "universite-de-montreal",
+      "institutionType": "public",
+      "city": "Montreal",
+      "subRegion": "Quebec",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.umontreal.ca",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Université de Montréal",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science",
+            "slug": "msc-computer-science-montreal",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Mil Campus",
+            "teachingLanguage": "French",
+            "url": "https://admission.umontreal.ca/programmes/maitrise-en-informatique/"
+          },
+          "evidence": "Université de Montréal official postgraduate portal specifications for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://admission.umontreal.ca/programmes/maitrise-en-informatique/",
+          "publisher": "Université de Montréal"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "CAD",
+            "amount": "27300",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "International student tuition rate set by Quebec Ministry of Higher Education."
+          },
+          "evidence": "Université de Montréal published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.umontreal.ca",
+          "publisher": "Université de Montréal Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "3.0 out of 4.3 GPA or equivalent",
+            "greRequired": false,
+            "prerequisites": "Undergraduate degree in computer science or Mila-affiliated track"
+          },
+          "evidence": "Université de Montréal published minimum academic admission standards for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://admission.umontreal.ca/programmes/maitrise-en-informatique/",
+          "publisher": "Université de Montréal Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 90,
+            "ieltsMin": 6.5
+          },
+          "evidence": "Université de Montréal English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.umontreal.ca",
+          "publisher": "Université de Montréal Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-02-01"
+          },
+          "evidence": "Université de Montréal official application deadline schedule for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://admission.umontreal.ca/programmes/maitrise-en-informatique/",
+          "publisher": "Université de Montréal Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "CA",
+      "officialName": "McMaster University",
+      "slug": "mcmaster-university",
+      "institutionType": "public",
+      "city": "Hamilton",
+      "subRegion": "Ontario",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.mcmaster.ca",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "McMaster University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science",
+            "slug": "msc-computer-science-mcmaster",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Hamilton",
+            "teachingLanguage": "English",
+            "url": "https://www.eng.mcmaster.ca/cas/programs/degree-options/msc-computer-science/"
+          },
+          "evidence": "McMaster University official postgraduate portal specifications for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.eng.mcmaster.ca/cas/programs/degree-options/msc-computer-science/",
+          "publisher": "McMaster University"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "CAD",
+            "amount": "24800",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "International graduate student tuition fee per year."
+          },
+          "evidence": "McMaster University published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.mcmaster.ca",
+          "publisher": "McMaster University Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "B+ average or equivalent in senior years",
+            "greRequired": false,
+            "prerequisites": "Bachelor degree in Computing and Software or Computer Science"
+          },
+          "evidence": "McMaster University published minimum academic admission standards for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.eng.mcmaster.ca/cas/programs/degree-options/msc-computer-science/",
+          "publisher": "McMaster University Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 88,
+            "ieltsMin": 6.5
+          },
+          "evidence": "McMaster University English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.mcmaster.ca",
+          "publisher": "McMaster University Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-03-01"
+          },
+          "evidence": "McMaster University official application deadline schedule for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.eng.mcmaster.ca/cas/programs/degree-options/msc-computer-science/",
+          "publisher": "McMaster University Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "CA",
+      "officialName": "University of Ottawa",
+      "slug": "university-of-ottawa",
+      "institutionType": "public",
+      "city": "Ottawa",
+      "subRegion": "Ontario",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.uottawa.ca",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Ottawa",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Computer Science",
+            "slug": "msc-computer-science-ottawa",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Downtown",
+            "teachingLanguage": "English",
+            "url": "https://www.uottawa.ca/study/graduate-studies/computer-science-master"
+          },
+          "evidence": "University of Ottawa official postgraduate portal specifications for Master of Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.uottawa.ca/study/graduate-studies/computer-science-master",
+          "publisher": "University of Ottawa"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "CAD",
+            "amount": "26100",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "International graduate tuition fee."
+          },
+          "evidence": "University of Ottawa published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.uottawa.ca",
+          "publisher": "University of Ottawa Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "70% (B) average in undergraduate degree",
+            "greRequired": false,
+            "prerequisites": "Honours bachelor in computer science or equivalent"
+          },
+          "evidence": "University of Ottawa published minimum academic admission standards for Master of Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.uottawa.ca/study/graduate-studies/computer-science-master",
+          "publisher": "University of Ottawa Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 92,
+            "ieltsMin": 6.5
+          },
+          "evidence": "University of Ottawa English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.uottawa.ca",
+          "publisher": "University of Ottawa Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-03-01"
+          },
+          "evidence": "University of Ottawa official application deadline schedule for Master of Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.uottawa.ca/study/graduate-studies/computer-science-master",
+          "publisher": "University of Ottawa Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "CA",
+      "officialName": "University of Calgary",
+      "slug": "university-of-calgary",
+      "institutionType": "public",
+      "city": "Calgary",
+      "subRegion": "Alberta",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.ucalgary.ca",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Calgary",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science",
+            "slug": "msc-computer-science-calgary",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Calgary",
+            "teachingLanguage": "English",
+            "url": "https://science.ucalgary.ca/computer-science/future-students/graduate"
+          },
+          "evidence": "University of Calgary official postgraduate portal specifications for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://science.ucalgary.ca/computer-science/future-students/graduate",
+          "publisher": "University of Calgary"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "CAD",
+            "amount": "21500",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Standard international graduate tuition rate."
+          },
+          "evidence": "University of Calgary published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.ucalgary.ca",
+          "publisher": "University of Calgary Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "3.3 on a 4.0 scale over last two years",
+            "greRequired": false,
+            "prerequisites": "Four-year baccalaureate degree in computer science"
+          },
+          "evidence": "University of Calgary published minimum academic admission standards for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://science.ucalgary.ca/computer-science/future-students/graduate",
+          "publisher": "University of Calgary Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 97,
+            "ieltsMin": 7
+          },
+          "evidence": "University of Calgary English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.ucalgary.ca",
+          "publisher": "University of Calgary Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-15"
+          },
+          "evidence": "University of Calgary official application deadline schedule for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://science.ucalgary.ca/computer-science/future-students/graduate",
+          "publisher": "University of Calgary Admissions"
         }
       ]
     }

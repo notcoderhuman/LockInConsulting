@@ -3,7 +3,7 @@
   "destinationIso2": "DE",
   "preparedAt": "2026-10-18",
   "status": "pending_admin_entry",
-  "recordCount": 3,
+  "recordCount": 10,
   "records": [
     {
       "destinationIso2": "DE",
@@ -197,6 +197,208 @@
     },
     {
       "destinationIso2": "DE",
+      "officialName": "Universität Heidelberg",
+      "slug": "universitat-heidelberg",
+      "institutionType": "public",
+      "city": "Heidelberg",
+      "subRegion": "Baden-Württemberg",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.uni-heidelberg.de/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Universität Heidelberg",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Scientific Computing",
+            "slug": "msc-scientific-computing-heidelberg",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Im Neuenheimer Feld",
+            "teachingLanguage": "English",
+            "url": "https://www.uni-heidelberg.de/en/study/all-subjects/scientific-computing-master"
+          },
+          "evidence": "Universität Heidelberg official postgraduate portal specifications for Master of Science in Scientific Computing.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.uni-heidelberg.de/en/study/all-subjects/scientific-computing-master",
+          "publisher": "Universität Heidelberg"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "3000",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Tuition fee for international students in Baden-Württemberg (€1,500/semester) plus semester contribution."
+          },
+          "evidence": "Universität Heidelberg published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.uni-heidelberg.de/en",
+          "publisher": "Universität Heidelberg Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "German bachelor degree (grade 2.5 or better) or international equivalent",
+            "greRequired": false,
+            "prerequisites": "Strong background in mathematics, informatics, and numerical methods"
+          },
+          "evidence": "Universität Heidelberg published minimum academic admission standards for Master of Science in Scientific Computing.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.uni-heidelberg.de/en/study/all-subjects/scientific-computing-master",
+          "publisher": "Universität Heidelberg Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 90,
+            "ieltsMin": 6.5
+          },
+          "evidence": "Universität Heidelberg English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.uni-heidelberg.de/en",
+          "publisher": "Universität Heidelberg Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-05-15"
+          },
+          "evidence": "Universität Heidelberg official application deadline schedule for Master of Science in Scientific Computing.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.uni-heidelberg.de/en/study/all-subjects/scientific-computing-master",
+          "publisher": "Universität Heidelberg Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "DE",
+      "officialName": "Freie Universität Berlin",
+      "slug": "freie-universitat-berlin",
+      "institutionType": "public",
+      "city": "Berlin",
+      "subRegion": "Berlin",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.fu-berlin.de/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Freie Universität Berlin",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science",
+            "slug": "msc-computer-science-fu-berlin",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Dahlem",
+            "teachingLanguage": "English",
+            "url": "https://www.fu-berlin.de/en/studium/studienangebot/master/informatik/index.html"
+          },
+          "evidence": "Freie Universität Berlin official postgraduate portal specifications for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.fu-berlin.de/en/studium/studienangebot/master/informatik/index.html",
+          "publisher": "Freie Universität Berlin"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "0.00",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "No tuition fee; students pay semester contribution of approx €312/semester including public transport."
+          },
+          "evidence": "Freie Universität Berlin published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.fu-berlin.de/en",
+          "publisher": "Freie Universität Berlin Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor degree in computer science or equivalent with at least 60 ECTS in CS",
+            "greRequired": false,
+            "prerequisites": "Theoretical computer science, programming, and software engineering"
+          },
+          "evidence": "Freie Universität Berlin published minimum academic admission standards for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.fu-berlin.de/en/studium/studienangebot/master/informatik/index.html",
+          "publisher": "Freie Universität Berlin Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 80,
+            "ieltsMin": 6
+          },
+          "evidence": "Freie Universität Berlin English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.fu-berlin.de/en",
+          "publisher": "Freie Universität Berlin Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-05-31"
+          },
+          "evidence": "Freie Universität Berlin official application deadline schedule for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.fu-berlin.de/en/studium/studienangebot/master/informatik/index.html",
+          "publisher": "Freie Universität Berlin Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "DE",
       "officialName": "Rheinisch-Westfälische Technische Hochschule Aachen",
       "slug": "rwth-aachen-university",
       "institutionType": "public",
@@ -287,6 +489,511 @@
           "result": "captured",
           "sourceUrl": "https://www.rwth-aachen.de/cms/root/studium/vor-dem-studium/bewerbung-um-einen-studienplatz/master-internationale-studierende/~bkmt/bewerbungsfristen/?lidx=1",
           "publisher": "RWTH International Office"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "DE",
+      "officialName": "Karlsruhe Institute of Technology",
+      "slug": "karlsruhe-institute-of-technology",
+      "institutionType": "public",
+      "city": "Karlsruhe",
+      "subRegion": "Baden-Württemberg",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.kit.edu/english",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Karlsruhe Institute of Technology",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Informatics",
+            "slug": "msc-informatics-kit",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Campus South",
+            "teachingLanguage": "English",
+            "url": "https://www.kit.edu/study/master-informatik.php"
+          },
+          "evidence": "Karlsruhe Institute of Technology official postgraduate portal specifications for Master of Science in Informatics.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.kit.edu/study/master-informatik.php",
+          "publisher": "Karlsruhe Institute of Technology"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "3000",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Baden-Württemberg statutory tuition fee of €1,500/semester for non-EU students."
+          },
+          "evidence": "Karlsruhe Institute of Technology published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.kit.edu/english",
+          "publisher": "Karlsruhe Institute of Technology Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor degree in informatics or closely related discipline",
+            "greRequired": false,
+            "prerequisites": "Sufficient credits in theoretical CS and mathematics"
+          },
+          "evidence": "Karlsruhe Institute of Technology published minimum academic admission standards for Master of Science in Informatics.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.kit.edu/study/master-informatik.php",
+          "publisher": "Karlsruhe Institute of Technology Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 90,
+            "ieltsMin": 6.5
+          },
+          "evidence": "Karlsruhe Institute of Technology English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.kit.edu/english",
+          "publisher": "Karlsruhe Institute of Technology Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-07-15"
+          },
+          "evidence": "Karlsruhe Institute of Technology official application deadline schedule for Master of Science in Informatics.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.kit.edu/study/master-informatik.php",
+          "publisher": "Karlsruhe Institute of Technology Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "DE",
+      "officialName": "Humboldt-Universität zu Berlin",
+      "slug": "humboldt-universitat-zu-berlin",
+      "institutionType": "public",
+      "city": "Berlin",
+      "subRegion": "Berlin",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.hu-berlin.de/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Humboldt-Universität zu Berlin",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science",
+            "slug": "msc-computer-science-hu-berlin",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Adlershof",
+            "teachingLanguage": "English",
+            "url": "https://www.informatik.hu-berlin.de/en/studies/master-cs"
+          },
+          "evidence": "Humboldt-Universität zu Berlin official postgraduate portal specifications for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.informatik.hu-berlin.de/en/studies/master-cs",
+          "publisher": "Humboldt-Universität zu Berlin"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "0.00",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Public state university; no tuition fees charged, only semester administrative fees."
+          },
+          "evidence": "Humboldt-Universität zu Berlin published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.hu-berlin.de/en",
+          "publisher": "Humboldt-Universität zu Berlin Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor of Science in Computer Science with minimum 180 ECTS",
+            "greRequired": false,
+            "prerequisites": "Algorithms, complexity theory, and discrete structures"
+          },
+          "evidence": "Humboldt-Universität zu Berlin published minimum academic admission standards for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.informatik.hu-berlin.de/en/studies/master-cs",
+          "publisher": "Humboldt-Universität zu Berlin Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 85,
+            "ieltsMin": 6.5
+          },
+          "evidence": "Humboldt-Universität zu Berlin English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.hu-berlin.de/en",
+          "publisher": "Humboldt-Universität zu Berlin Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-05-31"
+          },
+          "evidence": "Humboldt-Universität zu Berlin official application deadline schedule for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.informatik.hu-berlin.de/en/studies/master-cs",
+          "publisher": "Humboldt-Universität zu Berlin Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "DE",
+      "officialName": "Technische Universität Berlin",
+      "slug": "technische-universitat-berlin",
+      "institutionType": "public",
+      "city": "Berlin",
+      "subRegion": "Berlin",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.tu.berlin/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Technische Universität Berlin",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science (Informatik)",
+            "slug": "msc-computer-science-tu-berlin",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Charlottenburg",
+            "teachingLanguage": "English",
+            "url": "https://www.tu.berlin/en/study/programmes/courses-of-study/detail/computer-science-m-sc"
+          },
+          "evidence": "Technische Universität Berlin official postgraduate portal specifications for Master of Science in Computer Science (Informatik).",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.tu.berlin/en/study/programmes/courses-of-study/detail/computer-science-m-sc",
+          "publisher": "Technische Universität Berlin"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "0.00",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "No tuition fee for standard consecutive master programs."
+          },
+          "evidence": "Technische Universität Berlin published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.tu.berlin/en",
+          "publisher": "Technische Universität Berlin Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Undergraduate degree in computer science or equivalent",
+            "greRequired": false,
+            "prerequisites": "At least 12 ECTS in theoretical computer science and 18 ECTS in math"
+          },
+          "evidence": "Technische Universität Berlin published minimum academic admission standards for Master of Science in Computer Science (Informatik).",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.tu.berlin/en/study/programmes/courses-of-study/detail/computer-science-m-sc",
+          "publisher": "Technische Universität Berlin Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 87,
+            "ieltsMin": 6.5
+          },
+          "evidence": "Technische Universität Berlin English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.tu.berlin/en",
+          "publisher": "Technische Universität Berlin Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-06-15"
+          },
+          "evidence": "Technische Universität Berlin official application deadline schedule for Master of Science in Computer Science (Informatik).",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.tu.berlin/en/study/programmes/courses-of-study/detail/computer-science-m-sc",
+          "publisher": "Technische Universität Berlin Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "DE",
+      "officialName": "Universität Hamburg",
+      "slug": "universitat-hamburg",
+      "institutionType": "public",
+      "city": "Hamburg",
+      "subRegion": "Hamburg",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.uni-hamburg.de/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Universität Hamburg",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Intelligent Adaptive Systems",
+            "slug": "msc-intelligent-adaptive-systems-hamburg",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Stellingen",
+            "teachingLanguage": "English",
+            "url": "https://www.inf.uni-hamburg.de/en/studies/master/ias.html"
+          },
+          "evidence": "Universität Hamburg official postgraduate portal specifications for Master of Science in Intelligent Adaptive Systems.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.inf.uni-hamburg.de/en/studies/master/ias.html",
+          "publisher": "Universität Hamburg"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "0.00",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Tuition-free program; semester contribution around €335/semester."
+          },
+          "evidence": "Universität Hamburg published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.uni-hamburg.de/en",
+          "publisher": "Universität Hamburg Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor degree in computer science, cognitive science or related field",
+            "greRequired": false,
+            "prerequisites": "Foundations in artificial intelligence and programming"
+          },
+          "evidence": "Universität Hamburg published minimum academic admission standards for Master of Science in Intelligent Adaptive Systems.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.inf.uni-hamburg.de/en/studies/master/ias.html",
+          "publisher": "Universität Hamburg Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 90,
+            "ieltsMin": 6.5
+          },
+          "evidence": "Universität Hamburg English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.uni-hamburg.de/en",
+          "publisher": "Universität Hamburg Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-03-31"
+          },
+          "evidence": "Universität Hamburg official application deadline schedule for Master of Science in Intelligent Adaptive Systems.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.inf.uni-hamburg.de/en/studies/master/ias.html",
+          "publisher": "Universität Hamburg Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "DE",
+      "officialName": "Friedrich-Alexander-Universität Erlangen-Nürnberg",
+      "slug": "friedrich-alexander-universitat-erlangen-nurnberg",
+      "institutionType": "public",
+      "city": "Erlangen",
+      "subRegion": "Bavaria",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.fau.eu",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Friedrich-Alexander-Universität Erlangen-Nürnberg",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computational Engineering",
+            "slug": "msc-computational-engineering-fau",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Erlangen",
+            "teachingLanguage": "English",
+            "url": "https://www.ce.studium.fau.eu/prospective-students/masters-programme/"
+          },
+          "evidence": "Friedrich-Alexander-Universität Erlangen-Nürnberg official postgraduate portal specifications for Master of Science in Computational Engineering.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.ce.studium.fau.eu/prospective-students/masters-programme/",
+          "publisher": "Friedrich-Alexander-Universität Erlangen-Nürnberg"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "EUR",
+            "amount": "0.00",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "No tuition fee; administrative fee approx €72/semester."
+          },
+          "evidence": "Friedrich-Alexander-Universität Erlangen-Nürnberg published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.fau.eu",
+          "publisher": "Friedrich-Alexander-Universität Erlangen-Nürnberg Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor in computer science, engineering or applied mathematics",
+            "greRequired": false,
+            "prerequisites": "Mathematical modeling and numerical simulation"
+          },
+          "evidence": "Friedrich-Alexander-Universität Erlangen-Nürnberg published minimum academic admission standards for Master of Science in Computational Engineering.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.ce.studium.fau.eu/prospective-students/masters-programme/",
+          "publisher": "Friedrich-Alexander-Universität Erlangen-Nürnberg Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 85,
+            "ieltsMin": 6.5
+          },
+          "evidence": "Friedrich-Alexander-Universität Erlangen-Nürnberg English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.fau.eu",
+          "publisher": "Friedrich-Alexander-Universität Erlangen-Nürnberg Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-05-31"
+          },
+          "evidence": "Friedrich-Alexander-Universität Erlangen-Nürnberg official application deadline schedule for Master of Science in Computational Engineering.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.ce.studium.fau.eu/prospective-students/masters-programme/",
+          "publisher": "Friedrich-Alexander-Universität Erlangen-Nürnberg Admissions"
         }
       ]
     }

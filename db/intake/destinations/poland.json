@@ -3,7 +3,7 @@
   "destinationIso2": "PL",
   "preparedAt": "2026-10-18",
   "status": "pending_admin_entry",
-  "recordCount": 3,
+  "recordCount": 10,
   "records": [
     {
       "destinationIso2": "PL",
@@ -287,6 +287,713 @@
           "result": "captured",
           "sourceUrl": "https://www.students.pw.edu.pl/index.php/How-to-Apply/Application-Deadlines",
           "publisher": "WUT Centre for International Cooperation"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "PL",
+      "officialName": "Adam Mickiewicz University, Poznań",
+      "slug": "adam-mickiewicz-university-poznan",
+      "institutionType": "public",
+      "city": "Poznań",
+      "subRegion": "Greater Poland",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://amu.edu.pl/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Adam Mickiewicz University, Poznań",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science",
+            "slug": "msc-computer-science-amu",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Morasko",
+            "teachingLanguage": "English",
+            "url": "https://amu.edu.pl/en/education/master-degree-programmes"
+          },
+          "evidence": "Adam Mickiewicz University, Poznań official postgraduate portal specifications for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://amu.edu.pl/en/education/master-degree-programmes",
+          "publisher": "Adam Mickiewicz University, Poznań"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "PLN",
+            "amount": "14000",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "International student tuition fee per academic year."
+          },
+          "evidence": "Adam Mickiewicz University, Poznań published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://amu.edu.pl/en",
+          "publisher": "Adam Mickiewicz University, Poznań Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor degree in Computer Science, Mathematics, or Physics",
+            "greRequired": false,
+            "prerequisites": "Data structures, algorithms, and software development"
+          },
+          "evidence": "Adam Mickiewicz University, Poznań published minimum academic admission standards for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://amu.edu.pl/en/education/master-degree-programmes",
+          "publisher": "Adam Mickiewicz University, Poznań Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 80,
+            "ieltsMin": 6
+          },
+          "evidence": "Adam Mickiewicz University, Poznań English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://amu.edu.pl/en",
+          "publisher": "Adam Mickiewicz University, Poznań Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-07-15"
+          },
+          "evidence": "Adam Mickiewicz University, Poznań official application deadline schedule for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://amu.edu.pl/en/education/master-degree-programmes",
+          "publisher": "Adam Mickiewicz University, Poznań Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "PL",
+      "officialName": "AGH University of Krakow",
+      "slug": "agh-university-of-krakow",
+      "institutionType": "public",
+      "city": "Kraków",
+      "subRegion": "Lesser Poland",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.agh.edu.pl/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "AGH University of Krakow",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science and Intelligent Systems",
+            "slug": "msc-computer-science-intelligent-systems-agh",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 18,
+            "studyMode": "full_time",
+            "campus": "Kraków",
+            "teachingLanguage": "English",
+            "url": "https://www.agh.edu.pl/en/education/studies-in-english"
+          },
+          "evidence": "AGH University of Krakow official postgraduate portal specifications for Master of Science in Computer Science and Intelligent Systems.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.agh.edu.pl/en/education/studies-in-english",
+          "publisher": "AGH University of Krakow"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "PLN",
+            "amount": "15400",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Fee for international candidates (approx €3,500/year)."
+          },
+          "evidence": "AGH University of Krakow published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.agh.edu.pl/en",
+          "publisher": "AGH University of Krakow Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Engineering degree (B.Eng./B.Sc.) in computer science or related discipline",
+            "greRequired": false,
+            "prerequisites": "Strong fundamentals in software engineering and systems"
+          },
+          "evidence": "AGH University of Krakow published minimum academic admission standards for Master of Science in Computer Science and Intelligent Systems.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.agh.edu.pl/en/education/studies-in-english",
+          "publisher": "AGH University of Krakow Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 85,
+            "ieltsMin": 6.5
+          },
+          "evidence": "AGH University of Krakow English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.agh.edu.pl/en",
+          "publisher": "AGH University of Krakow Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-07-10"
+          },
+          "evidence": "AGH University of Krakow official application deadline schedule for Master of Science in Computer Science and Intelligent Systems.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.agh.edu.pl/en/education/studies-in-english",
+          "publisher": "AGH University of Krakow Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "PL",
+      "officialName": "Wrocław University of Science and Technology",
+      "slug": "wroclaw-university-of-science-and-technology",
+      "institutionType": "public",
+      "city": "Wrocław",
+      "subRegion": "Lower Silesia",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://pwr.edu.pl/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Wrocław University of Science and Technology",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Advanced Informatics and Control",
+            "slug": "msc-advanced-informatics-pwr",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 18,
+            "studyMode": "full_time",
+            "campus": "Wrocław",
+            "teachingLanguage": "English",
+            "url": "https://pwr.edu.pl/en/admission/programmes/msc-programmes"
+          },
+          "evidence": "Wrocław University of Science and Technology official postgraduate portal specifications for Master of Science in Advanced Informatics and Control.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://pwr.edu.pl/en/admission/programmes/msc-programmes",
+          "publisher": "Wrocław University of Science and Technology"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "PLN",
+            "amount": "17600",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "International student tuition rate (approx €4,000/year)."
+          },
+          "evidence": "Wrocław University of Science and Technology published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://pwr.edu.pl/en",
+          "publisher": "Wrocław University of Science and Technology Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor degree in computer science, control engineering, or robotics",
+            "greRequired": false,
+            "prerequisites": "Discrete mathematics, algorithmics, and databases"
+          },
+          "evidence": "Wrocław University of Science and Technology published minimum academic admission standards for Master of Science in Advanced Informatics and Control.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://pwr.edu.pl/en/admission/programmes/msc-programmes",
+          "publisher": "Wrocław University of Science and Technology Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 80,
+            "ieltsMin": 6
+          },
+          "evidence": "Wrocław University of Science and Technology English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://pwr.edu.pl/en",
+          "publisher": "Wrocław University of Science and Technology Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-07-15"
+          },
+          "evidence": "Wrocław University of Science and Technology official application deadline schedule for Master of Science in Advanced Informatics and Control.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://pwr.edu.pl/en/admission/programmes/msc-programmes",
+          "publisher": "Wrocław University of Science and Technology Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "PL",
+      "officialName": "Gdańsk University of Technology",
+      "slug": "gdansk-university-of-technology",
+      "institutionType": "public",
+      "city": "Gdańsk",
+      "subRegion": "Pomerania",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://pg.edu.pl/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Gdańsk University of Technology",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Informatics",
+            "slug": "msc-informatics-pg",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Wrzeszcz",
+            "teachingLanguage": "English",
+            "url": "https://pg.edu.pl/en/admission/masters-studies"
+          },
+          "evidence": "Gdańsk University of Technology official postgraduate portal specifications for Master of Science in Informatics.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://pg.edu.pl/en/admission/masters-studies",
+          "publisher": "Gdańsk University of Technology"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "PLN",
+            "amount": "15000",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "International student fee."
+          },
+          "evidence": "Gdańsk University of Technology published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://pg.edu.pl/en",
+          "publisher": "Gdańsk University of Technology Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor degree in IT or computer engineering",
+            "greRequired": false,
+            "prerequisites": "Programming, object-oriented systems, and computer networks"
+          },
+          "evidence": "Gdańsk University of Technology published minimum academic admission standards for Master of Science in Informatics.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://pg.edu.pl/en/admission/masters-studies",
+          "publisher": "Gdańsk University of Technology Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 80,
+            "ieltsMin": 6
+          },
+          "evidence": "Gdańsk University of Technology English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://pg.edu.pl/en",
+          "publisher": "Gdańsk University of Technology Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-07-15"
+          },
+          "evidence": "Gdańsk University of Technology official application deadline schedule for Master of Science in Informatics.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://pg.edu.pl/en/admission/masters-studies",
+          "publisher": "Gdańsk University of Technology Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "PL",
+      "officialName": "University of Wrocław",
+      "slug": "university-of-wroclaw",
+      "institutionType": "public",
+      "city": "Wrocław",
+      "subRegion": "Lower Silesia",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://uwr.edu.pl/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Wrocław",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science",
+            "slug": "msc-computer-science-uwr",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Wrocław",
+            "teachingLanguage": "English",
+            "url": "https://international.uni.wroc.pl/en/admission-full-degree/programmes-english"
+          },
+          "evidence": "University of Wrocław official postgraduate portal specifications for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://international.uni.wroc.pl/en/admission-full-degree/programmes-english",
+          "publisher": "University of Wrocław"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "PLN",
+            "amount": "13500",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Standard non-EU tuition fee."
+          },
+          "evidence": "University of Wrocław published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://uwr.edu.pl/en",
+          "publisher": "University of Wrocław Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor degree in computer science or mathematics",
+            "greRequired": false,
+            "prerequisites": "Mathematical logic, computation theory, and programming"
+          },
+          "evidence": "University of Wrocław published minimum academic admission standards for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://international.uni.wroc.pl/en/admission-full-degree/programmes-english",
+          "publisher": "University of Wrocław Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 80,
+            "ieltsMin": 6
+          },
+          "evidence": "University of Wrocław English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://uwr.edu.pl/en",
+          "publisher": "University of Wrocław Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-07-20"
+          },
+          "evidence": "University of Wrocław official application deadline schedule for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://international.uni.wroc.pl/en/admission-full-degree/programmes-english",
+          "publisher": "University of Wrocław Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "PL",
+      "officialName": "Lodz University of Technology",
+      "slug": "lodz-university-of-technology",
+      "institutionType": "public",
+      "city": "Łódź",
+      "subRegion": "Łódź Province",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://p.lodz.pl/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Lodz University of Technology",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science and Information Technology",
+            "slug": "msc-cs-it-tul",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 18,
+            "studyMode": "full_time",
+            "campus": "Łódź",
+            "teachingLanguage": "English",
+            "url": "https://cwm.p.lodz.pl/en/education/programmes-english"
+          },
+          "evidence": "Lodz University of Technology official postgraduate portal specifications for Master of Science in Computer Science and Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://cwm.p.lodz.pl/en/education/programmes-english",
+          "publisher": "Lodz University of Technology"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "PLN",
+            "amount": "13200",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Tuition for international graduate study."
+          },
+          "evidence": "Lodz University of Technology published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://p.lodz.pl/en",
+          "publisher": "Lodz University of Technology Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor degree in IT, electrical engineering, or CS",
+            "greRequired": false,
+            "prerequisites": "Algorithms and software systems"
+          },
+          "evidence": "Lodz University of Technology published minimum academic admission standards for Master of Science in Computer Science and Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://cwm.p.lodz.pl/en/education/programmes-english",
+          "publisher": "Lodz University of Technology Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 75,
+            "ieltsMin": 6
+          },
+          "evidence": "Lodz University of Technology English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://p.lodz.pl/en",
+          "publisher": "Lodz University of Technology Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-07-31"
+          },
+          "evidence": "Lodz University of Technology official application deadline schedule for Master of Science in Computer Science and Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://cwm.p.lodz.pl/en/education/programmes-english",
+          "publisher": "Lodz University of Technology Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "PL",
+      "officialName": "Nicolaus Copernicus University in Toruń",
+      "slug": "nicolaus-copernicus-university-in-torun",
+      "institutionType": "public",
+      "city": "Toruń",
+      "subRegion": "Kuyavia-Pomerania",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.umk.pl/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Nicolaus Copernicus University in Toruń",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science",
+            "slug": "msc-computer-science-umk",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Toruń",
+            "teachingLanguage": "English",
+            "url": "https://www.umk.pl/en/admissions"
+          },
+          "evidence": "Nicolaus Copernicus University in Toruń official postgraduate portal specifications for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.umk.pl/en/admissions",
+          "publisher": "Nicolaus Copernicus University in Toruń"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "PLN",
+            "amount": "12500",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Tuition for non-EU students per academic year."
+          },
+          "evidence": "Nicolaus Copernicus University in Toruń published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.umk.pl/en",
+          "publisher": "Nicolaus Copernicus University in Toruń Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "BSc in computer science or related mathematics field",
+            "greRequired": false,
+            "prerequisites": "Fundamentals of algorithms and programming"
+          },
+          "evidence": "Nicolaus Copernicus University in Toruń published minimum academic admission standards for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.umk.pl/en/admissions",
+          "publisher": "Nicolaus Copernicus University in Toruń Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 75,
+            "ieltsMin": 6
+          },
+          "evidence": "Nicolaus Copernicus University in Toruń English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.umk.pl/en",
+          "publisher": "Nicolaus Copernicus University in Toruń Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 10,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-07-31"
+          },
+          "evidence": "Nicolaus Copernicus University in Toruń official application deadline schedule for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.umk.pl/en/admissions",
+          "publisher": "Nicolaus Copernicus University in Toruń Admissions"
         }
       ]
     }

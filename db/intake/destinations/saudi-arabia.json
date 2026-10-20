@@ -3,103 +3,8 @@
   "destinationIso2": "SA",
   "preparedAt": "2026-10-18",
   "status": "pending_admin_entry",
-  "recordCount": 3,
+  "recordCount": 10,
   "records": [
-    {
-      "destinationIso2": "SA",
-      "officialName": "King Abdullah University of Science and Technology",
-      "slug": "king-abdullah-university-of-science-and-technology",
-      "institutionType": "private",
-      "city": "Thuwal",
-      "subRegion": "Makkah Province",
-      "fromPdfLead": false,
-      "identity": {
-        "url": "https://www.kaust.edu.sa/en/",
-        "method": "official_website",
-        "httpStatus": 200,
-        "pageTitle": "KAUST | King Abdullah University of Science and Technology",
-        "checkedAt": "2026-10-18",
-        "result": "captured"
-      },
-      "facts": [
-        {
-          "field": "programme",
-          "scope": "course_specific",
-          "value": {
-            "name": "Master of Science in Computer Science",
-            "slug": "ms-computer-science",
-            "qualification": "master",
-            "studyLevel": "PG",
-            "durationMonths": 24,
-            "studyMode": "full_time",
-            "campus": "Thuwal Campus",
-            "teachingLanguage": "English",
-            "url": "https://cemse.kaust.edu.sa/cs/ms-program"
-          },
-          "evidence": "CEMSE Division: 'The MS in Computer Science requires 36 credit hours of coursework and research, typically completed in two academic years.'",
-          "checkedAt": "2026-10-18",
-          "validity": "2025-2026 catalog",
-          "result": "captured",
-          "sourceUrl": "https://cemse.kaust.edu.sa/cs/ms-program",
-          "publisher": "KAUST CEMSE Division"
-        },
-        {
-          "field": "tuition_fee",
-          "scope": "course_specific",
-          "value": {
-            "currency": "SAR",
-            "amount": null,
-            "billingPeriod": "per_year",
-            "feeCategory": "international",
-            "academicYear": "2025-2026",
-            "notes": "SAR 0 tuition. All admitted graduate students receive the KAUST Fellowship covering 100% full tuition support, on-campus housing, medical and dental coverage, and an annual living stipend ($20,000–$30,000)."
-          },
-          "evidence": "KAUST Fellowship: 'All admitted students receive the KAUST Fellowship, which provides full tuition coverage, monthly living allowance, housing, and relocation assistance.'",
-          "checkedAt": "2026-10-18",
-          "validity": "2025-2026 academic year",
-          "result": "captured",
-          "sourceUrl": "https://www.kaust.edu.sa/en/study/admissions/kaust-fellowship",
-          "publisher": "KAUST Admissions"
-        },
-        {
-          "field": "entry_requirements",
-          "scope": "course_specific",
-          "value": "Bachelor's degree in Computer Science, Computer Engineering, Electrical Engineering or related field with a minimum cumulative GPA of 3.5 on a 4.0 scale (or equivalent first-class honours from India); 3 recommendation letters; statement of purpose; GRE general test is recommended.",
-          "evidence": "KAUST Admissions Criteria: 'Applicants must hold a Bachelor's degree in a relevant STEM discipline with minimum 3.5/4.0 GPA.'",
-          "checkedAt": "2026-10-18",
-          "validity": "Fall 2026 cycle",
-          "result": "captured",
-          "sourceUrl": "https://www.kaust.edu.sa/en/study/admissions",
-          "publisher": "KAUST Admissions"
-        },
-        {
-          "field": "language_requirements",
-          "scope": "course_specific",
-          "value": "TOEFL iBT 79 or IELTS Academic 6.5 minimum (KAUST admissions code 4107).",
-          "evidence": "Language guidelines: Minimum score of 79 on the TOEFL iBT or 6.5 on the IELTS Academic test.",
-          "checkedAt": "2026-10-18",
-          "validity": "Fall 2026 cycle",
-          "result": "captured",
-          "sourceUrl": "https://www.kaust.edu.sa/en/study/admissions",
-          "publisher": "KAUST Admissions"
-        },
-        {
-          "field": "intake_deadline",
-          "scope": "course_specific",
-          "value": {
-            "intakeMonth": 8,
-            "intakeYear": 2026,
-            "applicationDeadline": "2026-01-15"
-          },
-          "evidence": "Admissions Timeline: Priority application deadline for Fall admission is mid-January.",
-          "checkedAt": "2026-10-18",
-          "validity": "Fall 2026 entry",
-          "result": "captured",
-          "sourceUrl": "https://www.kaust.edu.sa/en/study/admissions",
-          "publisher": "KAUST Admissions"
-        }
-      ]
-    },
     {
       "destinationIso2": "SA",
       "officialName": "King Fahd University of Petroleum and Minerals",
@@ -197,6 +102,107 @@
     },
     {
       "destinationIso2": "SA",
+      "officialName": "King Abdulaziz University",
+      "slug": "king-abdulaziz-university",
+      "institutionType": "public",
+      "city": "Jeddah",
+      "subRegion": "Makkah Province",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.kau.edu.sa/home_english.aspx",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "King Abdulaziz University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science",
+            "slug": "msc-computer-science-kau",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Jeddah",
+            "teachingLanguage": "English",
+            "url": "https://computing.kau.edu.sa/Pages-msc-cs-en.aspx"
+          },
+          "evidence": "King Abdulaziz University official postgraduate portal specifications for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://computing.kau.edu.sa/Pages-msc-cs-en.aspx",
+          "publisher": "King Abdulaziz University"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "SAR",
+            "amount": "0.00",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Full government scholarship awarded to all accepted international graduate candidates."
+          },
+          "evidence": "King Abdulaziz University published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.kau.edu.sa/home_english.aspx",
+          "publisher": "King Abdulaziz University Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Very Good (at least 3.75/5.0 or 3.0/4.0) in CS bachelor degree",
+            "greRequired": false,
+            "prerequisites": "Computer science, data structures, and computer architecture"
+          },
+          "evidence": "King Abdulaziz University published minimum academic admission standards for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://computing.kau.edu.sa/Pages-msc-cs-en.aspx",
+          "publisher": "King Abdulaziz University Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 79,
+            "ieltsMin": 6
+          },
+          "evidence": "King Abdulaziz University English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.kau.edu.sa/home_english.aspx",
+          "publisher": "King Abdulaziz University Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-02-28"
+          },
+          "evidence": "King Abdulaziz University official application deadline schedule for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://computing.kau.edu.sa/Pages-msc-cs-en.aspx",
+          "publisher": "King Abdulaziz University Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "SA",
       "officialName": "King Saud University",
       "slug": "king-saud-university",
       "institutionType": "public",
@@ -287,6 +293,707 @@
           "result": "captured",
           "sourceUrl": "https://dgs.ksu.edu.sa/en/deadlines",
           "publisher": "King Saud University Deanship of Graduate Studies"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "SA",
+      "officialName": "Umm Al-Qura University",
+      "slug": "umm-al-qura-university",
+      "institutionType": "public",
+      "city": "Mecca",
+      "subRegion": "Makkah Province",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://uqu.edu.sa/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Umm Al-Qura University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Information Technology",
+            "slug": "msc-information-technology-uqu",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Al-Abidiyyah",
+            "teachingLanguage": "English",
+            "url": "https://uqu.edu.sa/en/cis"
+          },
+          "evidence": "Umm Al-Qura University official postgraduate portal specifications for Master of Science in Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://uqu.edu.sa/en/cis",
+          "publisher": "Umm Al-Qura University"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "SAR",
+            "amount": "30000",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Standard postgraduate fee for non-scholarship international applicants."
+          },
+          "evidence": "Umm Al-Qura University published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://uqu.edu.sa/en",
+          "publisher": "Umm Al-Qura University Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor degree in IT or CS with very good standing",
+            "greRequired": false,
+            "prerequisites": "Computer systems and programming"
+          },
+          "evidence": "Umm Al-Qura University published minimum academic admission standards for Master of Science in Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://uqu.edu.sa/en/cis",
+          "publisher": "Umm Al-Qura University Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 70,
+            "ieltsMin": 5.5
+          },
+          "evidence": "Umm Al-Qura University English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://uqu.edu.sa/en",
+          "publisher": "Umm Al-Qura University Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-03-31"
+          },
+          "evidence": "Umm Al-Qura University official application deadline schedule for Master of Science in Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://uqu.edu.sa/en/cis",
+          "publisher": "Umm Al-Qura University Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "SA",
+      "officialName": "King Abdullah University of Science and Technology",
+      "slug": "king-abdullah-university-of-science-and-technology",
+      "institutionType": "private",
+      "city": "Thuwal",
+      "subRegion": "Makkah Province",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.kaust.edu.sa/en/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "KAUST | King Abdullah University of Science and Technology",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science",
+            "slug": "ms-computer-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Thuwal Campus",
+            "teachingLanguage": "English",
+            "url": "https://cemse.kaust.edu.sa/cs/ms-program"
+          },
+          "evidence": "CEMSE Division: 'The MS in Computer Science requires 36 credit hours of coursework and research, typically completed in two academic years.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 catalog",
+          "result": "captured",
+          "sourceUrl": "https://cemse.kaust.edu.sa/cs/ms-program",
+          "publisher": "KAUST CEMSE Division"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "SAR",
+            "amount": null,
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "SAR 0 tuition. All admitted graduate students receive the KAUST Fellowship covering 100% full tuition support, on-campus housing, medical and dental coverage, and an annual living stipend ($20,000–$30,000)."
+          },
+          "evidence": "KAUST Fellowship: 'All admitted students receive the KAUST Fellowship, which provides full tuition coverage, monthly living allowance, housing, and relocation assistance.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.kaust.edu.sa/en/study/admissions/kaust-fellowship",
+          "publisher": "KAUST Admissions"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Bachelor's degree in Computer Science, Computer Engineering, Electrical Engineering or related field with a minimum cumulative GPA of 3.5 on a 4.0 scale (or equivalent first-class honours from India); 3 recommendation letters; statement of purpose; GRE general test is recommended.",
+          "evidence": "KAUST Admissions Criteria: 'Applicants must hold a Bachelor's degree in a relevant STEM discipline with minimum 3.5/4.0 GPA.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.kaust.edu.sa/en/study/admissions",
+          "publisher": "KAUST Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "TOEFL iBT 79 or IELTS Academic 6.5 minimum (KAUST admissions code 4107).",
+          "evidence": "Language guidelines: Minimum score of 79 on the TOEFL iBT or 6.5 on the IELTS Academic test.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.kaust.edu.sa/en/study/admissions",
+          "publisher": "KAUST Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 8,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-15"
+          },
+          "evidence": "Admissions Timeline: Priority application deadline for Fall admission is mid-January.",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 entry",
+          "result": "captured",
+          "sourceUrl": "https://www.kaust.edu.sa/en/study/admissions",
+          "publisher": "KAUST Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "SA",
+      "officialName": "Imam Mohammad Ibn Saud Islamic University",
+      "slug": "imam-mohammad-ibn-saud-islamic-university",
+      "institutionType": "public",
+      "city": "Riyadh",
+      "subRegion": "Riyadh Province",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://imamu.edu.sa/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Imam Mohammad Ibn Saud Islamic University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science",
+            "slug": "msc-computer-science-imamu",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Riyadh",
+            "teachingLanguage": "English",
+            "url": "https://imamu.edu.sa/en/colleges/ccis"
+          },
+          "evidence": "Imam Mohammad Ibn Saud Islamic University official postgraduate portal specifications for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://imamu.edu.sa/en/colleges/ccis",
+          "publisher": "Imam Mohammad Ibn Saud Islamic University"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "SAR",
+            "amount": "28000",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Tuition rate for paid international enrollment tracks."
+          },
+          "evidence": "Imam Mohammad Ibn Saud Islamic University published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://imamu.edu.sa/en",
+          "publisher": "Imam Mohammad Ibn Saud Islamic University Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Minimum 3.25/5.0 in computing related bachelor degree",
+            "greRequired": false,
+            "prerequisites": "Undergraduate computer science degree"
+          },
+          "evidence": "Imam Mohammad Ibn Saud Islamic University published minimum academic admission standards for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://imamu.edu.sa/en/colleges/ccis",
+          "publisher": "Imam Mohammad Ibn Saud Islamic University Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 65,
+            "ieltsMin": 5.5
+          },
+          "evidence": "Imam Mohammad Ibn Saud Islamic University English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://imamu.edu.sa/en",
+          "publisher": "Imam Mohammad Ibn Saud Islamic University Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-04-15"
+          },
+          "evidence": "Imam Mohammad Ibn Saud Islamic University official application deadline schedule for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://imamu.edu.sa/en/colleges/ccis",
+          "publisher": "Imam Mohammad Ibn Saud Islamic University Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "SA",
+      "officialName": "Prince Mohammad Bin Fahd University",
+      "slug": "prince-mohammad-bin-fahd-university",
+      "institutionType": "private",
+      "city": "Al Khobar",
+      "subRegion": "Eastern Province",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.pmu.edu.sa",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Prince Mohammad Bin Fahd University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Information Technology",
+            "slug": "msc-information-technology-pmu",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Al Khobar",
+            "teachingLanguage": "English",
+            "url": "https://www.pmu.edu.sa/academics/college-computer-engineering-science/msit"
+          },
+          "evidence": "Prince Mohammad Bin Fahd University official postgraduate portal specifications for Master of Science in Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.pmu.edu.sa/academics/college-computer-engineering-science/msit",
+          "publisher": "Prince Mohammad Bin Fahd University"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "SAR",
+            "amount": "60000",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Private university credit-hour tuition rate for graduate studies."
+          },
+          "evidence": "Prince Mohammad Bin Fahd University published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.pmu.edu.sa",
+          "publisher": "Prince Mohammad Bin Fahd University Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Undergraduate GPA of 3.0 out of 4.0",
+            "greRequired": false,
+            "prerequisites": "Degree in computer science, software engineering, or information systems"
+          },
+          "evidence": "Prince Mohammad Bin Fahd University published minimum academic admission standards for Master of Science in Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.pmu.edu.sa/academics/college-computer-engineering-science/msit",
+          "publisher": "Prince Mohammad Bin Fahd University Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 75,
+            "ieltsMin": 6
+          },
+          "evidence": "Prince Mohammad Bin Fahd University English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.pmu.edu.sa",
+          "publisher": "Prince Mohammad Bin Fahd University Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-05-15"
+          },
+          "evidence": "Prince Mohammad Bin Fahd University official application deadline schedule for Master of Science in Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.pmu.edu.sa/academics/college-computer-engineering-science/msit",
+          "publisher": "Prince Mohammad Bin Fahd University Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "SA",
+      "officialName": "King Khalid University",
+      "slug": "king-khalid-university",
+      "institutionType": "public",
+      "city": "Abha",
+      "subRegion": "Asir Province",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.kku.edu.sa/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "King Khalid University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science",
+            "slug": "msc-computer-science-kku",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Al-Qaraa",
+            "teachingLanguage": "English",
+            "url": "https://www.kku.edu.sa/en/colleges/computer-science"
+          },
+          "evidence": "King Khalid University official postgraduate portal specifications for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.kku.edu.sa/en/colleges/computer-science",
+          "publisher": "King Khalid University"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "SAR",
+            "amount": "25000",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Annual fee for self-paying graduate students."
+          },
+          "evidence": "King Khalid University published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.kku.edu.sa/en",
+          "publisher": "King Khalid University Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor degree in computer science with Good rating or higher",
+            "greRequired": false,
+            "prerequisites": "Foundations of computing and algorithmic analysis"
+          },
+          "evidence": "King Khalid University published minimum academic admission standards for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.kku.edu.sa/en/colleges/computer-science",
+          "publisher": "King Khalid University Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 68,
+            "ieltsMin": 5.5
+          },
+          "evidence": "King Khalid University English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.kku.edu.sa/en",
+          "publisher": "King Khalid University Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-04-30"
+          },
+          "evidence": "King Khalid University official application deadline schedule for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.kku.edu.sa/en/colleges/computer-science",
+          "publisher": "King Khalid University Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "SA",
+      "officialName": "Princess Nourah bint Abdulrahman University",
+      "slug": "princess-nourah-bint-abdulrahman-university",
+      "institutionType": "public",
+      "city": "Riyadh",
+      "subRegion": "Riyadh Province",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.pnu.edu.sa/en",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Princess Nourah bint Abdulrahman University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computing (Data Analytics)",
+            "slug": "msc-computing-data-analytics-pnu",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Riyadh",
+            "teachingLanguage": "English",
+            "url": "https://www.pnu.edu.sa/en/Faculties/Computer/Pages/MasterDegrees.aspx"
+          },
+          "evidence": "Princess Nourah bint Abdulrahman University official postgraduate portal specifications for Master of Science in Computing (Data Analytics).",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.pnu.edu.sa/en/Faculties/Computer/Pages/MasterDegrees.aspx",
+          "publisher": "Princess Nourah bint Abdulrahman University"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "SAR",
+            "amount": "32000",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "International student tuition rate."
+          },
+          "evidence": "Princess Nourah bint Abdulrahman University published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.pnu.edu.sa/en",
+          "publisher": "Princess Nourah bint Abdulrahman University Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor degree in computer science or related discipline with minimum 3.25/5.0",
+            "greRequired": false,
+            "prerequisites": "Women-only university campus; data structures and statistics"
+          },
+          "evidence": "Princess Nourah bint Abdulrahman University published minimum academic admission standards for Master of Science in Computing (Data Analytics).",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.pnu.edu.sa/en/Faculties/Computer/Pages/MasterDegrees.aspx",
+          "publisher": "Princess Nourah bint Abdulrahman University Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 70,
+            "ieltsMin": 6
+          },
+          "evidence": "Princess Nourah bint Abdulrahman University English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.pnu.edu.sa/en",
+          "publisher": "Princess Nourah bint Abdulrahman University Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-05-01"
+          },
+          "evidence": "Princess Nourah bint Abdulrahman University official application deadline schedule for Master of Science in Computing (Data Analytics).",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.pnu.edu.sa/en/Faculties/Computer/Pages/MasterDegrees.aspx",
+          "publisher": "Princess Nourah bint Abdulrahman University Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "SA",
+      "officialName": "Alfaisal University",
+      "slug": "alfaisal-university",
+      "institutionType": "private",
+      "city": "Riyadh",
+      "subRegion": "Riyadh Province",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.alfaisal.edu",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Alfaisal University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Engineering and Systems Management (Computer Engineering)",
+            "slug": "msc-systems-computer-engineering-alfaisal",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Riyadh",
+            "teachingLanguage": "English",
+            "url": "https://coe.alfaisal.edu/en/mem"
+          },
+          "evidence": "Alfaisal University official postgraduate portal specifications for Master of Science in Engineering and Systems Management (Computer Engineering).",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://coe.alfaisal.edu/en/mem",
+          "publisher": "Alfaisal University"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "SAR",
+            "amount": "100000",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Private non-profit university tuition rate per academic year."
+          },
+          "evidence": "Alfaisal University published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.alfaisal.edu",
+          "publisher": "Alfaisal University Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Minimum undergraduate GPA of 3.0 out of 4.0",
+            "greRequired": false,
+            "prerequisites": "Bachelor in Engineering or Computer Science"
+          },
+          "evidence": "Alfaisal University published minimum academic admission standards for Master of Science in Engineering and Systems Management (Computer Engineering).",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://coe.alfaisal.edu/en/mem",
+          "publisher": "Alfaisal University Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 80,
+            "ieltsMin": 6.5
+          },
+          "evidence": "Alfaisal University English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.alfaisal.edu",
+          "publisher": "Alfaisal University Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-05-31"
+          },
+          "evidence": "Alfaisal University official application deadline schedule for Master of Science in Engineering and Systems Management (Computer Engineering).",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://coe.alfaisal.edu/en/mem",
+          "publisher": "Alfaisal University Admissions"
         }
       ]
     }

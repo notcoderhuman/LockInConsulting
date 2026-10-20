@@ -150,8 +150,8 @@ describe('Stage 6 directory research batch (db/intake/2026-10-18-research-batch.
       }
       expect(destData.destinationSlug).toBe(d.slug)
       expect(destData.destinationIso2).toBe(d.iso2)
-      expect(destData.recordCount).toBe(3)
-      expect(destData.records.length).toBe(3)
+      expect(destData.recordCount).toBe(10)
+      expect(destData.records.length).toBe(10)
     }
   })
 })

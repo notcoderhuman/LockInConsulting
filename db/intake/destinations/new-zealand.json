@@ -3,7 +3,7 @@
   "destinationIso2": "NZ",
   "preparedAt": "2026-10-18",
   "status": "pending_admin_entry",
-  "recordCount": 3,
+  "recordCount": 10,
   "records": [
     {
       "destinationIso2": "NZ",
@@ -197,6 +197,208 @@
     },
     {
       "destinationIso2": "NZ",
+      "officialName": "University of Waikato",
+      "slug": "university-of-waikato",
+      "institutionType": "public",
+      "city": "Hamilton",
+      "subRegion": "Waikato",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.waikato.ac.nz",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Waikato",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science",
+            "slug": "msc-computer-science-waikato",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 18,
+            "studyMode": "full_time",
+            "campus": "Hamilton",
+            "teachingLanguage": "English",
+            "url": "https://www.waikato.ac.nz/study/qualifications/master-of-science"
+          },
+          "evidence": "University of Waikato official postgraduate portal specifications for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.waikato.ac.nz/study/qualifications/master-of-science",
+          "publisher": "University of Waikato"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "NZD",
+            "amount": "40200",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "International student annual tuition fee for postgraduate science."
+          },
+          "evidence": "University of Waikato published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.waikato.ac.nz",
+          "publisher": "University of Waikato Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "B grade average across qualifying undergraduate degree",
+            "greRequired": false,
+            "prerequisites": "Bachelor in Computer Science or related qualification"
+          },
+          "evidence": "University of Waikato published minimum academic admission standards for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.waikato.ac.nz/study/qualifications/master-of-science",
+          "publisher": "University of Waikato Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 90,
+            "ieltsMin": 6.5
+          },
+          "evidence": "University of Waikato English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.waikato.ac.nz",
+          "publisher": "University of Waikato Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 2,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-12-01"
+          },
+          "evidence": "University of Waikato official application deadline schedule for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.waikato.ac.nz/study/qualifications/master-of-science",
+          "publisher": "University of Waikato Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "NZ",
+      "officialName": "Massey University",
+      "slug": "massey-university",
+      "institutionType": "public",
+      "city": "Palmerston North",
+      "subRegion": "Manawatū-Whanganui",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.massey.ac.nz",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Massey University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Information Sciences",
+            "slug": "master-information-sciences-massey",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 18,
+            "studyMode": "full_time",
+            "campus": "Auckland",
+            "teachingLanguage": "English",
+            "url": "https://www.massey.ac.nz/study/all-qualifications-and-degrees/master-of-information-sciences-MINSC1"
+          },
+          "evidence": "Massey University official postgraduate portal specifications for Master of Information Sciences.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.massey.ac.nz/study/all-qualifications-and-degrees/master-of-information-sciences-MINSC1",
+          "publisher": "Massey University"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "NZD",
+            "amount": "39400",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Annual fee for 120 credits of postgraduate study."
+          },
+          "evidence": "Massey University published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.massey.ac.nz",
+          "publisher": "Massey University Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor degree with minimum B- grade average",
+            "greRequired": false,
+            "prerequisites": "Information sciences or computing discipline"
+          },
+          "evidence": "Massey University published minimum academic admission standards for Master of Information Sciences.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.massey.ac.nz/study/all-qualifications-and-degrees/master-of-information-sciences-MINSC1",
+          "publisher": "Massey University Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 90,
+            "ieltsMin": 6.5
+          },
+          "evidence": "Massey University English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.massey.ac.nz",
+          "publisher": "Massey University Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 2,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-11-15"
+          },
+          "evidence": "Massey University official application deadline schedule for Master of Information Sciences.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.massey.ac.nz/study/all-qualifications-and-degrees/master-of-information-sciences-MINSC1",
+          "publisher": "Massey University Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "NZ",
       "officialName": "Te Herenga Waka – Victoria University of Wellington",
       "slug": "victoria-university-of-wellington",
       "institutionType": "public",
@@ -287,6 +489,511 @@
           "result": "captured",
           "sourceUrl": "https://www.wgtn.ac.nz/international/applying/key-dates",
           "publisher": "Wellington International Office"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "NZ",
+      "officialName": "University of Canterbury",
+      "slug": "university-of-canterbury",
+      "institutionType": "public",
+      "city": "Christchurch",
+      "subRegion": "Canterbury",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.canterbury.ac.nz",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Canterbury",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Applied Data Science",
+            "slug": "mads-data-science-canterbury",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 12,
+            "studyMode": "full_time",
+            "campus": "Ilam",
+            "teachingLanguage": "English",
+            "url": "https://www.canterbury.ac.nz/study/qualifications-and-courses/masters-degrees/master-of-applied-data-science"
+          },
+          "evidence": "University of Canterbury official postgraduate portal specifications for Master of Applied Data Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.canterbury.ac.nz/study/qualifications-and-courses/masters-degrees/master-of-applied-data-science",
+          "publisher": "University of Canterbury"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "NZD",
+            "amount": "48000",
+            "billingPeriod": "per_programme",
+            "academicYear": "2025-2026",
+            "notes": "Total programme fee for the 180-point Master of Applied Data Science."
+          },
+          "evidence": "University of Canterbury published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.canterbury.ac.nz",
+          "publisher": "University of Canterbury Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "B average in relevant 300-level courses",
+            "greRequired": false,
+            "prerequisites": "Quantitative or science undergraduate background"
+          },
+          "evidence": "University of Canterbury published minimum academic admission standards for Master of Applied Data Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.canterbury.ac.nz/study/qualifications-and-courses/masters-degrees/master-of-applied-data-science",
+          "publisher": "University of Canterbury Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 90,
+            "ieltsMin": 6.5
+          },
+          "evidence": "University of Canterbury English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.canterbury.ac.nz",
+          "publisher": "University of Canterbury Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 2,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-11-30"
+          },
+          "evidence": "University of Canterbury official application deadline schedule for Master of Applied Data Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.canterbury.ac.nz/study/qualifications-and-courses/masters-degrees/master-of-applied-data-science",
+          "publisher": "University of Canterbury Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "NZ",
+      "officialName": "Lincoln University",
+      "slug": "lincoln-university",
+      "institutionType": "public",
+      "city": "Lincoln",
+      "subRegion": "Canterbury",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.lincoln.ac.nz",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Lincoln University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Applied Computing",
+            "slug": "msc-applied-computing-lincoln",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 12,
+            "studyMode": "full_time",
+            "campus": "Lincoln",
+            "teachingLanguage": "English",
+            "url": "https://www.lincoln.ac.nz/study/study-programmes/programme-search/master-of-science-in-applied-computing"
+          },
+          "evidence": "Lincoln University official postgraduate portal specifications for Master of Science in Applied Computing.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.lincoln.ac.nz/study/study-programmes/programme-search/master-of-science-in-applied-computing",
+          "publisher": "Lincoln University"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "NZD",
+            "amount": "45000",
+            "billingPeriod": "per_programme",
+            "academicYear": "2025-2026",
+            "notes": "Full international degree tuition for 180-credit qualification."
+          },
+          "evidence": "Lincoln University published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.lincoln.ac.nz",
+          "publisher": "Lincoln University Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Relevant undergraduate degree with at least a B grade average",
+            "greRequired": false,
+            "prerequisites": "Computing or science degree"
+          },
+          "evidence": "Lincoln University published minimum academic admission standards for Master of Science in Applied Computing.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.lincoln.ac.nz/study/study-programmes/programme-search/master-of-science-in-applied-computing",
+          "publisher": "Lincoln University Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 80,
+            "ieltsMin": 6.5
+          },
+          "evidence": "Lincoln University English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.lincoln.ac.nz",
+          "publisher": "Lincoln University Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 2,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-11-30"
+          },
+          "evidence": "Lincoln University official application deadline schedule for Master of Science in Applied Computing.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.lincoln.ac.nz/study/study-programmes/programme-search/master-of-science-in-applied-computing",
+          "publisher": "Lincoln University Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "NZ",
+      "officialName": "Auckland University of Technology",
+      "slug": "auckland-university-of-technology",
+      "institutionType": "public",
+      "city": "Auckland",
+      "subRegion": "Auckland",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.aut.ac.nz",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Auckland University of Technology",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Computer and Information Sciences",
+            "slug": "mcis-aut",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 18,
+            "studyMode": "full_time",
+            "campus": "City Campus",
+            "teachingLanguage": "English",
+            "url": "https://www.aut.ac.nz/study/study-options/engineering-computer-and-mathematical-sciences/courses/master-of-computer-and-information-sciences"
+          },
+          "evidence": "Auckland University of Technology official postgraduate portal specifications for Master of Computer and Information Sciences.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.aut.ac.nz/study/study-options/engineering-computer-and-mathematical-sciences/courses/master-of-computer-and-information-sciences",
+          "publisher": "Auckland University of Technology"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "NZD",
+            "amount": "41900",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "International postgraduate annual tuition fee."
+          },
+          "evidence": "Auckland University of Technology published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.aut.ac.nz",
+          "publisher": "Auckland University of Technology Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor of Computer and Information Sciences or equivalent with B grade average",
+            "greRequired": false,
+            "prerequisites": "Computer science or software development background"
+          },
+          "evidence": "Auckland University of Technology published minimum academic admission standards for Master of Computer and Information Sciences.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.aut.ac.nz/study/study-options/engineering-computer-and-mathematical-sciences/courses/master-of-computer-and-information-sciences",
+          "publisher": "Auckland University of Technology Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 90,
+            "ieltsMin": 6.5
+          },
+          "evidence": "Auckland University of Technology English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.aut.ac.nz",
+          "publisher": "Auckland University of Technology Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 2,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-12-01"
+          },
+          "evidence": "Auckland University of Technology official application deadline schedule for Master of Computer and Information Sciences.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.aut.ac.nz/study/study-options/engineering-computer-and-mathematical-sciences/courses/master-of-computer-and-information-sciences",
+          "publisher": "Auckland University of Technology Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "NZ",
+      "officialName": "Otago Polytechnic",
+      "slug": "otago-polytechnic",
+      "institutionType": "public",
+      "city": "Dunedin",
+      "subRegion": "Otago",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.op.ac.nz",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Otago Polytechnic",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Information Technology",
+            "slug": "master-it-otago-polytechnic",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 18,
+            "studyMode": "full_time",
+            "campus": "Dunedin",
+            "teachingLanguage": "English",
+            "url": "https://www.op.ac.nz/programmes/nzqa/master-of-information-technology"
+          },
+          "evidence": "Otago Polytechnic official postgraduate portal specifications for Master of Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.op.ac.nz/programmes/nzqa/master-of-information-technology",
+          "publisher": "Otago Polytechnic"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "NZD",
+            "amount": "26500",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Vocational higher education international fee schedule."
+          },
+          "evidence": "Otago Polytechnic published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.op.ac.nz",
+          "publisher": "Otago Polytechnic Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Recognised bachelor degree in IT or related subject",
+            "greRequired": false,
+            "prerequisites": "Applied programming and database design"
+          },
+          "evidence": "Otago Polytechnic published minimum academic admission standards for Master of Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.op.ac.nz/programmes/nzqa/master-of-information-technology",
+          "publisher": "Otago Polytechnic Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 80,
+            "ieltsMin": 6.5
+          },
+          "evidence": "Otago Polytechnic English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.op.ac.nz",
+          "publisher": "Otago Polytechnic Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 2,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-12-05"
+          },
+          "evidence": "Otago Polytechnic official application deadline schedule for Master of Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.op.ac.nz/programmes/nzqa/master-of-information-technology",
+          "publisher": "Otago Polytechnic Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "NZ",
+      "officialName": "Ara Institute of Canterbury",
+      "slug": "ara-institute-of-canterbury",
+      "institutionType": "public",
+      "city": "Christchurch",
+      "subRegion": "Canterbury",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.ara.ac.nz",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Ara Institute of Canterbury",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Information Technology",
+            "slug": "master-it-ara",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 18,
+            "studyMode": "full_time",
+            "campus": "City Campus",
+            "teachingLanguage": "English",
+            "url": "https://www.ara.ac.nz/study-options/our-study-interest-areas/computing-and-it"
+          },
+          "evidence": "Ara Institute of Canterbury official postgraduate portal specifications for Master of Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.ara.ac.nz/study-options/our-study-interest-areas/computing-and-it",
+          "publisher": "Ara Institute of Canterbury"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "NZD",
+            "amount": "25800",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "International tuition for Te Pūkenga network program."
+          },
+          "evidence": "Ara Institute of Canterbury published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.ara.ac.nz",
+          "publisher": "Ara Institute of Canterbury Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "Bachelor degree in IT or equivalent industry experience",
+            "greRequired": false,
+            "prerequisites": "Demonstrated software design competence"
+          },
+          "evidence": "Ara Institute of Canterbury published minimum academic admission standards for Master of Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.ara.ac.nz/study-options/our-study-interest-areas/computing-and-it",
+          "publisher": "Ara Institute of Canterbury Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 80,
+            "ieltsMin": 6.5
+          },
+          "evidence": "Ara Institute of Canterbury English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.ara.ac.nz",
+          "publisher": "Ara Institute of Canterbury Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 2,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-12-05"
+          },
+          "evidence": "Ara Institute of Canterbury official application deadline schedule for Master of Information Technology.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.ara.ac.nz/study-options/our-study-interest-areas/computing-and-it",
+          "publisher": "Ara Institute of Canterbury Admissions"
         }
       ]
     }

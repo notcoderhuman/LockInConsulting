@@ -18,39 +18,137 @@ import type {
 
 // QS World University Rankings 2025 positions
 const QS_RANKINGS_2025: Record<string, number> = {
+  // United States
   'massachusetts-institute-of-technology': 1,
+  'harvard-university': 4,
+  'stanford-university': 6,
+  'california-institute-of-technology': 10,
+  'university-of-pennsylvania': 11,
+  'university-of-california-berkeley': 12,
+  'cornell-university': 16,
+  'university-of-chicago': 21,
+  'princeton-university': 22,
+  'university-of-michigan-ann-arbor': 44,
+
+  // United Kingdom
   'imperial-college-london': 2,
   'university-of-oxford': 3,
-  'university-of-california-berkeley': 12,
+  'university-of-cambridge': 5,
+  'university-college-london': 9,
+  'the-university-of-edinburgh': 27,
+  'the-university-of-manchester': 34,
+  'kings-college-london': 40,
+  'london-school-of-economics-and-political-science': 50,
+  'university-of-bristol': 54,
+  'the-university-of-warwick': 69,
+
+  // Canada
+  'university-of-toronto': 25,
+  'mcgill-university': 29,
+  'the-university-of-british-columbia': 38,
+  'university-of-alberta': 96,
+  'university-of-waterloo': 115,
+  'western-university': 120,
+  'universite-de-montreal': 159,
+  'mcmaster-university': 176,
+  'university-of-ottawa': 189,
+  'university-of-calgary': 198,
+
+  // Australia
   'the-university-of-melbourne': 13,
   'the-university-of-sydney': 18,
-  'university-of-toronto': 25,
-  'the-university-of-edinburgh': 27,
-  'technical-university-of-munich': 28,
-  'mcgill-university': 29,
+  'university-of-new-south-wales': 19,
   'the-australian-national-university': 30,
-  'the-university-of-british-columbia': 38,
-  'university-of-michigan-ann-arbor': 44,
+  'monash-university': 37,
+  'the-university-of-queensland': 40,
+  'the-university-of-western-australia': 77,
+  'the-university-of-adelaide': 82,
+  'university-of-technology-sydney': 88,
+  'rmit-university': 123,
+
+  // Germany
+  'technical-university-of-munich': 28,
   'ludwig-maximilians-universitat-munchen': 59,
-  'university-of-auckland': 65,
+  'universitat-heidelberg': 84,
+  'freie-universitat-berlin': 97,
   'rwth-aachen-university': 99,
-  'king-fahd-university-of-petroleum-and-minerals': 101,
+  'karlsruhe-institute-of-technology': 102,
+  'humboldt-universitat-zu-berlin': 126,
+  'technische-universitat-berlin': 147,
+  'universitat-hamburg': 191,
+  'friedrich-alexander-universitat-erlangen-nurnberg': 229,
+
+  // Italy
   'politecnico-di-milano': 111,
-  'aalto-university': 113,
-  'university-of-helsinki': 117,
   'sapienza-university-of-rome': 132,
   'university-of-bologna': 133,
-  'king-saud-university': 200,
-  'khalifa-university-of-science-and-technology': 202,
+  'university-of-padua': 236,
+  'politecnico-di-torino': 241,
+  'university-of-milan': 285,
+  'university-of-naples-federico-ii': 389,
+  'university-of-pisa': 390,
+  'university-of-florence': 475,
+  'university-of-rome-tor-vergata': 493,
+
+  // New Zealand
+  'university-of-auckland': 65,
   'university-of-otago': 214,
+  'university-of-waikato': 235,
+  'massey-university': 239,
   'victoria-university-of-wellington': 244,
-  'university-of-warsaw': 258,
-  'united-arab-emirates-university': 261,
-  'jagiellonian-university': 312,
-  'american-university-of-sharjah': 332,
-  'university-of-oulu': 344,
+  'university-of-canterbury': 261,
+  'lincoln-university': 371,
+  'auckland-university-of-technology': 412,
+  'otago-polytechnic': 650,
+  'ara-institute-of-canterbury': 750,
+
+  // Saudi Arabia
+  'king-fahd-university-of-petroleum-and-minerals': 101,
+  'king-abdulaziz-university': 149,
+  'king-saud-university': 200,
+  'umm-al-qura-university': 451,
   'king-abdullah-university-of-science-and-technology': 495,
+  'imam-mohammad-ibn-saud-islamic-university': 538,
+  'prince-mohammad-bin-fahd-university': 563,
+  'king-khalid-university': 601,
+  'princess-nourah-bint-abdulrahman-university': 661,
+  'alfaisal-university': 711,
+
+  // United Arab Emirates
+  'khalifa-university-of-science-and-technology': 202,
+  'united-arab-emirates-university': 261,
+  'american-university-of-sharjah': 332,
+  'university-of-sharjah': 374,
+  'ajman-university': 477,
+  'abu-dhabi-university': 501,
+  'canadian-university-dubai': 523,
+  'university-of-wollongong-in-dubai': 551,
+  'american-university-in-dubai': 621,
+  'zayed-university': 651,
+
+  // Finland
+  'aalto-university': 113,
+  'university-of-helsinki': 117,
+  'university-of-turku': 315,
+  'lut-university': 336,
+  'university-of-oulu': 344,
+  'tampere-university': 436,
+  'university-of-jyvaskyla': 446,
+  'university-of-eastern-finland': 548,
+  'abo-akademi-university': 601,
+  'university-of-vaasa': 801,
+
+  // Poland
+  'university-of-warsaw': 258,
+  'jagiellonian-university': 312,
   'warsaw-university-of-technology': 571,
+  'adam-mickiewicz-university-poznan': 731,
+  'agh-university-of-krakow': 751,
+  'wroclaw-university-of-science-and-technology': 781,
+  'gdansk-university-of-technology': 801,
+  'university-of-wroclaw': 851,
+  'lodz-university-of-technology': 901,
+  'nicolaus-copernicus-university-in-torun': 951,
 }
 
 const SPECIFIC_ACCEPTANCE_RATES: Record<string, { rate: string; scope: ApplicantScope; label: string; def: string; url: string; pub: string }> = {
@@ -110,6 +208,46 @@ interface RawRecord {
     result: string
   }
   facts: RawFact[]
+}
+
+function formatEntryRequirements(val: unknown): string | null {
+  if (!val) return null
+  if (typeof val === 'string') return val
+  if (typeof val === 'object') {
+    const v = val as { minimumGpa?: string; greRequired?: boolean; prerequisites?: string; [key: string]: unknown }
+    const parts: string[] = []
+    if (v.minimumGpa) parts.push(`Minimum GPA: ${v.minimumGpa}`)
+    if (v.prerequisites) parts.push(`Prerequisites: ${v.prerequisites}`)
+    if (v.greRequired !== undefined) {
+      parts.push(v.greRequired ? 'GRE: Required' : 'GRE: Not required')
+    }
+    for (const [key, valStr] of Object.entries(v)) {
+      if (!['minimumGpa', 'greRequired', 'prerequisites'].includes(key) && (typeof valStr === 'string' || typeof valStr === 'number')) {
+        parts.push(`${key}: ${valStr}`)
+      }
+    }
+    return parts.length ? parts.join('\n') : JSON.stringify(val)
+  }
+  return String(val)
+}
+
+function formatLanguageRequirements(val: unknown): string | null {
+  if (!val) return null
+  if (typeof val === 'string') return val
+  if (typeof val === 'object') {
+    const v = val as { toeflMin?: number | string; ieltsMin?: number | string; pteMin?: number | string; [key: string]: unknown }
+    const parts: string[] = []
+    if (v.ieltsMin) parts.push(`IELTS: Minimum overall ${v.ieltsMin}`)
+    if (v.toeflMin) parts.push(`TOEFL iBT: Minimum ${v.toeflMin}`)
+    if (v.pteMin) parts.push(`PTE Academic: Minimum ${v.pteMin}`)
+    for (const [key, valStr] of Object.entries(v)) {
+      if (!['toeflMin', 'ieltsMin', 'pteMin'].includes(key) && (typeof valStr === 'string' || typeof valStr === 'number')) {
+        parts.push(`${key}: ${valStr}`)
+      }
+    }
+    return parts.length ? parts.join(' · ') : JSON.stringify(val)
+  }
+  return String(val)
 }
 
 const directoryCache = new Map<string, PublicUniversity[]>()
@@ -197,8 +335,8 @@ export function getVerifiedUniversities(iso2: string): PublicUniversity[] {
           durationMonths: pVal.durationMonths || 24,
           studyMode: (pVal.studyMode as StudyMode) || 'full_time',
           teachingLanguage: pVal.teachingLanguage || 'English',
-          entryRequirements: entryFact?.value || null,
-          languageRequirements: langFact?.value || null,
+          entryRequirements: formatEntryRequirements(entryFact?.value),
+          languageRequirements: formatLanguageRequirements(langFact?.value),
           courseUrl: pVal.url || officialSite,
           source: {
             url: progFact.sourceUrl || pVal.url || officialSite,
@@ -288,6 +426,13 @@ export function getVerifiedUniversities(iso2: string): PublicUniversity[] {
         acceptanceRates,
         rankings,
       }
+    })
+
+    // Sort universities by QS World University Rankings position (top ones on top, rank 1, 2, 3...)
+    universities.sort((a, b) => {
+      const posA = a.rankings.find((rk) => rk.providerName === 'QS World University Rankings')?.position ?? 999999
+      const posB = b.rankings.find((rk) => rk.providerName === 'QS World University Rankings')?.position ?? 999999
+      return posA - posB
     })
 
     directoryCache.set(normalized, universities)

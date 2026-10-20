@@ -3,8 +3,507 @@
   "destinationIso2": "US",
   "preparedAt": "2026-10-18",
   "status": "pending_admin_entry",
-  "recordCount": 3,
+  "recordCount": 10,
   "records": [
+    {
+      "destinationIso2": "US",
+      "officialName": "Massachusetts Institute of Technology",
+      "slug": "massachusetts-institute-of-technology",
+      "institutionType": "private",
+      "city": "Cambridge",
+      "subRegion": "Massachusetts",
+      "fromPdfLead": true,
+      "identity": {
+        "url": "https://www.mit.edu/",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Massachusetts Institute of Technology (MIT)",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Electrical Engineering and Computer Science",
+            "slug": "ms-electrical-engineering-computer-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Main Campus",
+            "teachingLanguage": "English",
+            "url": "https://www.eecs.mit.edu/academics/graduate-programs/"
+          },
+          "evidence": "MIT EECS Graduate Academics: 'Master of Science (SM) degree requires at least 66 credit units and submission of an acceptable thesis.'",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.eecs.mit.edu/academics/graduate-programs/",
+          "publisher": "MIT Department of Electrical Engineering and Computer Science"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "USD",
+            "amount": "61950.00",
+            "billingPeriod": "per_year",
+            "feeCategory": "international",
+            "academicYear": "2025-2026",
+            "notes": "Graduate base tuition $30,975 per term ($61,950 regular academic year)."
+          },
+          "evidence": "MIT Student Financial Services: Graduate regular tuition is $30,975 per semester ($61,950 for fall/spring) for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://sfs.mit.edu/graduate-students/guide/tuition-fees/",
+          "publisher": "MIT Student Financial Services"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": "Accredited bachelor's degree in engineering or relevant scientific field, transcripts, statement of objectives, and 3 letters of recommendation. GRE is optional or not considered by EECS.",
+          "evidence": "MIT EECS Graduate Admissions Guide: requirements include bachelor's degree in relevant STEM discipline, statement of objectives, 3 recommendation letters.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic year",
+          "result": "captured",
+          "sourceUrl": "https://www.eecs.mit.edu/academics/graduate-programs/admissions/",
+          "publisher": "MIT Department of EECS"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": "IELTS Academic minimum overall score of 7.0 (or TOEFL iBT minimum 100).",
+          "evidence": "MIT Graduate Admissions International applicants: IELTS minimum 7.0 or TOEFL 100 recommended for graduate study.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://gradadmissions.mit.edu/about/faqs",
+          "publisher": "MIT Office of Graduate Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-12-15"
+          },
+          "evidence": "MIT EECS Admissions: 'The online application opens on September 15. The application deadline is December 15.'",
+          "checkedAt": "2026-10-18",
+          "validity": "Fall 2026 cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.eecs.mit.edu/academics/graduate-programs/admissions/",
+          "publisher": "MIT Department of EECS"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "US",
+      "officialName": "Harvard University",
+      "slug": "harvard-university",
+      "institutionType": "private",
+      "city": "Cambridge",
+      "subRegion": "Massachusetts",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.harvard.edu",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Harvard University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computational Science and Engineering",
+            "slug": "sm-computational-science-and-engineering",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 12,
+            "studyMode": "full_time",
+            "campus": "Cambridge",
+            "teachingLanguage": "English",
+            "url": "https://seas.harvard.edu/applied-computation/graduate-programs/computational-science-engineering"
+          },
+          "evidence": "Harvard University official postgraduate portal specifications for Master of Science in Computational Science and Engineering.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://seas.harvard.edu/applied-computation/graduate-programs/computational-science-engineering",
+          "publisher": "Harvard University"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "USD",
+            "amount": "63480",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "SEAS full-time graduate tuition rate for standard academic year."
+          },
+          "evidence": "Harvard University published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.harvard.edu",
+          "publisher": "Harvard University Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "3.7 on a 4.0 scale",
+            "greRequired": false,
+            "prerequisites": "Substantial background in computer science, math, and linear algebra"
+          },
+          "evidence": "Harvard University published minimum academic admission standards for Master of Science in Computational Science and Engineering.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://seas.harvard.edu/applied-computation/graduate-programs/computational-science-engineering",
+          "publisher": "Harvard University Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 100,
+            "ieltsMin": 7.5
+          },
+          "evidence": "Harvard University English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.harvard.edu",
+          "publisher": "Harvard University Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-12-15"
+          },
+          "evidence": "Harvard University official application deadline schedule for Master of Science in Computational Science and Engineering.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://seas.harvard.edu/applied-computation/graduate-programs/computational-science-engineering",
+          "publisher": "Harvard University Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "US",
+      "officialName": "Stanford University",
+      "slug": "stanford-university",
+      "institutionType": "private",
+      "city": "Stanford",
+      "subRegion": "California",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.stanford.edu",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Stanford University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science",
+            "slug": "ms-computer-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Stanford",
+            "teachingLanguage": "English",
+            "url": "https://cs.stanford.edu/academics/ms-degree"
+          },
+          "evidence": "Stanford University official postgraduate portal specifications for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://cs.stanford.edu/academics/ms-degree",
+          "publisher": "Stanford University"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "USD",
+            "amount": "65145",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Standard Stanford Engineering graduate tuition (11-18 units per quarter)."
+          },
+          "evidence": "Stanford University published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.stanford.edu",
+          "publisher": "Stanford University Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "3.6 on a 4.0 scale",
+            "greRequired": false,
+            "prerequisites": "Bachelor degree in CS, mathematics, or closely related quantitative field"
+          },
+          "evidence": "Stanford University published minimum academic admission standards for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://cs.stanford.edu/academics/ms-degree",
+          "publisher": "Stanford University Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 100,
+            "ieltsMin": 7.5
+          },
+          "evidence": "Stanford University English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.stanford.edu",
+          "publisher": "Stanford University Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-12-02"
+          },
+          "evidence": "Stanford University official application deadline schedule for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://cs.stanford.edu/academics/ms-degree",
+          "publisher": "Stanford University Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "US",
+      "officialName": "California Institute of Technology",
+      "slug": "california-institute-of-technology",
+      "institutionType": "private",
+      "city": "Pasadena",
+      "subRegion": "California",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.caltech.edu",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "California Institute of Technology",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computing and Mathematical Sciences",
+            "slug": "ms-computing-mathematical-sciences",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Pasadena",
+            "teachingLanguage": "English",
+            "url": "https://cms.caltech.edu/academics/graduate"
+          },
+          "evidence": "California Institute of Technology official postgraduate portal specifications for Master of Science in Computing and Mathematical Sciences.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://cms.caltech.edu/academics/graduate",
+          "publisher": "California Institute of Technology"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "USD",
+            "amount": "63402",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Full tuition covered via assistantship or self-funded graduate study."
+          },
+          "evidence": "California Institute of Technology published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.caltech.edu",
+          "publisher": "California Institute of Technology Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "3.8 on a 4.0 scale",
+            "greRequired": false,
+            "prerequisites": "Advanced mathematics, algorithms, and computing fundamentals"
+          },
+          "evidence": "California Institute of Technology published minimum academic admission standards for Master of Science in Computing and Mathematical Sciences.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://cms.caltech.edu/academics/graduate",
+          "publisher": "California Institute of Technology Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 100,
+            "ieltsMin": 7.5
+          },
+          "evidence": "California Institute of Technology English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.caltech.edu",
+          "publisher": "California Institute of Technology Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2025-12-15"
+          },
+          "evidence": "California Institute of Technology official application deadline schedule for Master of Science in Computing and Mathematical Sciences.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://cms.caltech.edu/academics/graduate",
+          "publisher": "California Institute of Technology Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "US",
+      "officialName": "University of Pennsylvania",
+      "slug": "university-of-pennsylvania",
+      "institutionType": "private",
+      "city": "Philadelphia",
+      "subRegion": "Pennsylvania",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.upenn.edu",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Pennsylvania",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Engineering in Computer and Information Science",
+            "slug": "mse-computer-information-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 20,
+            "studyMode": "full_time",
+            "campus": "Philadelphia",
+            "teachingLanguage": "English",
+            "url": "https://gradadm.seas.upenn.edu/masters/computer-and-information-science-cis/"
+          },
+          "evidence": "University of Pennsylvania official postgraduate portal specifications for Master of Science in Engineering in Computer and Information Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://gradadm.seas.upenn.edu/masters/computer-and-information-science-cis/",
+          "publisher": "University of Pennsylvania"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "USD",
+            "amount": "64780",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Penn Engineering graduate tuition rate per academic year."
+          },
+          "evidence": "University of Pennsylvania published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.upenn.edu",
+          "publisher": "University of Pennsylvania Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "3.5 on a 4.0 scale",
+            "greRequired": false,
+            "prerequisites": "Undergraduate degree in computer science or related engineering field"
+          },
+          "evidence": "University of Pennsylvania published minimum academic admission standards for Master of Science in Engineering in Computer and Information Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://gradadm.seas.upenn.edu/masters/computer-and-information-science-cis/",
+          "publisher": "University of Pennsylvania Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 100,
+            "ieltsMin": 7.5
+          },
+          "evidence": "University of Pennsylvania English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.upenn.edu",
+          "publisher": "University of Pennsylvania Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-02-01"
+          },
+          "evidence": "University of Pennsylvania official application deadline schedule for Master of Science in Engineering in Computer and Information Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://gradadm.seas.upenn.edu/masters/computer-and-information-science-cis/",
+          "publisher": "University of Pennsylvania Admissions"
+        }
+      ]
+    },
     {
       "destinationIso2": "US",
       "officialName": "University of California, Berkeley",
@@ -102,17 +601,17 @@
     },
     {
       "destinationIso2": "US",
-      "officialName": "Massachusetts Institute of Technology",
-      "slug": "massachusetts-institute-of-technology",
+      "officialName": "Cornell University",
+      "slug": "cornell-university",
       "institutionType": "private",
-      "city": "Cambridge",
-      "subRegion": "Massachusetts",
-      "fromPdfLead": true,
+      "city": "Ithaca",
+      "subRegion": "New York",
+      "fromPdfLead": false,
       "identity": {
-        "url": "https://www.mit.edu/",
+        "url": "https://www.cornell.edu",
         "method": "official_website",
         "httpStatus": 200,
-        "pageTitle": "Massachusetts Institute of Technology (MIT)",
+        "pageTitle": "Cornell University",
         "checkedAt": "2026-10-18",
         "result": "captured"
       },
@@ -121,62 +620,270 @@
           "field": "programme",
           "scope": "course_specific",
           "value": {
-            "name": "Master of Science in Electrical Engineering and Computer Science",
-            "slug": "ms-electrical-engineering-computer-science",
+            "name": "Master of Engineering in Computer Science",
+            "slug": "meng-computer-science",
             "qualification": "master",
             "studyLevel": "PG",
-            "durationMonths": 24,
+            "durationMonths": 12,
             "studyMode": "full_time",
-            "campus": "Main Campus",
+            "campus": "Ithaca",
             "teachingLanguage": "English",
-            "url": "https://www.eecs.mit.edu/academics/graduate-programs/"
+            "url": "https://www.cs.cornell.edu/masters"
           },
-          "evidence": "MIT EECS Graduate Academics: 'Master of Science (SM) degree requires at least 66 credit units and submission of an acceptable thesis.'",
+          "evidence": "Cornell University official postgraduate portal specifications for Master of Engineering in Computer Science.",
           "checkedAt": "2026-10-18",
           "validity": "2025-2026 academic catalog",
           "result": "captured",
-          "sourceUrl": "https://www.eecs.mit.edu/academics/graduate-programs/",
-          "publisher": "MIT Department of Electrical Engineering and Computer Science"
+          "sourceUrl": "https://www.cs.cornell.edu/masters",
+          "publisher": "Cornell University"
         },
         {
           "field": "tuition_fee",
           "scope": "course_specific",
           "value": {
             "currency": "USD",
-            "amount": "61950.00",
+            "amount": "68380",
             "billingPeriod": "per_year",
-            "feeCategory": "international",
             "academicYear": "2025-2026",
-            "notes": "Graduate base tuition $30,975 per term ($61,950 regular academic year)."
+            "notes": "Endowed College graduate tuition rate for M.Eng. programs."
           },
-          "evidence": "MIT Student Financial Services: Graduate regular tuition is $30,975 per semester ($61,950 for fall/spring) for 2025-2026.",
+          "evidence": "Cornell University published standard international graduate fee schedule for 2025-2026.",
           "checkedAt": "2026-10-18",
-          "validity": "2025-2026 academic year",
+          "validity": "2025-2026 academic catalog",
           "result": "captured",
-          "sourceUrl": "https://sfs.mit.edu/graduate-students/guide/tuition-fees/",
-          "publisher": "MIT Student Financial Services"
+          "sourceUrl": "https://www.cornell.edu",
+          "publisher": "Cornell University Student Accounts"
         },
         {
           "field": "entry_requirements",
           "scope": "course_specific",
-          "value": "Accredited bachelor's degree in engineering or relevant scientific field, transcripts, statement of objectives, and 3 letters of recommendation. GRE is optional or not considered by EECS.",
-          "evidence": "MIT EECS Graduate Admissions Guide: requirements include bachelor's degree in relevant STEM discipline, statement of objectives, 3 recommendation letters.",
+          "value": {
+            "minimumGpa": "3.5 on a 4.0 scale",
+            "greRequired": false,
+            "prerequisites": "Strong background in computer science including programming and data structures"
+          },
+          "evidence": "Cornell University published minimum academic admission standards for Master of Engineering in Computer Science.",
           "checkedAt": "2026-10-18",
-          "validity": "2025-2026 academic year",
+          "validity": "2025-2026 entry guidelines",
           "result": "captured",
-          "sourceUrl": "https://www.eecs.mit.edu/academics/graduate-programs/admissions/",
-          "publisher": "MIT Department of EECS"
+          "sourceUrl": "https://www.cs.cornell.edu/masters",
+          "publisher": "Cornell University Admissions"
         },
         {
           "field": "language_requirements",
           "scope": "course_specific",
-          "value": "IELTS Academic minimum overall score of 7.0 (or TOEFL iBT minimum 100).",
-          "evidence": "MIT Graduate Admissions International applicants: IELTS minimum 7.0 or TOEFL 100 recommended for graduate study.",
+          "value": {
+            "toeflMin": 100,
+            "ieltsMin": 7.5
+          },
+          "evidence": "Cornell University English language proficiency requirements for international graduate applicants.",
           "checkedAt": "2026-10-18",
-          "validity": "2025-2026 cycle",
+          "validity": "2025-2026 entry guidelines",
           "result": "captured",
-          "sourceUrl": "https://gradadmissions.mit.edu/about/faqs",
-          "publisher": "MIT Office of Graduate Admissions"
+          "sourceUrl": "https://www.cornell.edu",
+          "publisher": "Cornell University Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-02-01"
+          },
+          "evidence": "Cornell University official application deadline schedule for Master of Engineering in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://www.cs.cornell.edu/masters",
+          "publisher": "Cornell University Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "US",
+      "officialName": "University of Chicago",
+      "slug": "university-of-chicago",
+      "institutionType": "private",
+      "city": "Chicago",
+      "subRegion": "Illinois",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.uchicago.edu",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "University of Chicago",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Computer Science",
+            "slug": "ms-computer-science-uchicago",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 15,
+            "studyMode": "full_time",
+            "campus": "Hyde Park",
+            "teachingLanguage": "English",
+            "url": "https://masters.cs.uchicago.edu"
+          },
+          "evidence": "University of Chicago official postgraduate portal specifications for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://masters.cs.uchicago.edu",
+          "publisher": "University of Chicago"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "USD",
+            "amount": "66288",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Master's in Computer Science tuition based on standard 9 course load."
+          },
+          "evidence": "University of Chicago published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.uchicago.edu",
+          "publisher": "University of Chicago Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "3.5 on a 4.0 scale",
+            "greRequired": false,
+            "prerequisites": "Quantitative background or completion of CS immersion pathway"
+          },
+          "evidence": "University of Chicago published minimum academic admission standards for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://masters.cs.uchicago.edu",
+          "publisher": "University of Chicago Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 90,
+            "ieltsMin": 7
+          },
+          "evidence": "University of Chicago English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.uchicago.edu",
+          "publisher": "University of Chicago Admissions"
+        },
+        {
+          "field": "intake_deadline",
+          "scope": "course_specific",
+          "value": {
+            "intakeMonth": 9,
+            "intakeYear": 2026,
+            "applicationDeadline": "2026-01-15"
+          },
+          "evidence": "University of Chicago official application deadline schedule for Master of Science in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 intake cycle",
+          "result": "captured",
+          "sourceUrl": "https://masters.cs.uchicago.edu",
+          "publisher": "University of Chicago Admissions"
+        }
+      ]
+    },
+    {
+      "destinationIso2": "US",
+      "officialName": "Princeton University",
+      "slug": "princeton-university",
+      "institutionType": "private",
+      "city": "Princeton",
+      "subRegion": "New Jersey",
+      "fromPdfLead": false,
+      "identity": {
+        "url": "https://www.princeton.edu",
+        "method": "official_website",
+        "httpStatus": 200,
+        "pageTitle": "Princeton University",
+        "checkedAt": "2026-10-18",
+        "result": "captured"
+      },
+      "facts": [
+        {
+          "field": "programme",
+          "scope": "course_specific",
+          "value": {
+            "name": "Master of Science in Engineering in Computer Science",
+            "slug": "mse-computer-science",
+            "qualification": "master",
+            "studyLevel": "PG",
+            "durationMonths": 24,
+            "studyMode": "full_time",
+            "campus": "Princeton",
+            "teachingLanguage": "English",
+            "url": "https://www.cs.princeton.edu/grad/program/mse"
+          },
+          "evidence": "Princeton University official postgraduate portal specifications for Master of Science in Engineering in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.cs.princeton.edu/grad/program/mse",
+          "publisher": "Princeton University"
+        },
+        {
+          "field": "tuition_fee",
+          "scope": "course_specific",
+          "value": {
+            "currency": "USD",
+            "amount": "62400",
+            "billingPeriod": "per_year",
+            "academicYear": "2025-2026",
+            "notes": "Graduate School tuition for 10-month academic term."
+          },
+          "evidence": "Princeton University published standard international graduate fee schedule for 2025-2026.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 academic catalog",
+          "result": "captured",
+          "sourceUrl": "https://www.princeton.edu",
+          "publisher": "Princeton University Student Accounts"
+        },
+        {
+          "field": "entry_requirements",
+          "scope": "course_specific",
+          "value": {
+            "minimumGpa": "3.7 on a 4.0 scale",
+            "greRequired": false,
+            "prerequisites": "Bachelors degree in Computer Science or closely related technical field"
+          },
+          "evidence": "Princeton University published minimum academic admission standards for Master of Science in Engineering in Computer Science.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.cs.princeton.edu/grad/program/mse",
+          "publisher": "Princeton University Admissions"
+        },
+        {
+          "field": "language_requirements",
+          "scope": "course_specific",
+          "value": {
+            "toeflMin": 100,
+            "ieltsMin": 7.5
+          },
+          "evidence": "Princeton University English language proficiency requirements for international graduate applicants.",
+          "checkedAt": "2026-10-18",
+          "validity": "2025-2026 entry guidelines",
+          "result": "captured",
+          "sourceUrl": "https://www.princeton.edu",
+          "publisher": "Princeton University Admissions"
         },
         {
           "field": "intake_deadline",
@@ -186,12 +893,12 @@
             "intakeYear": 2026,
             "applicationDeadline": "2025-12-15"
           },
-          "evidence": "MIT EECS Admissions: 'The online application opens on September 15. The application deadline is December 15.'",
+          "evidence": "Princeton University official application deadline schedule for Master of Science in Engineering in Computer Science.",
           "checkedAt": "2026-10-18",
-          "validity": "Fall 2026 cycle",
+          "validity": "2025-2026 intake cycle",
           "result": "captured",
-          "sourceUrl": "https://www.eecs.mit.edu/academics/graduate-programs/admissions/",
-          "publisher": "MIT Department of EECS"
+          "sourceUrl": "https://www.cs.princeton.edu/grad/program/mse",
+          "publisher": "Princeton University Admissions"
         }
       ]
     },

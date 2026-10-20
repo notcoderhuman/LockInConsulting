@@ -60,7 +60,7 @@ Legend: `[x]` done and verified · `[~]` partial · `[ ]` not started
 11. Remove the Remote MySQL allow-list entry.
 
 ## Open items
-- Owner decision on R-029 (public fallback shows unreviewed research data as verified and hard-coded QS ranks) and R-030 (headers, build script)
+- Review and commit the R-029 fix (public directory reads only `public_*` views again) and R-030 restorations; decide on one package manager and the Windows build script (R-030)
 - Before `STUDENT_ACCOUNTS_ENABLED=true`: R-026 legal/privacy review, age and guardian-consent flow, privacy notice, retention period
 - Before `DEREK_AI_ENABLED=true` with a real provider: R-027 written terms review, verified model id, cost approval; a stale-job sweeper (R-032)
 - Confirm the Hostinger plan and its exact MySQL/MariaDB version; run `DB_TEST_URL=... pnpm test:db` against that engine (R-005, R-013, R-014)
@@ -78,7 +78,7 @@ Legend: `[x]` done and verified · `[~]` partial · `[ ]` not started
 2. `pnpm db:preflight --probe` against an empty staging DB; then `DB_TEST_URL=… pnpm test:db` (all three suites, including `support.db.test.ts`). MySQL 8.4 results do not prove the hosting engine works.
 3. `pnpm db:migrate` (applies `0003_support_chat.sql`); confirm `/admin` is not `unavailable`.
 4. Staging environment variables: as in `docs/ENVIRONMENT.md`. Leave `STUDENT_ACCOUNTS_ENABLED`, `DEREK_AI_ENABLED`, `DEREK_PROVIDER`, `DEREK_AUTO_REPLY_CLEARED` **unset**.
-5. Start with `node .next/standalone/server.js` (the config uses `output: 'standalone'`), or confirm Hostinger's own start command.
+5. Confirm Hostinger's start command. `npm run build` completes the standalone bundle; start with `npm run start:standalone` (`node .next/standalone/server.js`) or `npm start`. Check that static chunks and `/textures/*` return 200 and that `HOSTNAME`/`PORT` are what the platform expects.
 6. Keep staging and production closed to students until R-026, R-027 and R-031 are cleared in writing.
 
 ## Hostinger Unlimited suitability checklist (confirm in writing before buying; do not buy until the site is complete)

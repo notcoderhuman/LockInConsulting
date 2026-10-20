@@ -56,15 +56,9 @@ const university: PublicUniversity = {
 describe('getDestinationDirectory', () => {
   afterEach(() => vi.unstubAllEnvs())
 
-  it('loads verified directory listings for destination without a database', async () => {
+  it('reports not_configured without a database, never private research data (R-029)', async () => {
     vi.stubEnv('DATABASE_URL', '')
-    const result = await getDestinationDirectory('DE')
-    expect(result.state).toBe('ready')
-    if (result.state === 'ready') {
-      expect(result.universities.length).toBe(10)
-      expect(result.universities[0].name).toContain('Munich')
-      expect(result.universities[0].rankings.length).toBeGreaterThan(0)
-    }
+    expect(await getDestinationDirectory('DE')).toEqual({ state: 'not_configured' })
   })
 
   it('reports not_configured for an unconfigured destination', async () => {

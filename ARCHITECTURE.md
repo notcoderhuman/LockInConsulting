@@ -184,7 +184,7 @@ Student POSTs require same-origin `Origin` and `application/json`; bodies are ca
 
 ## Deployment shape (pending plan confirmation)
 
-GitHub → Hostinger Node.js web app (Business or Cloud; Node 22.x/24.x; Hostinger applies `output: "standalone"` itself) → server process restarted from hPanel. Secrets live only in Hostinger environment variables. Changing them requires a restart, or a redeploy for build-time values.
+GitHub → Hostinger Node.js web app (Node 22.x/24.x) → server process restarted from hPanel. `npm run build` runs `next build` and then `scripts/prepare-standalone.mjs`, which copies `public/` and `.next/static/` into `.next/standalone/`. Start with `npm run start:standalone` (`node .next/standalone/server.js`, honours `PORT`/`HOSTNAME`) or `npm start` (`next start`; Next warns about standalone but serves correctly). Both verified locally on Windows only; which one Hostinger runs is unconfirmed (R-030). Secrets live only in Hostinger environment variables. Changing them requires a restart, or a redeploy for build-time values.
 
 Database operations run from a trusted machine over Remote MySQL (R-018), never from a web route:
 1. `pnpm db:preflight --probe` prints version, `sql_mode`, time zone, binlog/trigger settings and redacted grants. It creates and drops a throwaway `_lockin_probe_*` table, view and trigger.

@@ -3,7 +3,7 @@ import { canonicalJson, computeRowHash, GENESIS_HASH } from '@/lib/admin/audit'
 import { getAdminConfigStatus } from '@/lib/admin/config'
 import { ENTITIES, ENTITY_KEYS, isEntityKey } from '@/lib/admin/entities'
 import { parseEntityForm } from '@/lib/admin/forms'
-import { ADMIN_ROLES, can, type Permission } from '@/lib/admin/roles'
+import { actorCan, ADMIN_ROLES, can, type Permission } from '@/lib/admin/roles'
 import { availableActions } from '@/lib/admin/workflow'
 
 const form = (fields: Record<string, string>) => {
@@ -19,9 +19,29 @@ describe('role permissions', () => {
     'data.review': { editor: false, reviewer: true, owner: true },
     'rights.manage': { editor: false, reviewer: false, owner: true },
     'members.read': { editor: false, reviewer: false, owner: true },
+    'support.read': { editor: false, reviewer: true, owner: true },
+    'support.reply': { editor: false, reviewer: true, owner: true },
+    'support.review_ai': { editor: false, reviewer: true, owner: true },
+    'students.read': { editor: false, reviewer: true, owner: true },
+    'members.manage': { editor: false, reviewer: false, owner: true },
+    'support.settings': { editor: false, reviewer: false, owner: true },
+    'students.erase': { editor: false, reviewer: false, owner: true },
   }
   it.each(Object.entries(matrix))('%s', (permission, expected) => {
     for (const role of ADMIN_ROLES) expect(can(role, permission as Permission)).toBe(expected[role])
+  })
+  it('lets an owner delegate only reading and replying to an individual editor', () => {
+    const editor = { role: 'editor' as const, supportEnabled: true }
+    expect(actorCan(editor, 'support.read')).toBe(true)
+    expect(actorCan(editor, 'support.reply')).toBe(true)
+    for (const p of ['support.review_ai', 'students.read', 'members.manage', 'support.settings', 'students.erase', 'data.review'] as Permission[])
+      expect(actorCan(editor, p)).toBe(false)
+    expect(actorCan({ role: 'editor', supportEnabled: false }, 'support.read')).toBe(false)
+    expect(actorCan({ role: 'editor' }, 'support.read')).toBe(false)
+    // The flag means nothing for a reviewer: it can neither add nor remove role permissions.
+    expect(actorCan({ role: 'reviewer', supportEnabled: false }, 'support.review_ai')).toBe(true)
+    expect(actorCan({ role: 'reviewer', supportEnabled: true }, 'support.settings')).toBe(false)
+    expect(actorCan(null, 'support.read')).toBe(false)
   })
   it('grants nothing to missing or unknown roles', () => {
     expect(can(null, 'data.read')).toBe(false)

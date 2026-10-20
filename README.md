@@ -42,6 +42,7 @@ Append `?ist=15:30` to preview the globe's lighting at that India time.
 - `DECISIONS.md` — decision log
 - `RISKS.md` — risk register, blockers, and FX source review
 - `TODO.md` — phased roadmap
+- Stage 7 student support: see `ARCHITECTURE.md` → *Student support, Live Inbox and Derek*. Student accounts and live AI are off by default.
 - `docs/ENVIRONMENT.md` — environment variables, fail-closed configuration, and template (`docs/env.example`)
 
 ## Asset credits and licences

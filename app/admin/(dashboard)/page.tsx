@@ -5,13 +5,27 @@ import { EmptyState, PageHeader, Panel } from '@/components/admin/page-header'
 import { requireAdminPage } from '@/lib/admin/access'
 import { ENTITIES, ENTITY_KEYS } from '@/lib/admin/entities'
 import { getChainStatus, getReviewQueue, getStatusCounts, REVIEW_HORIZON_DAYS } from '@/lib/admin/queries'
-import { ROLE_LABEL } from '@/lib/admin/roles'
+import { actorCan, can, ROLE_LABEL } from '@/lib/admin/roles'
 import { formatDate, recordHref } from '@/lib/admin/view'
 import { getAdminPool } from '@/lib/db/pool'
+import { getDerekStatus } from '@/lib/derek/config'
+import { getInboxCounts } from '@/lib/support/conversations'
+import { countUnreadNotifications, staffViewer, syncOverdueReviewNotifications } from '@/lib/support/notifications'
+import { getSupportSettings } from '@/lib/support/settings'
+import { STATUS_LABEL } from '@/lib/support/state'
 
 export const metadata: Metadata = { title: 'Overview' }
 
 const REASON_LABEL = { expired: 'Overdue', in_review: 'Awaiting review', due_soon: 'Due soon' } as const
+
+function StatCard({ href, label, value, alert }: { href: string; label: string; value: number; alert?: boolean }) {
+  return (
+    <Link href={href} className="flex flex-col gap-1 rounded-xl border border-border bg-card p-5 transition-colors hover:border-primary/50">
+      <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{label}</span>
+      <span className={alert && value > 0 ? 'font-serif text-4xl text-destructive' : 'font-serif text-4xl text-foreground'}>{value}</span>
+    </Link>
+  )
+}
 
 export default async function OverviewPage() {
   const actor = await requireAdminPage('data.read')
@@ -19,6 +33,17 @@ export default async function OverviewPage() {
   const [counts, queue, chain] = await Promise.all([getStatusCounts(db), getReviewQueue(db), getChainStatus(db)])
   const tally = { expired: 0, in_review: 0, due_soon: 0 }
   for (const item of queue) tally[item.reason]++
+  if (can(actor.role, 'data.review'))
+    await syncOverdueReviewNotifications(
+      db,
+      queue.filter((q) => q.reason === 'expired').map((q) => ({ entity: q.entity, id: q.id, title: q.title, reviewDueAt: q.reviewDueAt, validTo: q.validTo, href: recordHref(q.entity, q.id) })),
+    )
+  const [inbox, unreadNotifications, support] = await Promise.all([
+    actorCan(actor, 'support.read') ? getInboxCounts(db, actor) : null,
+    countUnreadNotifications(db, staffViewer(actor)),
+    getSupportSettings(db),
+  ])
+  const derek = getDerekStatus()
 
   return (
     <>
@@ -41,6 +66,23 @@ export default async function OverviewPage() {
           </Link>
         ))}
       </section>
+
+      <section aria-label="Student support" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {inbox ? (
+          <>
+            <StatCard href="/admin/inbox?unread=1" label="Unread conversations" value={inbox.unread} />
+            <StatCard href="/admin/inbox?status=awaiting_human_review" label={STATUS_LABEL.awaiting_human_review} value={inbox.byStatus.awaiting_human_review} />
+            <StatCard href="/admin/inbox?status=failed" label={STATUS_LABEL.failed} value={inbox.byStatus.failed} alert />
+          </>
+        ) : null}
+        <StatCard href="/admin/notifications" label="Unread notifications" value={unreadNotifications} />
+      </section>
+
+      <p className="text-sm leading-relaxed text-muted-foreground">
+        {`Support mode: ${support.mode === 'online' ? 'online (human replies)' : 'offline'}. Automatic replies: ${support.autoReplyEnabled ? 'on' : 'off'}. Derek: ${
+          derek.state === 'ready' ? `drafting enabled (${derek.providerId})` : derek.state === 'blocked' ? 'blocked' : 'disabled'
+        }.`}
+      </p>
 
       <div className="grid gap-6 lg:grid-cols-5">
         <div className="lg:col-span-3">

@@ -3,7 +3,6 @@ import { notFound } from 'next/navigation'
 import { DestinationHero } from '@/components/destination/destination-hero'
 import { DestinationPager } from '@/components/destination/destination-pager'
 import { OfficialResources } from '@/components/destination/official-resources'
-import { RankingsNotice } from '@/components/destination/rankings-notice'
 import { StatusLegend } from '@/components/destination/status-legend'
 import { UniversityDirectory } from '@/components/destination/university-directory'
 import { SiteFooter } from '@/components/site/site-footer'
@@ -38,7 +37,6 @@ export default async function DestinationPage({ params }: Props) {
   const directory = await getDestinationDirectory(destination.iso2)
   const resources = getOfficialResources(destination.iso2)
   const universities = directory.state === 'ready' ? directory.universities : []
-  const publishedRankings = universities.reduce((n, u) => n + u.rankings.length, 0)
 
   return (
     <>
@@ -52,7 +50,6 @@ export default async function DestinationPage({ params }: Props) {
         />
         <UniversityDirectory destination={destination} directory={directory} />
         <OfficialResources destination={destination} resources={resources} />
-        <RankingsNotice publishedCount={publishedRankings} />
         <StatusLegend />
         <DestinationPager iso2={destination.iso2} />
       </main>

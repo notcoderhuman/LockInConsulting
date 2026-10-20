@@ -9,8 +9,31 @@ function Pending({ label }: { label: string }) {
   return <span className="text-sm text-muted-foreground">{label}</span>
 }
 
+function formatRequirementsText(val: unknown): string | null {
+  if (!val) return null
+  if (typeof val === 'string') return val
+  if (typeof val === 'object') {
+    const v = val as Record<string, unknown>
+    const parts: string[] = []
+    if (v.minimumGpa) parts.push(`Minimum GPA: ${v.minimumGpa}`)
+    if (v.prerequisites) parts.push(`Prerequisites: ${v.prerequisites}`)
+    if (v.greRequired !== undefined) parts.push(v.greRequired ? 'GRE: Required' : 'GRE: Not required')
+    if (v.ieltsMin) parts.push(`IELTS: Minimum overall ${v.ieltsMin}`)
+    if (v.toeflMin) parts.push(`TOEFL iBT: Minimum ${v.toeflMin}`)
+    for (const [k, item] of Object.entries(v)) {
+      if (!['minimumGpa', 'prerequisites', 'greRequired', 'ieltsMin', 'toeflMin'].includes(k) && (typeof item === 'string' || typeof item === 'number')) {
+        parts.push(`${k}: ${item}`)
+      }
+    }
+    return parts.length ? parts.join('\n') : JSON.stringify(val)
+  }
+  return String(val)
+}
+
 function CourseRow({ course }: { course: PublicCourse }) {
   const duration = formatDuration(course.durationMonths)
+  const entryText = formatRequirementsText(course.entryRequirements)
+  const langText = formatRequirementsText(course.languageRequirements)
   return (
     <li className="grid gap-4 border-t border-border py-5 md:grid-cols-[minmax(0,1.3fr)_minmax(0,0.9fr)_minmax(0,1.4fr)]">
       <div className="flex flex-col gap-1">
@@ -55,12 +78,12 @@ function CourseRow({ course }: { course: PublicCourse }) {
             <DataStatusBadge state="unverified" className="mt-1" />
           )}
         </div>
-        {(course.entryRequirements || course.languageRequirements) && (
+        {(entryText || langText) && (
           <details className="group text-sm">
             <summary className="min-h-11 cursor-pointer content-center text-primary">Entry requirements</summary>
             <div className="flex flex-col gap-2 pt-2 leading-relaxed text-muted-foreground">
-              {course.entryRequirements && <p className="whitespace-pre-line">{course.entryRequirements}</p>}
-              {course.languageRequirements && <p className="whitespace-pre-line">{course.languageRequirements}</p>}
+              {entryText && <p className="whitespace-pre-line">{entryText}</p>}
+              {langText && <p className="whitespace-pre-line">{langText}</p>}
             </div>
           </details>
         )}

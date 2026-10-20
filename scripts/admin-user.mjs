@@ -175,10 +175,13 @@ export async function runAdminCli(argv, io = {}) {
         requireEmail()
         requireRole()
         const user = await findUser()
+        // Staff and student accounts are kept separate (lib/identity/policy.ts).
+        const [[student]] = await dataPool.query('SELECT COUNT(*) AS n FROM student_profiles WHERE user_id = ?', [user.id])
+        if (Number(student.n) > 0) throw new CliError(`${email} is a student account and cannot be given admin access. Use a separate staff account.`)
         await memberChange(user.id, 'role_grant', `grant ${role}`, (conn) =>
           conn.query(
             `INSERT INTO admin_members (user_id, role, status, granted_by) VALUES (?, ?, 'active', ?)
-             ON DUPLICATE KEY UPDATE role = VALUES(role), status = 'active', revoked_at = NULL,
+             ON DUPLICATE KEY UPDATE role = VALUES(role), status = 'active', revoked_at = NULL, support_enabled = FALSE,
                                      granted_by = VALUES(granted_by), granted_at = CURRENT_TIMESTAMP(3)`,
             [user.id, role, actor],
           ),
@@ -190,7 +193,7 @@ export async function runAdminCli(argv, io = {}) {
         requireEmail()
         const user = await findUser()
         await memberChange(user.id, 'role_revoke', 'revoke', (conn) =>
-          conn.query("UPDATE admin_members SET status = 'revoked', revoked_at = CURRENT_TIMESTAMP(3) WHERE user_id = ?", [user.id]),
+          conn.query("UPDATE admin_members SET status = 'revoked', revoked_at = CURRENT_TIMESTAMP(3), support_enabled = FALSE WHERE user_id = ?", [user.id]),
         )
         await ctx.internalAdapter.deleteUserSessions(user.id)
         log(`Revoked admin access for ${email} and signed out all of their sessions.`)

@@ -18,7 +18,10 @@ function targetHref(type: string, id: unknown): string | null {
   const entity = LOG_TO_ENTITY.get(type)
   if (entity) return recordHref(entity, id)
   if (type === 'source') return `/admin/sources/${id}`
-  if (type === 'ranking_provider' || type === 'fx_provider' || type === 'fx_rate' || type === 'admin_member') return '/admin/settings'
+  if (type === 'ranking_provider' || type === 'fx_provider' || type === 'fx_rate' || type === 'support_settings') return '/admin/settings'
+  if (type === 'admin_member') return '/admin/team'
+  if (type === 'conversation') return `/admin/inbox/${id}`
+  if (type === 'student_profile') return `/admin/students/${id}`
   return null
 }
 

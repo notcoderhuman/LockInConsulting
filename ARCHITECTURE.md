@@ -1,6 +1,6 @@
 # LockIn Consulting — Architecture
 
-Status: **Stage 5 (local product completion).** Stage 5 added an enforcing nonce CSP (`proxy.ts`), so every route now renders per request. It also added a 404 page, `robots`/`sitemap` gated on `NEXT_PUBLIC_SITE_URL`, and private intake/evidence files for the first university batch and the IMF terms (nothing published). Stage 4: local checks are complete, and the integration suite also passes on MariaDB 10.5.29. Staging is blocked on the Hostinger plan and staging credentials. Stage 3 summary: The public homepage, 11 destination pages, university-directory schema (`0001_university_directory.sql` + `0002_admin_auth.sql`), Better Auth administrator sign-in, Owner/Reviewer/Editor role-based access control, `/admin` dashboard, publication/licensing workflow, and SHA-256 hash-chained + trigger-protected audit log are implemented and verified against real MySQL 8.4 (`pnpm test:db`). There is still **no live production database connection, no student chat, and no AI provider** (Derek remains disabled per D-002).
+Status: **Stage 7 (support chat, local only).** Stage 7 added persistent student conversations (`0003_support_chat.sql`), the Live Inbox, Students, Our Team and Notifications admin areas, and Derek's provider-independent draft/review workflow with an offline mock provider. Student accounts stay **closed** (`STUDENT_ACCOUNTS_ENABLED` unset) and live AI stays **off** (`DEREK_AI_ENABLED` unset; Gemini blocked, R-027). Verified on MySQL 8.4.9 only (R-031). Stage 5: Stage 5 added an enforcing nonce CSP (`proxy.ts`), so every route now renders per request. It also added a 404 page, `robots`/`sitemap` gated on `NEXT_PUBLIC_SITE_URL`, and private intake/evidence files for the first university batch and the IMF terms (nothing published). Stage 4: local checks are complete, and the integration suite also passes on MariaDB 10.5.29. Staging is blocked on the Hostinger plan and staging credentials. Stage 3 summary: The public homepage, 11 destination pages, university-directory schema (`0001_university_directory.sql` + `0002_admin_auth.sql`), Better Auth administrator sign-in, Owner/Reviewer/Editor role-based access control, `/admin` dashboard, publication/licensing workflow, and SHA-256 hash-chained + trigger-protected audit log are implemented and verified against real MySQL 8.4 (`pnpm test:db`). There is still **no live production database connection, no student chat, and no AI provider** (Derek remains disabled per D-002).
 
 ## Stack
 
@@ -12,8 +12,8 @@ Status: **Stage 5 (local product completion).** Stage 5 added an enforcing nonce
 | Validation | `zod` schemas (`lib/data/validation.ts`) + column whitelist (`lib/admin/forms.ts`) | Implemented across all admin write paths |
 | Auth | Better Auth 1.7.8 (`lib/auth.ts`, `lib/auth-options.mjs`) — email/password, public sign-up disabled, DB-backed rate limiting, CLI-only provisioning (`scripts/admin-user.mjs`) | Implemented and integration-tested; fails closed without config |
 | Authorisation | Server-side RBAC (`lib/admin/access.ts`, `lib/admin/roles.ts`) — `editor` < `reviewer` < `owner` | Enforced on every page, route handler and server action |
-| AI (Derek) | Provider-agnostic interface | **Disabled. No provider connected (D-002, R-001, R-002).** |
-| Support | Human-reviewed replies via the future admin inbox | Planned (Phase 7). No simulated chat. |
+| AI (Derek) | Provider-independent interface (`lib/derek`), mock provider for dev/tests, Gemini stub that always refuses | **Off by default. No real provider connected (D-002, D-030, R-027).** |
+| Support | Persistent chat (`/support`, `/api/student/*`) + Live Inbox (`/admin/inbox`) with human replies and reviewed Derek drafts | Implemented and DB-tested; **closed to students** until R-026 is cleared |
 | 3D | three.js + `@react-three/fiber` 9.8.1 | Implemented; shared between homepage and destination pages |
 
 ## Code layout
@@ -46,6 +46,12 @@ app/
     auth/[...all]/route.ts                    Better Auth handler (503 fail-closed when unconfigured)
     admin/review-queue/route.ts               JSON review queue (requires data.read, Cache-Control: no-store)
     admin/audit/route.ts                      JSON chain verification (requires members.read, no-store)
+    admin/notifications/route.ts              unread counts for the nav badges (data.read; counts only)
+    student/conversations/…                   student chat API: list/create, messages (GET page, POST), read marker
+    student/notifications/route.ts            the student's own notifications
+  support/page.tsx                            student chat (fails closed unless STUDENT_ACCOUNTS_ENABLED=true)
+  admin/support-actions.ts                    inbox / Derek review / notifications / team / erasure server actions
+  admin/(dashboard)/inbox, students, team, notifications   Stage 7 admin areas
 components/
   site/                                       header, footer, skip link
   home/                                       homepage sections
@@ -75,6 +81,12 @@ lib/
     workflow.ts                               transactional mutations + FOR UPDATE locks + audit logging
     queries.ts                                admin read queries (parameterised, escaped LIKE)
     audit.ts / audit-core.mjs                 canonical JSON + SHA-256 hash chain append & verification
+  identity/policy.ts                          administrator / team member / student policies, OAuth provider status
+  student/access.ts, student/http.ts          student session resolution, same-origin + JSON checks, safe errors
+  support/                                    state machine, validation, conversations, notifications, settings, attribution
+  derek/                                      provider interface, runtime (timeout/retry), config gate, safeguards,
+                                              evidence (public_* views only), drafts worker + review, mock & Gemini stub
+  admin/team.ts                               Our Team: list, revoke, editor support delegation (owner only)
 db/migrations/
   0001_university_directory.sql               core directory tables, CHECK constraints, public_* views
   0002_admin_auth.sql                         Better Auth tables, admin_members, fx_providers, public_fx_rates,
@@ -84,6 +96,7 @@ scripts/
   db-capabilities.mjs                         engine classification, DDL capability probe, grant redaction
   db-preflight.mjs                            read-only staging compatibility report (`pnpm db:preflight`)
   admin-user.mjs                              CLI-only admin provisioning (create, grant, revoke, set-password, list, verify-audit)
+  dev-sandbox.mjs                             local-only disposable MySQL + synthetic accounts for trying the chat
 tests/                                        Vitest unit tests (pnpm test)
 tests/db/                                     real-MySQL 8.4 integration tests (pnpm test:db)
 ```
@@ -125,6 +138,37 @@ All money is `DECIMAL` in the original currency. All facts are linked to a `sour
    - `reviewer`: adds `data.review` — can verify records against sources, mark fees/acceptance rates as `unavailable`, return records to draft with a reason, publish, re-verify, unpublish with a reason, and enter FX rates for approved providers. Cannot approve ranking licences or FX provider terms, or view the member list / `/api/admin/audit`.
    - `owner`: adds `rights.manage` and `members.read` — can update ranking provider reuse rights, approve/reject FX provider terms, view admin members, and call `/api/admin/audit`.
 4. **Transactional mutations & audit chain (`lib/admin/workflow.ts`, `lib/admin/audit-core.mjs`).** Every write locks the target row (`FOR UPDATE`), validates input via `zod`, applies the change, locks `audit_chain_head` (`FOR UPDATE`), computes `SHA-256(prevHash + "|" + canonicalJson(entry))`, inserts into `data_change_log`, and updates `audit_chain_head` in a single database transaction. Published records cannot be edited in place; any edit to an unverified/in-review/unpublished record resets `verification_status` to `'unverified'`.
+
+## Student support, Live Inbox and Derek (Stage 7)
+
+### Identity
+| Account | Provisioning | Gate |
+|---|---|---|
+| Administrator (owner) | `pnpm admin:user create --role owner` only | active `admin_members` row, no student profile |
+| Team member (editor/reviewer) | CLI only; owner may revoke or delegate support to an editor in `/admin/team` | same |
+| Student | **Disabled.** No sign-up route exists for anyone (`/sign-up/email` is disabled) | `STUDENT_ACCOUNTS_ENABLED=true` + active `student_profiles` row + no admin membership |
+
+Google, Microsoft (Outlook) and Yahoo are reported as *not configured*; Apple is *deferred* (cost). Nothing is wired into Better Auth (`lib/identity/policy.ts`).
+
+### Schema (`0003_support_chat.sql`)
+`student_profiles`, `support_settings` (owner singleton: mode online/offline, auto replies off), `conversations` (status, last student message, staff/student read markers, idempotency key), `messages` (author_kind student/staff/derek; CHECK ties Derek to a draft and humans to a user id; UNIQUE idempotency key and UNIQUE draft_id), `conversation_events` (state history), `ai_drafts` (one per student message; status, risk, usage, error code), `ai_draft_revisions`, `draft_reviews`, `notifications`, `notification_reads`; `admin_members.support_enabled`; new audit entity types/actions. Messages, events, revisions and reviews have `SIGNAL` triggers against UPDATE/DELETE; erasing a conversation removes them through FK cascades (which do not fire triggers).
+
+### Conversation state machine (`lib/support/state.ts`)
+`open` → (Derek draft or flag) `awaiting_human_review` → (human or approved reply) `awaiting_student_reply` → (student writes) `open`; staff may set `open`, `awaiting_human_review`, `resolved`, `failed`; a provider failure sets `failed` (needs intervention). Students see only "Waiting for the LockIn team", "The team has replied" or "Resolved".
+
+### Concurrency and duplicates
+Every write locks the conversation row `FOR UPDATE` (lock order conversation → draft). Student and staff sends carry a client idempotency key (UNIQUE). Derek claims a question by inserting its draft (UNIQUE `trigger_message_id`), calls the provider with no lock held, then re-locks and gives up if a human answered meanwhile; a human reply marks open drafts `superseded`. `messages.draft_id` is UNIQUE, so a draft is delivered at most once.
+
+### Derek workflow
+1. Disabled unless `DEREK_AI_ENABLED=true` and `DEREK_PROVIDER` is an allowed provider (`mock` outside production; `gemini` always blocked).
+2. Evidence: matched universities from `public_*` views only, fees for past academic years dropped (`lib/derek/evidence.ts`).
+3. Contact details are redacted before the provider sees the question. Provider calls: 20 s timeout per attempt, 2 attempts, retry only on retryable errors, errors reduced to a code (`lib/derek/runtime.ts`).
+4. Safeguards (`lib/derek/safeguards.ts`): visa/immigration, distress, legal and payment questions → `high`; admission-probability, guarantees, or a factual topic without evidence → `uncertain`; any figure not present in the evidence, guarantees, outcome predictions or INR conversions in the draft → `high`.
+5. Review: edit (new revision), approve exact revision + SHA-256, send; or reject with a reason; or write a human reply. Automatic replies: only `low` risk, only when offline mode + owner switch + `DEREK_AUTO_REPLY_CLEARED=true` + ready provider, all re-checked at send time.
+6. Usage metadata (model, tokens, latency, attempts, error code) is stored per draft.
+
+### Security notes
+Student POSTs require same-origin `Origin` and `application/json`; bodies are capped at 16 KB and messages at 4,000 characters (invisible/bidi control characters stripped); text is rendered as text. Rate limits: 20 student messages per 10 minutes, 10 new conversations per day, 20 unresolved conversations. Staff server actions re-authorise before reading input. Errors never echo SQL or provider messages. Owner-only erasure deletes the account, sessions, conversations, drafts and notifications, keeping a scrubbed tombstone and a content-free audit entry. Limits of the audit chain: R-028.
 
 ## Destination pages & globe behaviour
 

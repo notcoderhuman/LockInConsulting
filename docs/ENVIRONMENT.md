@@ -33,6 +33,20 @@ The admin dashboard (`/admin`) and auth endpoints (`/api/auth/*`) are strictly *
 | `BETTER_AUTH_URL` | Canonical base URL for Better Auth authentication callbacks and trusted origins. | Required when admin is active. Must use `https://` in production (allows `localhost` in development). |
 | `ADMIN_DISABLED` | Emergency kill switch (`true` / `false`). | If set to `true`, instantly disables the admin dashboard regardless of credentials. |
 
+### Student support and Derek (Stage 7)
+
+All of these default to **off**. Leave them unset on staging and production until the blockers in `RISKS.md` are cleared.
+
+| Variable | Description | Default / Missing Behavior |
+| :--- | :--- | :--- |
+| `STUDENT_ACCOUNTS_ENABLED` | `true` opens `/support` and `/api/student/*` to students who already have a profile. There is still **no sign-up**. | Unset: the student page explains accounts aren't open; student APIs return 503. Blocked by R-026. |
+| `DEREK_AI_ENABLED` | Global live-AI flag. | Unset: no drafts are generated; the inbox shows "Live AI is switched off". |
+| `DEREK_PROVIDER` | `mock` (offline, development/tests only, refused when `NODE_ENV=production`) or `gemini` (always blocked, R-027). | Unset or unknown: Derek reports "blocked". |
+| `DEREK_AUTO_REPLY_CLEARED` | `true` records that the provider terms, privacy and age-eligibility review for unreviewed automatic replies is complete. The owner must still choose offline mode and enable automatic replies in `/admin/settings`. | Unset: automatic replies cannot be enabled and are never sent. |
+| `GOOGLE_CLIENT_ID`/`_SECRET`, `MICROSOFT_CLIENT_ID`/`_SECRET`, `YAHOO_CLIENT_ID`/`_SECRET` | Reserved. Presence is only reported as "credentials supplied, untested"; no provider is wired in. | Reported as "not configured". Apple is deferred (cost). |
+
+Local end-to-end trial with synthetic data: `node scripts/dev-sandbox.mjs` (disposable MySQL, synthetic accounts, writes the git-ignored `.env.sandbox.local`), then `set -a; . ./.env.sandbox.local; set +a; npx next dev`.
+
 ---
 
 ## Development vs. Staging vs. Production

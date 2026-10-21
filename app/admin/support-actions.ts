@@ -4,13 +4,15 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { AccessDeniedError, requireAdminAction } from '@/lib/admin/access'
 import { formId, formText } from '@/lib/admin/forms'
+import { getReviewQueue } from '@/lib/admin/queries'
 import type { AdminActor, Permission } from '@/lib/admin/roles'
+import { recordHref } from '@/lib/admin/view'
 import { revokeMember, setSupportAccess } from '@/lib/admin/team'
 import { getAdminPool } from '@/lib/db/pool'
 import { approveAndSendDraft, editDraft, rejectDraft, requestDraftForConversation } from '@/lib/derek/drafts'
-import { eraseStudent, setConversationStatus, staffReply } from '@/lib/support/conversations'
+import { eraseStudent, markStaffRead, setConversationStatus, staffReply } from '@/lib/support/conversations'
 import { SupportError } from '@/lib/support/db'
-import { markNotificationsRead, staffViewer } from '@/lib/support/notifications'
+import { markNotificationsRead, staffViewer, syncOverdueReviewNotifications } from '@/lib/support/notifications'
 import { updateSupportSettings } from '@/lib/support/settings'
 import type { ActionState } from './actions'
 
@@ -121,8 +123,10 @@ export async function setSupportAccessAction(_prev: ActionState, form: FormData)
 
 export async function revokeMemberAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   return run('members.manage', async (actor) => {
+    if (formText(form, 'confirm') !== 'yes') throw new SupportError(400, 'Confirm that you want to revoke this member.')
     await revokeMember(getAdminPool(), actor, formText(form, 'userId'), formText(form, 'reason'))
-    return { message: 'Access revoked and all of their sessions were signed out.' }
+    // The form disappears once the member is revoked, so the confirmation is shown by the page.
+    return { redirectTo: '/admin/team?notice=revoked' }
   })
 }
 
@@ -133,5 +137,22 @@ export async function eraseStudentAction(_prev: ActionState, form: FormData): Pr
     if (formText(form, 'confirm') !== 'ERASE') throw new SupportError(400, 'Type ERASE to confirm.', { confirm: ['Type ERASE to confirm.'] })
     await eraseStudent(getAdminPool(), actor, id, formText(form, 'reason'))
     return { redirectTo: `/admin/students/${id}` }
+  })
+}
+
+// Called by the browser after a page has mounted, never during a GET render or a prefetch.
+export async function markConversationReadAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  return run('support.read', async (actor) => {
+    await markStaffRead(getAdminPool(), actor, conversationId(form))
+    return { message: 'Marked as read.' }
+  })
+}
+
+export async function syncReviewNoticesAction(_prev: ActionState, _form: FormData): Promise<ActionState> {
+  return run('data.review', async () => {
+    const db = getAdminPool()
+    const overdue = (await getReviewQueue(db)).filter((q) => q.reason === 'expired')
+    await syncOverdueReviewNotifications(db, overdue.map((q) => ({ entity: q.entity, id: q.id, title: q.title, reviewDueAt: q.reviewDueAt, validTo: q.validTo, href: recordHref(q.entity, q.id) })))
+    return { message: 'Review notices up to date.' }
   })
 }

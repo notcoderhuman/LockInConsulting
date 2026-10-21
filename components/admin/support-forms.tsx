@@ -6,6 +6,7 @@ import {
   approveAndSendAction,
   editDraftAction,
   eraseStudentAction,
+  markConversationReadAction,
   markNotificationsReadAction,
   rejectDraftAction,
   replyAction,
@@ -13,6 +14,7 @@ import {
   revokeMemberAction,
   setStatusAction,
   setSupportAccessAction,
+  syncReviewNoticesAction,
   updateSupportSettingsAction,
 } from '@/app/admin/support-actions'
 import { controlClass, describedBy, Field, FormMessage } from './form-controls'
@@ -110,6 +112,8 @@ export function DraftReviewForms({ draftId, revision, bodySha256, body }: { draf
   const send = useFormAction(approveAndSendAction)
   const reject = useFormAction(rejectDraftAction)
   const [text, setText] = useState(body)
+  // The forms stay mounted across revisions (so confirmations survive); follow the saved text.
+  useEffect(() => setText(body), [body])
   const dirty = text !== body
   return (
     <div className="flex flex-col gap-4">
@@ -220,17 +224,31 @@ export function SupportAccessForm({ userId, enabled }: { userId: string; enabled
 
 export function RevokeMemberForm({ userId, name }: { userId: string; name: string }) {
   const { state, pending, onSubmit } = useFormAction(revokeMemberAction)
+  const [armed, setArmed] = useState(false)
   const id = `revoke-${userId}`
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-2" noValidate>
       <input type="hidden" name="userId" value={userId} />
+      {armed ? <input type="hidden" name="confirm" value="yes" /> : null}
       <Field id={id} label={`Reason for revoking ${name}`} errors={state?.fieldErrors?.reason}>
         <input id={id} name="reason" maxLength={500} className={controlClass} />
       </Field>
       <FormMessage state={state} />
-      <Button type="submit" variant="outline" size="sm" disabled={pending} className="self-start">
-        Revoke access
-      </Button>
+      {armed ? (
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label={`Confirm revoking ${name}`}>
+          <span className="text-xs text-destructive">{`Revoke ${name}? They are signed out at once; only the CLI can grant access again.`}</span>
+          <Button type="submit" variant="destructive" size="sm" disabled={pending}>
+            {pending ? 'Revoking…' : 'Confirm revoke'}
+          </Button>
+          <Button type="button" variant="outline" size="sm" disabled={pending} onClick={() => setArmed(false)}>
+            Cancel
+          </Button>
+        </div>
+      ) : (
+        <Button type="button" variant="outline" size="sm" className="self-start" onClick={() => setArmed(true)}>
+          Revoke access
+        </Button>
+      )}
     </form>
   )
 }
@@ -252,4 +270,22 @@ export function EraseStudentForm({ profileId }: { profileId: number }) {
       </Button>
     </form>
   )
+}
+
+/** Marks a conversation read once it is really shown, not when its page is rendered or prefetched. */
+export function MarkConversationRead({ conversationId }: { conversationId: number }) {
+  useEffect(() => {
+    const form = new FormData()
+    form.set('conversationId', String(conversationId))
+    void markConversationReadAction(null, form)
+  }, [conversationId])
+  return null
+}
+
+/** Creates overdue-review notices (idempotent) from a reviewer's browser, not during a GET render. */
+export function SyncReviewNotices() {
+  useEffect(() => {
+    void syncReviewNoticesAction(null, new FormData())
+  }, [])
+  return null
 }

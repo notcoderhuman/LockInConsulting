@@ -3,14 +3,14 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ConversationBadge, RiskBadge } from '@/components/admin/conversation-badge'
 import { EmptyState, PageHeader, Panel } from '@/components/admin/page-header'
-import { DraftReviewForms, ReplyForm, RequestDraftForm, StatusForm } from '@/components/admin/support-forms'
+import { DraftReviewForms, MarkConversationRead, ReplyForm, RequestDraftForm, StatusForm } from '@/components/admin/support-forms'
 import { requireAdminPage } from '@/lib/admin/access'
 import { actorCan } from '@/lib/admin/roles'
 import { firstParam, formatUtc, positiveInt } from '@/lib/admin/view'
 import { getAdminPool } from '@/lib/db/pool'
 import { getDerekStatus } from '@/lib/derek/config'
 import { listDrafts } from '@/lib/derek/drafts'
-import { getConversationForStaff, markStaffRead } from '@/lib/support/conversations'
+import { getConversationForStaff } from '@/lib/support/conversations'
 import { SupportError } from '@/lib/support/db'
 import { STAFF_SETTABLE, STATUS_LABEL } from '@/lib/support/state'
 import { cn } from '@/lib/utils'
@@ -22,8 +22,14 @@ const DRAFT_STATUS: Record<string, string> = {
   ready: 'Awaiting review',
   sent: 'Sent',
   rejected: 'Rejected',
-  superseded: 'Superseded by a human reply',
+  superseded: 'Superseded',
   failed: 'Failed',
+}
+
+const SUPERSEDED_BY: Record<string, string> = {
+  newer_message: 'Superseded: the student sent a newer message',
+  human_reply: 'Superseded by a human reply',
+  other_draft: 'Superseded by another approved Derek reply',
 }
 
 export default async function ConversationPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
@@ -40,9 +46,6 @@ export default async function ConversationPage({ params, searchParams }: { param
     if (error instanceof SupportError && error.status === 404) notFound()
     throw error
   }
-  // Opening the latest page marks the conversation (and its notifications) read for staff.
-  if (!before) await markStaffRead(db, actor, id)
-
   const { conversation: c, messages, hasMore, events } = data
   const canReply = actorCan(actor, 'support.reply')
   const canReviewAi = actorCan(actor, 'support.review_ai')
@@ -54,6 +57,7 @@ export default async function ConversationPage({ params, searchParams }: { param
 
   return (
     <>
+      {before ? null : <MarkConversationRead conversationId={id} />}
       <PageHeader
         title={`#${c.id} · ${c.subject}`}
         crumbs={[{ href: '/admin/inbox', label: 'Live Inbox' }]}
@@ -136,9 +140,12 @@ export default async function ConversationPage({ params, searchParams }: { param
                   <li key={d.id} className="flex flex-col gap-3 border-t border-border pt-4 first:border-0 first:pt-0">
                     <div className="flex flex-wrap items-center gap-2 text-xs">
                       <span className="font-medium text-foreground">{`Draft #${d.id}`}</span>
-                      <span className="text-muted-foreground">{DRAFT_STATUS[d.status] ?? d.status}</span>
+                      <span className="text-muted-foreground">{(d.supersededBy && SUPERSEDED_BY[d.supersededBy]) ?? DRAFT_STATUS[d.status] ?? d.status}</span>
                       <RiskBadge risk={d.risk} />
                     </div>
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      {`Answers message #${d.answers.messageId}: “${d.answers.excerpt}${d.answers.excerpt.length >= 160 ? '…' : ''}”`}
+                    </p>
                     {d.riskReasons.length ? (
                       <ul className="list-disc pl-5 text-xs leading-relaxed text-muted-foreground">
                         {d.riskReasons.map((r) => (
@@ -147,7 +154,7 @@ export default async function ConversationPage({ params, searchParams }: { param
                       </ul>
                     ) : null}
                     {d.status === 'ready' && canReviewAi && d.body && d.bodySha256 ? (
-                      <DraftReviewForms key={`${d.id}-${d.revision}`} draftId={d.id} revision={d.revision} bodySha256={d.bodySha256} body={d.body} />
+                      <DraftReviewForms key={d.id} draftId={d.id} revision={d.revision} bodySha256={d.bodySha256} body={d.body} />
                     ) : d.body ? (
                       <p className="rounded-md border border-border bg-background px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">{d.body}</p>
                     ) : null}

@@ -4,15 +4,17 @@ import { RevokeMemberForm, SupportAccessForm } from '@/components/admin/support-
 import { requireAdminPage } from '@/lib/admin/access'
 import { ROLE_LABEL } from '@/lib/admin/roles'
 import { listTeam } from '@/lib/admin/team'
-import { formatUtc } from '@/lib/admin/view'
+import { firstParam, formatUtc } from '@/lib/admin/view'
 import { getAdminPool } from '@/lib/db/pool'
 import { TEAM_SEED } from '@/lib/content/team'
 
 export const metadata: Metadata = { title: 'Our Team' }
 
-export default async function TeamPage() {
+export default async function TeamPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const actor = await requireAdminPage('members.read')
   const members = await listTeam(getAdminPool(), actor)
+  // Fixed message only: the parameter selects text, it is never echoed.
+  const revoked = firstParam((await searchParams).notice) === 'revoked'
 
   return (
     <>
@@ -20,6 +22,12 @@ export default async function TeamPage() {
         title="Our Team"
         description="Everyone with admin access. New accounts and role changes are made only with the CLI (pnpm admin:user), so nobody can raise their own access from a browser. Here an owner can revoke access or let an individual editor answer student questions."
       />
+
+      {revoked ? (
+        <p role="status" className="rounded-md border border-primary/40 bg-primary/10 px-3 py-2 text-sm text-foreground">
+          Access revoked. All of their sessions were signed out.
+        </p>
+      ) : null}
 
       <Panel title="Members">
         {members.length ? (

@@ -328,7 +328,7 @@ describe('admin support server actions enforce roles before touching data', () =
     const [target] = await rows<{ user_id: string }>("SELECT m.user_id FROM admin_members m JOIN auth_user u ON u.id = m.user_id WHERE u.email = 'act-editor@test.example'")
     expect((await resolveAdminContext(new Headers({ cookie: cookies['act-editor'] }))).state).toBe('ok')
     as('act-owner')
-    expect(await actions.revokeMemberAction(null, form({ userId: target.user_id, reason: 'Left the team' }))).toMatchObject({ ok: true })
+    await expect(actions.revokeMemberAction(null, form({ userId: target.user_id, reason: 'Left the team', confirm: 'yes' }))).rejects.toThrow('NEXT_REDIRECT:/admin/team?notice=revoked')
     expect((await resolveAdminContext(new Headers({ cookie: cookies['act-editor'] }))).state).toBe('signed_out')
   })
 })

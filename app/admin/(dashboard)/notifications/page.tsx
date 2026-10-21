@@ -2,13 +2,12 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { buttonVariants } from '@/components/ui/button'
 import { EmptyState, PageHeader } from '@/components/admin/page-header'
-import { MarkReadForm } from '@/components/admin/support-forms'
+import { MarkReadForm, SyncReviewNotices } from '@/components/admin/support-forms'
 import { requireAdminPage } from '@/lib/admin/access'
 import { can } from '@/lib/admin/roles'
-import { getReviewQueue } from '@/lib/admin/queries'
-import { firstParam, formatUtc, positiveInt, recordHref } from '@/lib/admin/view'
+import { firstParam, formatUtc, positiveInt } from '@/lib/admin/view'
 import { getAdminPool } from '@/lib/db/pool'
-import { listNotifications, staffViewer, syncOverdueReviewNotifications, type NotificationKind } from '@/lib/support/notifications'
+import { listNotifications, staffViewer, type NotificationKind } from '@/lib/support/notifications'
 import { isSafeTargetPath } from '@/lib/support/validation'
 import { cn } from '@/lib/utils'
 
@@ -31,10 +30,6 @@ export default async function NotificationsPage({ searchParams }: { searchParams
   const actor = await requireAdminPage('data.read')
   const before = positiveInt(firstParam((await searchParams).before))
   const db = getAdminPool()
-  if (can(actor.role, 'data.review')) {
-    const overdue = (await getReviewQueue(db)).filter((q) => q.reason === 'expired')
-    await syncOverdueReviewNotifications(db, overdue.map((q) => ({ entity: q.entity, id: q.id, title: q.title, reviewDueAt: q.reviewDueAt, validTo: q.validTo, href: recordHref(q.entity, q.id) })))
-  }
   const viewer = staffViewer(actor)
   const items = await listNotifications(db, viewer, { limit: PAGE + 1, before })
   const page = items.slice(0, PAGE)
@@ -42,6 +37,7 @@ export default async function NotificationsPage({ searchParams }: { searchParams
 
   return (
     <>
+      {can(actor.role, 'data.review') ? <SyncReviewNotices /> : null}
       <PageHeader
         title="Notifications"
         description="In-site only. You see notifications addressed to you and to the teams your role belongs to. Nothing is emailed or sent to another service."

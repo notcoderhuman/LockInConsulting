@@ -116,7 +116,7 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     const [draft] = await selectRows(conn, 'SELECT * FROM ai_drafts WHERE id = ? FOR UPDATE', [claim.draftId])
     if (!draft || draft.status !== 'generating') return { state: 'superseded', draftId: claim.draftId }
     const [answered] = await selectRows(conn, "SELECT id FROM messages WHERE conversation_id = ? AND id > ? AND author_kind <> 'student' LIMIT 1", [conversationId, triggerMessageId])
-    if (answered) {
+    if (answered || Number(conv.last_student_message_id) !== triggerMessageId) {
       await conn.query("UPDATE ai_drafts SET status = 'superseded' WHERE id = ?", [claim.draftId])
       return { state: 'superseded', draftId: claim.draftId }
     }
@@ -252,8 +252,11 @@ async function lockDraft(conn: PoolConnection, draftId: number) {
   return { draft: fresh, conv, revision }
 }
 
-function requireReady(draft: Row) {
+function requireReady(draft: Row, conv: Row) {
   if (draft.status !== 'ready') throw new SupportError(409, `This draft is ${String(draft.status)} and can no longer be changed.`)
+  // Never send an answer to an earlier question when the student has written since.
+  if (Number(draft.trigger_message_id) !== Number(conv.last_student_message_id))
+    throw new SupportError(409, 'The student has sent a newer message. Reply to that message instead.')
 }
 
 function requireRevision(draft: Row, revision: unknown) {
@@ -266,8 +269,8 @@ export async function editDraft(pool: Pool, actor: AdminActor, draftId: number, 
   const body = messageBody.safeParse(input.body)
   if (!body.success) throw new SupportError(400, 'Check the draft text.', { body: body.error.issues.map((i) => i.message) })
   return inTransaction(pool, async (conn) => {
-    const { draft, revision } = await lockDraft(conn, draftId)
-    requireReady(draft)
+    const { draft, conv, revision } = await lockDraft(conn, draftId)
+    requireReady(draft, conv)
     requireRevision(draft, input.revision)
     if (revision && revision.body === body.data) return Number(draft.current_revision)
     const next = Number(draft.current_revision) + 1
@@ -297,8 +300,8 @@ export async function editDraft(pool: Pool, actor: AdminActor, draftId: number, 
 export async function approveDraft(pool: Pool, actor: AdminActor, draftId: number, input: { revision: unknown; bodySha256: unknown }): Promise<void> {
   assertActor(actor, 'support.review_ai')
   await inTransaction(pool, async (conn) => {
-    const { draft, revision } = await lockDraft(conn, draftId)
-    requireReady(draft)
+    const { draft, conv, revision } = await lockDraft(conn, draftId)
+    requireReady(draft, conv)
     requireRevision(draft, input.revision)
     if (!revision || revision.body_sha256 !== input.bodySha256) throw new SupportError(409, 'The draft text changed since you reviewed it. Reload and review it again.')
     await recordApproval(conn, actor, draftId, revision)
@@ -329,7 +332,7 @@ export async function sendApprovedDraft(pool: Pool, actor: AdminActor, draftId: 
   assertActor(actor, 'support.review_ai')
   return inTransaction(pool, async (conn) => {
     const { draft, conv, revision } = await lockDraft(conn, draftId)
-    requireReady(draft)
+    requireReady(draft, conv)
     if (!revision) throw new SupportError(409, 'This draft has no text.')
     const [approval] = await selectRows(
       conn,
@@ -347,7 +350,7 @@ export async function approveAndSendDraft(pool: Pool, actor: AdminActor, draftId
   assertActor(actor, 'support.review_ai')
   return inTransaction(pool, async (conn) => {
     const { draft, conv, revision } = await lockDraft(conn, draftId)
-    requireReady(draft)
+    requireReady(draft, conv)
     requireRevision(draft, input.revision)
     if (!revision || revision.body_sha256 !== input.bodySha256) throw new SupportError(409, 'The draft text changed since you reviewed it. Reload and review it again.')
     if (conv.student_status !== 'active') throw new SupportError(409, 'This student account is no longer active.')
@@ -362,7 +365,7 @@ export async function rejectDraft(pool: Pool, actor: AdminActor, draftId: number
   if (!reason.success) throw new SupportError(400, 'Give a reason for rejecting the draft.', { reason: reason.error.issues.map((i) => i.message) })
   await inTransaction(pool, async (conn) => {
     const { draft, conv, revision } = await lockDraft(conn, draftId)
-    requireReady(draft)
+    requireReady(draft, conv)
     requireRevision(draft, input.revision)
     await conn.query("INSERT INTO draft_reviews (draft_id, revision, body_sha256, decision, reviewer_id, reason) VALUES (?, ?, ?, 'reject', ?, ?)", [
       draftId,
@@ -404,6 +407,10 @@ export interface DraftView {
   editedByName: string | null
   approvedForCurrentRevision: boolean
   createdAt: string
+  /** The student message this draft answers. */
+  answers: { messageId: number; excerpt: string }
+  /** For superseded drafts: what came first after the question it answered. */
+  supersededBy: 'newer_message' | 'human_reply' | 'other_draft' | null
 }
 
 const parseList = (v: unknown): string[] => {
@@ -419,12 +426,14 @@ export async function listDrafts(db: Pick<Pool, 'query'>, actor: AdminActor, con
   assertActor(actor, 'support.read')
   const rows = await selectRows(
     db,
-    `SELECT d.*, r.body, r.body_sha256, r.created_by_kind, u.name AS edited_by_name,
+    `SELECT d.*, r.body, r.body_sha256, r.created_by_kind, u.name AS edited_by_name, LEFT(t.body, 160) AS trigger_excerpt,
+            (SELECT x.author_kind FROM messages x WHERE x.conversation_id = d.conversation_id AND x.id > d.trigger_message_id ORDER BY x.id LIMIT 1) AS next_author,
             EXISTS (SELECT 1 FROM draft_reviews v WHERE v.draft_id = d.id AND v.revision = d.current_revision
                       AND v.body_sha256 = r.body_sha256 AND v.decision = 'approve') AS approved
        FROM ai_drafts d
        LEFT JOIN ai_draft_revisions r ON r.draft_id = d.id AND r.revision = d.current_revision
        LEFT JOIN auth_user u ON u.id = r.created_by
+       LEFT JOIN messages t ON t.id = d.trigger_message_id
       WHERE d.conversation_id = ? ORDER BY d.id DESC LIMIT 20`,
     [conversationId],
   )
@@ -449,6 +458,9 @@ export async function listDrafts(db: Pick<Pool, 'query'>, actor: AdminActor, con
     editedByName: r.created_by_kind === 'staff' && r.edited_by_name != null ? String(r.edited_by_name) : null,
     approvedForCurrentRevision: Number(r.approved) === 1,
     createdAt: String(r.created_at),
+    answers: { messageId: Number(r.trigger_message_id), excerpt: String(r.trigger_excerpt ?? '') },
+    supersededBy:
+      r.status !== 'superseded' ? null : r.next_author === 'student' ? 'newer_message' : r.next_author === 'staff' ? 'human_reply' : r.next_author === 'derek' ? 'other_draft' : null,
   }))
 }
 

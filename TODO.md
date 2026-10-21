@@ -22,12 +22,13 @@ Legend: `[x]` done and verified · `[~]` partial · `[ ]` not started
   - [ ] Enter batches in `/admin` as drafts, with a second-person review (needs a database, so blocked by staging). **Nothing is entered or published.**
   - [ ] Real university data, entered from official sources and verified by a human reviewer in `/admin`
 - [x] **Phase 6**: Better Auth 1.7.8 for `/admin` (email/password, public sign-up disabled, DB rate limit, CLI provisioning via `scripts/admin-user.mjs`; OAuth and Apple deferred).
-- [ ] **Phase 7**: human-reviewed support: student questions, team replies in the admin inbox. No simulated chat.
-- [ ] **Phase 8**: AI provider. **Not connected by owner decision (D-002, R-001, R-002).**
-- [ ] **Phase 9**: online/offline state and attribution (human replies never shown as Derek)
+- [~] **Phase 7**: human-reviewed support. Stage 7: persistent conversations/messages (`0003`), student chat `/support` + `/api/student/*`, Live Inbox, Students, notifications, erasure; DB-tested on MySQL 8.4 (`tests/db/support.db.test.ts`) and browser-tested locally with synthetic data. **Not open to students** (R-026). Still to do: MariaDB/Hostinger run (R-031), age/consent/privacy flow, retention schedule, abuse reporting/blocking.
+- [~] **Phase 8**: AI provider. Provider interface, mock, safeguards, draft/review workflow done (D-030, D-031). **No real provider connected (D-002); Gemini blocked (R-027).**
+- [x] **Phase 9**: online/offline mode (owner setting) and DB-enforced attribution (D-032)
 - [~] **Phase 10**: `/admin` dashboard
   - [x] Overview, Review Queue, Universities & child records (`campus`, `course`, `course_intake`, `tuition_fee`, `acceptance_rate`, `university_ranking`), Official Sources, Audit Change Log, and Settings (ranking rights, FX provider terms, FX rates, member roles)
-  - [ ] Student Inbox, Students, Our Team (Phases 7, 11, 12)
+  - [x] Live Inbox, Students, Our Team (members: revoke + editor support delegation), Notifications, real support counts on Overview (Stage 7)
+  - [ ] Our Team public profiles in the DB (still `lib/content/team.ts`, D-010)
 - [ ] **Phase 11**: document upload, validation, 30-day deletion (no AI processing)
 - [ ] **Phase 12**: team manager (move `lib/content/team.ts` into the DB; bio pending approved copy)
 - [~] **Phase 13**: legal drafts, privacy controls, CSP enforcement, rate limits
@@ -59,6 +60,9 @@ Legend: `[x]` done and verified · `[~]` partial · `[ ]` not started
 11. Remove the Remote MySQL allow-list entry.
 
 ## Open items
+- Review and commit the R-029 fix (public directory reads only `public_*` views again) and R-030 restorations; decide on one package manager and the Windows build script (R-030)
+- Before `STUDENT_ACCOUNTS_ENABLED=true`: R-026 legal/privacy review, age and guardian-consent flow, privacy notice, retention period
+- Before `DEREK_AI_ENABLED=true` with a real provider: R-027 written terms review, verified model id, cost approval; a stale-job sweeper (R-032)
 - Confirm the Hostinger plan and its exact MySQL/MariaDB version; run `DB_TEST_URL=... pnpm test:db` against that engine (R-005, R-013, R-014)
 - Owner decision on FX provider strategy (R-016). IMF needs written permission from copyright@imf.org first (commercial reuse + automated download, R-024; evidence in `db/intake/2026-10-17-imf-terms-review.md`)
 - Manual browser check of the 3 listed links that block automated checks, plus the unresolved ones (`db/intake/2026-10-17-link-check.md`, R-015)
@@ -68,6 +72,14 @@ Legend: `[x]` done and verified · `[~]` partial · `[ ]` not started
 - Set `NEXT_PUBLIC_SITE_URL` once a domain exists, then rebuild
 - In a real Chrome, Safari and Firefox, run `pnpm build && pnpm start`, open `/destinations/finland#data-status`, and repeat the R-025 interactions (anchor, back/forward, reload, fresh tab). Record whether the router error appears outside v0
 - Indian privacy/legal review before enabling student accounts, uploads or the inbox
+
+## After purchase (do not buy or deploy without approval)
+1. Record the plan, Node versions offered, database engine and **exact** version, and whether the DB user can `CREATE TRIGGER`/`CREATE VIEW` with binary logging on.
+2. `pnpm db:preflight --probe` against an empty staging DB; then `DB_TEST_URL=… pnpm test:db` (all three suites, including `support.db.test.ts`). MySQL 8.4 results do not prove the hosting engine works.
+3. `pnpm db:migrate` (applies `0003_support_chat.sql`); confirm `/admin` is not `unavailable`.
+4. Staging environment variables: as in `docs/ENVIRONMENT.md`. Leave `STUDENT_ACCOUNTS_ENABLED`, `DEREK_AI_ENABLED`, `DEREK_PROVIDER`, `DEREK_AUTO_REPLY_CLEARED` **unset**.
+5. Confirm Hostinger's start command. `npm run build` completes the standalone bundle; start with `npm run start:standalone` (`node .next/standalone/server.js`) or `npm start`. Check that static chunks and `/textures/*` return 200 and that `HOSTNAME`/`PORT` are what the platform expects.
+6. Keep staging and production closed to students until R-026, R-027 and R-031 are cleared in writing.
 
 ## Hostinger Unlimited suitability checklist (confirm in writing before buying; do not buy until the site is complete)
 - [ ] Node.js Web App included on **Unlimited** and how many apps (R-021)

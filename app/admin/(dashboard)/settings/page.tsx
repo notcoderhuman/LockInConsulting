@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { EmptyState, PageHeader, Panel } from '@/components/admin/page-header'
 import { FxRateForm, FxTermsForm, RankingRightsForm } from '@/components/admin/settings-forms'
+import { SupportSettingsForm } from '@/components/admin/support-forms'
 import { requireAdminPage } from '@/lib/admin/access'
 import { humanize } from '@/lib/admin/entities'
 import { getSettingsData, type Row } from '@/lib/admin/queries'
@@ -9,6 +10,9 @@ import { can, ROLE_LABEL, type AdminRole } from '@/lib/admin/roles'
 import { formatDate, formatUtc } from '@/lib/admin/view'
 import { todayIso } from '@/lib/data/publication'
 import { getAdminPool } from '@/lib/db/pool'
+import { getDerekStatus } from '@/lib/derek/config'
+import { getIdentityProviderStatus } from '@/lib/identity/policy'
+import { getSupportSettings } from '@/lib/support/settings'
 
 export const metadata: Metadata = { title: 'Settings' }
 
@@ -55,6 +59,10 @@ export default async function SettingsPage() {
   const manageRights = can(actor.role, 'rights.manage')
   const enterRates = can(actor.role, 'data.review')
   const approved = fxProviders.filter((p) => p.terms_status === 'approved')
+  const support = await getSupportSettings(getAdminPool())
+  const derek = getDerekStatus()
+  const blockers = [...new Set([...(derek.state === 'ready' ? [] : derek.reasons), ...(derek.autoReply.permitted ? [] : derek.autoReply.blockers)])]
+  const studentAccounts = process.env.STUDENT_ACCOUNTS_ENABLED === 'true'
 
   return (
     <>
@@ -62,6 +70,38 @@ export default async function SettingsPage() {
         title="Settings"
         description="Data-licensing decisions that control what may be shown publicly. Only the owner can change rights and terms; every change is logged."
       />
+
+      <Panel title="Student support and Derek" description="Who answers students. Only the owner can change this; every change is logged.">
+        <Facts
+          items={[
+            ['Student accounts', studentAccounts ? 'Enabled by STUDENT_ACCOUNTS_ENABLED' : 'Closed (sign-up disabled; legal and privacy review pending)'],
+            ['Derek (live AI)', derek.state === 'ready' ? `Drafting enabled with provider "${derek.providerId}"` : derek.state === 'blocked' ? 'Blocked' : 'Disabled (default)'],
+            ['Support mode', support.mode === 'online' ? 'Online: humans answer' : 'Offline'],
+            ['Automatic replies', support.autoReplyEnabled ? (derek.autoReply.permitted ? 'On' : 'On, but not currently permitted, so nothing is auto-sent') : 'Off'],
+          ]}
+        />
+        {blockers.length ? (
+          <ul className="list-disc pl-5 text-sm leading-relaxed text-muted-foreground">
+            {blockers.map((b) => (
+              <li key={b}>{b}</li>
+            ))}
+          </ul>
+        ) : null}
+        {can(actor.role, 'support.settings') ? (
+          <SupportSettingsForm mode={support.mode} autoReplyEnabled={support.autoReplyEnabled} autoReplyPermitted={derek.autoReply.permitted} />
+        ) : null}
+      </Panel>
+
+      <Panel title="Sign-in providers" description="Only staff email-and-password sign-in exists. No social sign-in provider is operational.">
+        <ul className="flex flex-col divide-y divide-border">
+          {getIdentityProviderStatus().map((p) => (
+            <li key={p.id} className="flex flex-col gap-0.5 py-2.5 first:pt-0 last:pb-0">
+              <span className="text-sm text-foreground">{`${p.label} · ${p.state === 'deferred' ? 'Deferred' : 'Unavailable'}`}</span>
+              <span className="text-xs text-muted-foreground">{p.detail}</span>
+            </li>
+          ))}
+        </ul>
+      </Panel>
 
       <Panel title="Ranking reuse rights" description="Rankings are hidden from students until the provider's terms permit reuse. QS rankings are not shown without a licence.">
         {rankingProviders.length ? (
@@ -176,7 +216,15 @@ export default async function SettingsPage() {
       </Panel>
 
       {can(actor.role, 'members.read') ? (
-        <Panel title="Admin members" description="Accounts are created and roles changed only with scripts/admin-user.mjs, so access can't be escalated from the browser.">
+        <Panel
+          title="Admin members"
+          description="Accounts are created and roles changed only with scripts/admin-user.mjs, so access can't be escalated from the browser."
+          actions={
+            <Link href="/admin/team" className="text-sm text-primary hover:underline">
+              Manage in Our Team
+            </Link>
+          }
+        >
           {members.length ? (
             <ul className="flex flex-col divide-y divide-border">
               {members.map((m) => (

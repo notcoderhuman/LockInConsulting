@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { NextRequest } from 'next/server'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { buildCsp, createNonce, cspHeaderName, resolveCspMode } from '@/lib/security/csp'
 
 function directives(policy: string) {
@@ -41,5 +42,35 @@ describe('content security policy', () => {
     const d = directives(buildCsp('abc', { isDev: true }))
     expect(d['script-src']).toContain("'unsafe-eval'")
     expect(d['connect-src']).toEqual(["'self'", 'ws:', 'wss:'])
+  })
+})
+
+// R-030: development allows `frame-ancestors *` for preview iframes. It must never reach a
+// non-development response. (A production build also constant-folds isDev to false in proxy.ts.)
+describe('proxy response CSP', () => {
+  afterEach(() => vi.unstubAllEnvs())
+
+  async function responsePolicy(nodeEnv: string) {
+    vi.stubEnv('NODE_ENV', nodeEnv)
+    vi.stubEnv('CSP_MODE', '')
+    const { proxy } = await import('../proxy')
+    const res = proxy(new NextRequest('https://lockin.example/destinations/uk'))
+    return { header: res.headers.get('content-security-policy'), forwarded: res.headers.get('x-middleware-request-content-security-policy') }
+  }
+
+  it.each(['production', 'test', ''])('NODE_ENV=%j: frame-ancestors is self only, with a fresh nonce', async (env) => {
+    const a = await responsePolicy(env)
+    const b = await responsePolicy(env)
+    expect(a.header).toBeTruthy()
+    const d = directives(a.header!)
+    expect(d['frame-ancestors']).toEqual(["'self'"])
+    expect(a.header).not.toMatch(/\*|unsafe-eval/)
+    expect(a.forwarded).toBe(a.header) // the same nonce Next stamps on its own scripts
+    expect(d['script-src'][1]).toMatch(/^'nonce-[A-Za-z0-9+/]{22}=='$/)
+    expect(a.header).not.toBe(b.header)
+  })
+
+  it('NODE_ENV=development is the only case that allows framing by any origin', async () => {
+    expect(directives((await responsePolicy('development')).header!)['frame-ancestors']).toEqual(["'self'", '*'])
   })
 })

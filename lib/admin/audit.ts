@@ -17,6 +17,10 @@ export type LogEntityType =
   | 'university_ranking'
   | 'fx_provider'
   | 'admin_member'
+  | 'conversation'
+  | 'ai_draft'
+  | 'support_settings'
+  | 'student_profile'
 
 export type LogAction =
   | 'create'
@@ -32,13 +36,23 @@ export type LogAction =
   | 'terms_change'
   | 'role_grant'
   | 'role_revoke'
+  | 'staff_reply'
+  | 'status_change'
+  | 'draft_edit'
+  | 'draft_approve'
+  | 'draft_reject'
+  | 'draft_send'
+  | 'settings_change'
+  | 'support_grant'
+  | 'support_revoke'
+  | 'student_erase'
 
 export interface ChangeLogEntry {
   entityType: LogEntityType
   entityId: number
   action: LogAction
   actorId: string
-  actorRole: AdminRole | 'cli' | null
+  actorRole: AdminRole | 'cli' | 'derek' | 'system' | null
   reason: string | null
   before: Record<string, unknown> | null
   after: Record<string, unknown> | null

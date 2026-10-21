@@ -125,7 +125,7 @@ export default async function ConversationPage({ params, searchParams }: { param
             title="Derek"
             description={
               derek.state === 'ready'
-                ? `Live AI is enabled (provider: ${derek.providerId}). Drafts need review before they reach the student.`
+                ? [`Derek is enabled (provider: ${derek.providerId}). Drafts need review before they reach the student.`, ...derek.notes].join(' ')
                 : derek.reasons.join(' ')
             }
           >

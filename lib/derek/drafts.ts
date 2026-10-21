@@ -7,11 +7,13 @@ import { createNotification } from '@/lib/support/notifications'
 import { autoReplyActive, getSupportSettings } from '@/lib/support/settings'
 import { TransitionError } from '@/lib/support/state'
 import { messageBody, reasonText } from '@/lib/support/validation'
-import { createProvider, getDerekStatus, type DerekStatus } from './config'
+import { createProvider, derekMaxAttempts, getDerekStatus, type DerekStatus } from './config'
 import { loadEvidence } from './evidence'
+import { analyseQuestion } from './guidance'
 import { DEREK_INSTRUCTIONS, type AiProvider, type EvidenceItem } from './provider'
 import { callProvider } from './runtime'
 import { assessDraft, assessQuestion, redactPersonalData } from './safeguards'
+import { tidyDraft } from './style'
 
 // Derek's draft lifecycle.
 //
@@ -32,6 +34,8 @@ export type WorkerOutcome =
   | { state: 'disabled' }
   | { state: 'duplicate' }
   | { state: 'stale' }
+  | { state: 'ineligible' } // provider policy forbids this student (no recorded 18+ confirmation)
+  | { state: 'quota' } // provider's daily draft cap reached
   | { state: 'superseded'; draftId: number }
   | { state: 'failed'; draftId: number; code: string }
   | { state: 'review'; draftId: number; risk: string }
@@ -58,6 +62,15 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     if (!trigger || conv.status === 'resolved' || conv.student_status !== 'active') return null
     const [answered] = await selectRows(conn, "SELECT id FROM messages WHERE conversation_id = ? AND id > ? AND author_kind <> 'student' LIMIT 1", [conversationId, triggerMessageId])
     if (answered) return null
+    // External-provider policy, checked before anything leaves this server. The question stays in
+    // the Live Inbox for a human either way.
+    if (provider.policy?.requiresAdultStudent && conv.student_age_confirmed_at == null) return 'ineligible' as const
+    if (provider.policy?.external) {
+      // Serialise external claims on the settings row so concurrent workers cannot overshoot the cap.
+      await conn.query('SELECT id FROM support_settings WHERE id = 1 FOR UPDATE')
+      const [[used]] = await conn.query<Row[]>('SELECT COUNT(*) AS n FROM ai_drafts WHERE provider = ? AND created_at > UTC_TIMESTAMP(3) - INTERVAL 1 DAY', [provider.id])
+      if (Number(used.n) >= provider.policy.dailyDraftLimit) return 'quota' as const
+    }
     try {
       const [res] = await conn.query("INSERT INTO ai_drafts (conversation_id, trigger_message_id, status, provider, model) VALUES (?, ?, 'generating', ?, ?)", [
         conversationId,
@@ -72,6 +85,8 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     }
   })
   if (claim === 'duplicate') return { state: 'duplicate' }
+  if (claim === 'ineligible') return { state: 'ineligible' }
+  if (claim === 'quota') return { state: 'quota' }
   if (!claim) return { state: 'stale' }
 
   // 2. Build the request from redacted text and verified evidence only. No lock is held during
@@ -83,15 +98,16 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
   )
   const question = redactPersonalData(claim.question)
   const evidence = await (deps.loadEvidence ?? loadEvidence)(pool, claim.question)
+  const history = historyRows.reverse().map((r) => ({ role: r.author_kind === 'student' ? ('student' as const) : ('team' as const), text: redactPersonalData(String(r.body)) }))
+  const guidance = analyseQuestion(
+    question,
+    evidence,
+    history.filter((h) => h.role === 'student').map((h) => h.text).join('\n'),
+  )
   const outcome = await callProvider(
     provider,
-    {
-      question,
-      history: historyRows.reverse().map((r) => ({ role: r.author_kind === 'student' ? 'student' : 'team', text: redactPersonalData(String(r.body)) })),
-      evidence,
-      instructions: DEREK_INSTRUCTIONS,
-    },
-    deps.callOptions,
+    { question, history, evidence, instructions: DEREK_INSTRUCTIONS, guidance },
+    deps.callOptions ?? { maxAttempts: derekMaxAttempts() },
   )
 
   // 3. Record the result under the conversation lock.
@@ -127,7 +143,7 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
       return { state: 'failed', draftId: claim.draftId, code: outcome.code }
     }
 
-    const text = messageBody.safeParse(outcome.result.text)
+    const text = messageBody.safeParse(tidyDraft(outcome.result.text))
     if (!text.success) {
       await conn.query("UPDATE ai_drafts SET status = 'failed', error_code = 'invalid_response', attempts = ? WHERE id = ?", [outcome.attempts, claim.draftId])
       await applyEvent(conn, { id: conversationId, status: conv.status }, { type: 'ai_failed' }, { kind: 'system', id: null }, 'Derek invalid_response').catch((e) => {
@@ -446,5 +462,8 @@ export async function requestDraftForConversation(pool: Pool, actor: AdminActor,
   const outcome = await prepareDerekDraft(pool, conversationId, Number(conv.last_student_message_id), { ...deps, status })
   if (outcome.state === 'duplicate') throw new SupportError(409, 'Derek has already drafted (or is drafting) a reply to this message.')
   if (outcome.state === 'stale') throw new SupportError(409, 'The latest message has already been answered.')
+  if (outcome.state === 'ineligible')
+    throw new SupportError(409, 'This provider only drafts for students with a recorded 18+ confirmation. Please answer this one yourself.')
+  if (outcome.state === 'quota') throw new SupportError(429, 'Derek’s daily draft limit for this provider has been reached. Please answer this one yourself.')
   return outcome
 }

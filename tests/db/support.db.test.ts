@@ -2,6 +2,8 @@
 // a real database. Synthetic data and the offline mock provider only: no AI key, no network, no cost.
 // Run with `pnpm test:db` (or DB_TEST_URL=… for the target engine).
 import { randomUUID } from 'node:crypto'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import type { Connection, RowDataPacket } from 'mysql2/promise'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { connect, startTestDatabase, type TestDatabase } from './harness'
@@ -29,6 +31,8 @@ const T = await import('@/lib/admin/team')
 const W = await import('@/lib/admin/workflow')
 const { loadEvidence } = await import('@/lib/derek/evidence')
 const { MockProvider } = await import('@/lib/derek/providers/mock')
+const { DIRECTORY_LABEL } = await import('@/lib/derek/provider')
+const { unsupportedFigures } = await import('@/lib/derek/safeguards')
 const { CONVERSATION_STATUSES } = await import('@/lib/support/state')
 const { verifyAuditChain } = await import('@/lib/admin/audit')
 const { resolveAdminContext } = await import('@/lib/admin/access')
@@ -49,7 +53,7 @@ const SECRET = 'test-secret-'.padEnd(48, 'x')
 const PASSWORD = 'correct horse battery staple'
 const ORIGIN = 'http://localhost:3000'
 
-const READY: DerekStatus = { state: 'ready', providerId: 'mock', autoReply: { permitted: false, blockers: ['not cleared in this test'] } }
+const READY: DerekStatus = { state: 'ready', providerId: 'mock', notes: [], autoReply: { permitted: false, blockers: ['not cleared in this test'] } }
 
 const owner: AdminActor = { userId: 'u-owner', name: 'Olive Owner', email: 'owner@test.example', role: 'owner' }
 const reviewer: AdminActor = { userId: 'u-reviewer', name: 'Rhea Reviewer', email: 'reviewer@test.example', role: 'reviewer' }
@@ -792,5 +796,50 @@ describe('our team', () => {
     expect(remaining).toHaveLength(1)
     await expect(T.revokeMember(pool(), actorFor('u-someone-else'), remaining[0].user_id, 'Takeover')).rejects.toThrow(/last active owner/)
     expect(await verifyAuditChain(db)).toMatchObject({ ok: true })
+  })
+})
+
+describe('Derek answer quality with real directory data (mock provider)', () => {
+  it('answers a broad destination question with published listings only, and one follow-up', async () => {
+    const src = await newSource()
+    const listed = await W.createRecord(pool(), editor, 'university', form({ name: 'Synthetic Thames University', slug: 'synthetic-thames-university', destinationIso2: 'GB', officialWebsite: 'https://thames.example/', sourceId: String(src) }), null)
+    await publish('university', listed, src)
+    await W.createRecord(pool(), editor, 'university', form({ name: 'Unpublished Severn University', slug: 'unpublished-severn-university', destinationIso2: 'GB', officialWebsite: 'https://severn.example/' }), null)
+
+    const evidence = await loadEvidence(pool(), 'Tell me about UK universities')
+    expect(evidence.map((e) => e.ref)).toEqual([`university:${listed}`])
+    expect(JSON.stringify(evidence)).not.toContain('Severn')
+
+    const s = await makeStudent()
+    const q = await ask(s, 'Tell me about UK universities')
+    const provider = new MockProvider()
+    expect(await D.prepareDerekDraft(pool(), q.conversationId, q.triggerMessageId!, { status: READY, provider })).toMatchObject({ state: 'review', risk: 'low' })
+    expect(provider.requests[0].guidance).toMatchObject({ kind: 'broad_destination', destinations: ['UK'], askFollowUp: true })
+    const [draft] = await D.listDrafts(pool(), reviewer, q.conversationId)
+    expect(draft.body).toMatch(/course content and structure/)
+    expect(draft.body).toContain(`${DIRECTORY_LABEL}\n- Synthetic Thames University`)
+    expect(draft.body).not.toContain('Severn')
+    expect(draft.body!.trim().endsWith('?')).toBe(true)
+    expect(draft.body!.match(/\?/g)).toHaveLength(1)
+  })
+
+  it('never treats pending research records as verified evidence', async () => {
+    const research = JSON.parse(readFileSync(path.join(__dirname, '..', '..', 'db', 'intake', 'destinations', 'uk.json'), 'utf8')) as { status: string; records: { officialName: string }[] }
+    expect(research.status).toBe('pending_admin_entry')
+    const s = await makeStudent()
+    for (const record of research.records.slice(0, 3)) {
+      const question = `What are the tuition fees and entry requirements at ${record.officialName}?`
+      expect(await loadEvidence(pool(), question), record.officialName).toEqual([])
+      const q = await ask(s, question)
+      const provider = new MockProvider()
+      expect(await D.prepareDerekDraft(pool(), q.conversationId, q.triggerMessageId!, { status: READY, provider })).toMatchObject({ state: 'review', risk: 'uncertain' })
+      expect(provider.requests[0].evidence).toEqual([])
+      expect(provider.requests[0].guidance).toMatchObject({ kind: 'specific_fact', askFollowUp: true })
+      const [draft] = await D.listDrafts(pool(), reviewer, q.conversationId)
+      expect(draft.body).toMatch(/LockIn has not verified/)
+      expect(draft.body).toMatch(/Which university and course are you interested in\?$/)
+      expect(draft.body).not.toContain(DIRECTORY_LABEL)
+      expect(unsupportedFigures(draft.body!, [])).toEqual([])
+    }
   })
 })

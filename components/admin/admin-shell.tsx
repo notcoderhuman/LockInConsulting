@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import { ROLE_LABEL, type AdminActor } from '@/lib/admin/roles'
+import { actorCan, ROLE_LABEL, type AdminActor } from '@/lib/admin/roles'
 import { AdminNav } from './admin-nav'
 import { SignOutButton } from './sign-out-button'
 
@@ -24,12 +24,17 @@ export function AdminShell({ actor, children }: { actor: AdminActor; children: R
             <SignOutButton compact />
           </div>
         </div>
-        <AdminNav role={actor.role} />
+        <AdminNav
+          access={{ support: actorCan(actor, 'support.read'), students: actorCan(actor, 'students.read'), team: actorCan(actor, 'members.read') }}
+        />
         <div className="mt-auto hidden flex-col gap-3 border-t border-border px-5 py-5 md:flex">
           <div className="flex flex-col gap-0.5">
             <span className="truncate text-sm text-foreground">{actor.name}</span>
             <span className="truncate text-xs text-muted-foreground">{actor.email}</span>
-            <span className="mt-1 text-xs font-medium text-primary">{ROLE_LABEL[actor.role]}</span>
+            <span className="mt-1 text-xs font-medium text-primary">
+              {ROLE_LABEL[actor.role]}
+              {actor.role === 'editor' && actor.supportEnabled ? ' · support' : ''}
+            </span>
           </div>
           <SignOutButton />
         </div>

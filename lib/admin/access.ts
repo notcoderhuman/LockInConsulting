@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 import { getAuth } from '@/lib/auth'
 import { getAdminPool } from '@/lib/db/pool'
 import { REQUIRED_MIGRATIONS } from '@/lib/db/schema-version'
-import { ADMIN_ROLES, can, type AdminActor, type AdminRole, type Permission } from './roles'
+import { ADMIN_ROLES, actorCan, type AdminActor, type AdminRole, type Permission } from './roles'
 
 // Server-side authorisation for every admin page, API route and server action. Hiding a link in
 // the UI is never relied on: each entry point calls one of the require* functions below.
@@ -33,13 +33,20 @@ export async function resolveAdminContext(requestHeaders: Headers): Promise<Admi
     }
     const session = await auth.api.getSession({ headers: requestHeaders })
     if (!session?.user) return { state: 'signed_out' }
+    // An account is either staff or a student, never both: a user who also has a student
+    // profile is refused admin access (see lib/identity/policy.ts).
     const [rows] = await getAdminPool().query<RowDataPacket[]>(
-      "SELECT role FROM admin_members WHERE user_id = ? AND status = 'active'",
+      `SELECT m.role, m.support_enabled, (SELECT COUNT(*) FROM student_profiles s WHERE s.user_id = m.user_id) AS student_profiles
+         FROM admin_members m WHERE m.user_id = ? AND m.status = 'active'`,
       [session.user.id],
     )
     const role = rows[0]?.role as AdminRole | undefined
-    if (!role || !ADMIN_ROLES.includes(role)) return { state: 'forbidden', email: session.user.email }
-    return { state: 'ok', actor: { userId: session.user.id, name: session.user.name, email: session.user.email, role } }
+    if (!role || !ADMIN_ROLES.includes(role) || Number(rows[0].student_profiles) > 0)
+      return { state: 'forbidden', email: session.user.email }
+    return {
+      state: 'ok',
+      actor: { userId: session.user.id, name: session.user.name, email: session.user.email, role, supportEnabled: Boolean(Number(rows[0].support_enabled)) },
+    }
   } catch (error) {
     console.error('[admin] could not resolve session', error)
     return { state: 'error' }
@@ -51,7 +58,7 @@ export async function requireAdminPage(permission: Permission = 'data.read'): Pr
   const ctx = await resolveAdminContext(await headers())
   if (ctx.state === 'not_configured' || ctx.state === 'error') redirect('/admin/unavailable')
   if (ctx.state === 'signed_out') redirect('/admin/sign-in')
-  if (ctx.state === 'forbidden' || !can(ctx.actor.role, permission)) redirect('/admin/forbidden')
+  if (ctx.state === 'forbidden' || !actorCan(ctx.actor, permission)) redirect('/admin/forbidden')
   return ctx.actor
 }
 
@@ -75,7 +82,7 @@ function denial(ctx: AdminContext, permission: Permission): AccessDeniedError | 
     case 'forbidden':
       return new AccessDeniedError(403, 'You do not have admin access.')
     case 'ok':
-      return can(ctx.actor.role, permission) ? null : new AccessDeniedError(403, 'You do not have permission to do this.')
+      return actorCan(ctx.actor, permission) ? null : new AccessDeniedError(403, 'You do not have permission to do this.')
   }
 }
 

@@ -78,7 +78,7 @@ Legend: `[x]` done and verified · `[~]` partial · `[ ]` not started
 1. Record the plan, Node versions offered, database engine and **exact** version, and whether the DB user can `CREATE TRIGGER`/`CREATE VIEW` with binary logging on.
 2. `pnpm db:preflight --probe` against an empty staging DB; then `DB_TEST_URL=… pnpm test:db` (all three suites, including `support.db.test.ts`). MySQL 8.4 results do not prove the hosting engine works.
 3. `pnpm db:migrate` (applies `0003_support_chat.sql`); confirm `/admin` is not `unavailable`.
-4. Staging environment variables: as in `docs/ENVIRONMENT.md`. Leave `STUDENT_ACCOUNTS_ENABLED`, `DEREK_AI_ENABLED`, `DEREK_PROVIDER`, `DEREK_AUTO_REPLY_CLEARED` **unset**.
+4. Ask Hostinger which header its proxy overwrites with the client IP; test it on staging (send a forged `X-Forwarded-For` and confirm it is not what the app sees), then set `AUTH_CLIENT_IP_HEADER` (R-033). Staging environment variables: as in `docs/ENVIRONMENT.md`. Leave `STUDENT_ACCOUNTS_ENABLED`, `DEREK_AI_ENABLED`, `DEREK_PROVIDER`, `DEREK_AUTO_REPLY_CLEARED` **unset**.
 5. Confirm Hostinger's start command. `npm run build` completes the standalone bundle; start with `npm run start:standalone` (`node .next/standalone/server.js`) or `npm start`. Check that static chunks and `/textures/*` return 200 and that `HOSTNAME`/`PORT` are what the platform expects.
 6. Keep staging and production closed to students until R-026, R-027 and R-031 are cleared in writing.
 

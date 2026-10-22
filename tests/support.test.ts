@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { createProvider, getDerekStatus } from '@/lib/derek/config'
 import { isStaleAcademicYear } from '@/lib/derek/evidence'
 import type { EvidenceItem } from '@/lib/derek/provider'
-import { BlockedGeminiProvider } from '@/lib/derek/providers/gemini'
 import { MockProvider } from '@/lib/derek/providers/mock'
 import { callProvider } from '@/lib/derek/runtime'
 import { assessDraft, assessQuestion, redactPersonalData, unsupportedFigures } from '@/lib/derek/safeguards'
@@ -116,16 +115,21 @@ describe('Derek configuration fails closed', () => {
     expect(status.autoReply.permitted).toBe(false)
     expect(createProvider(status)).toBeNull()
   })
-  it('keeps Gemini blocked even when explicitly selected', async () => {
-    const status = getDerekStatus({ DEREK_AI_ENABLED: 'true', DEREK_PROVIDER: 'gemini', DEREK_AUTO_REPLY_CLEARED: 'true' })
-    expect(status).toMatchObject({ state: 'blocked', providerId: 'gemini', autoReply: { permitted: false } })
-    expect(createProvider(status)).toBeNull()
-    await expect(new BlockedGeminiProvider().generate()).rejects.toMatchObject({ code: 'blocked', retryable: false })
+  it('keeps Gemini blocked without an explicit, sendable key', () => {
+    const base = { DEREK_AI_ENABLED: 'true', DEREK_PROVIDER: 'gemini' }
+    expect(getDerekStatus(base)).toMatchObject({ state: 'blocked', reasons: ['GEMINI_API_KEY is not set.'] })
+    expect(getDerekStatus({ ...base, GEMINI_API_KEY: '   \t\r\n ' })).toMatchObject({ state: 'blocked', reasons: ['GEMINI_API_KEY is not set.'] })
+    expect(getDerekStatus({ ...base, GEMINI_API_KEY: 'FAKE-part-one\nFAKE-part-two' }).state).toBe('blocked')
+    expect(createProvider(getDerekStatus(base), base)).toBeNull()
+    // Gemini requires the global flag too.
+    expect(getDerekStatus({ DEREK_PROVIDER: 'gemini', GEMINI_API_KEY: 'A'.repeat(39) }).state).toBe('disabled')
   })
-  it('refuses the mock provider in production and an unknown provider anywhere', () => {
+  it('defaults to the offline mock, which production refuses, and rejects unknown providers', () => {
+    expect(getDerekStatus({ DEREK_AI_ENABLED: 'true' })).toMatchObject({ state: 'ready', providerId: 'mock' })
+    expect(createProvider(getDerekStatus({ DEREK_AI_ENABLED: 'true' }))).toBeInstanceOf(MockProvider)
+    expect(getDerekStatus({ DEREK_AI_ENABLED: 'true', NODE_ENV: 'production' }).state).toBe('blocked')
     expect(getDerekStatus({ DEREK_AI_ENABLED: 'true', DEREK_PROVIDER: 'mock', NODE_ENV: 'production' }).state).toBe('blocked')
     expect(getDerekStatus({ DEREK_AI_ENABLED: 'true', DEREK_PROVIDER: 'openai' }).state).toBe('blocked')
-    expect(getDerekStatus({ DEREK_AI_ENABLED: 'true' }).state).toBe('blocked')
   })
   it('permits automatic replies only with every gate open', () => {
     const drafting = getDerekStatus({ DEREK_AI_ENABLED: 'true', DEREK_PROVIDER: 'mock', NODE_ENV: 'test' })

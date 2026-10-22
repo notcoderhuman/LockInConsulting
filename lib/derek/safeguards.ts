@@ -1,4 +1,4 @@
-import type { EvidenceItem } from './provider'
+import { DIRECTORY_LABEL, type EvidenceItem } from './provider'
 
 // Server-side checks on every question and every draft, independent of the model's own behaviour.
 //
@@ -32,19 +32,27 @@ const UNCERTAIN_TOPICS: [RegExp, string][] = [
 ]
 
 // Questions that need a directory fact; without matching evidence the answer is "unknown".
+// Each pattern allows plurals and word stems (e.g. "requirements", "eligible", "expensive").
 const FACT_TOPICS: [RegExp, string, RegExp][] = [
-  [/\b(fee|fees|tuition|cost|costs|price|expens|living cost|rent)\b/i, 'fees or costs', /tuition|fee/i],
-  [/\b(rank|ranking|ranked|qs|times higher education)\b/i, 'rankings', /rank/i],
-  [/\b(deadline|intake|apply by|closing date|application date)\b/i, 'intakes or deadlines', /intake|deadline/i],
-  [/\b(acceptance rate|admit rate|selectiv)\b/i, 'acceptance rates', /acceptance/i],
-  [/\b(requirement|ielts|toefl|pte|duolingo|gpa|grade|percentage needed|eligib)\b/i, 'entry or language requirements', /requirement/i],
-  [/\b(scholarship|bursary|funding|financial aid)\b/i, 'scholarships', /scholarship/i],
+  [/\b(fees?|tuition|costs?|price[sd]?|expens\w*|living costs?|rent)\b/i, 'fees or costs', /tuition|fee/i],
+  [/\b(rank\w*|qs|times higher education)\b/i, 'rankings', /rank/i],
+  [/\b(deadlines?|intakes?|apply by|closing dates?|application dates?|last date)\b/i, 'intakes or deadlines', /intake|deadline/i],
+  [/\b(acceptance rates?|admit rates?|selectiv\w*)\b/i, 'acceptance rates', /acceptance/i],
+  [/\b(requirements?|ielts|toefl|pte|duolingo|gpa|cgpa|grades?|percentage needed|minimum marks|eligib\w*|cut-?offs?)\b/i, 'entry or language requirements', /requirement/i],
+  [/\b(scholarships?|bursar\w*|funding|financial aid)\b/i, 'scholarships', /scholarship/i],
 ]
+
+/** The factual topics (fees, rankings, deadlines…) a question asks about. */
+export function factTopicsIn(text: string): string[] {
+  return FACT_TOPICS.filter(([re]) => re.test(text)).map(([, label]) => label)
+}
 
 const FORBIDDEN_CLAIMS: [RegExp, string][] = [
   [/\b(guarantee[ds]?|assured|certain(?:ly)? (?:get|be admitted)|100 ?% (?:chance|sure))\b/i, 'Draft makes a guarantee'],
   [/\b(you will (?:definitely )?(?:get|be (?:admitted|accepted|granted))|visa will be (?:approved|granted))\b/i, 'Draft predicts an outcome'],
   [/\b(approximately|about|around|roughly)\s+(?:INR|₹|rs\.?)\s?\d/i, 'Draft converts to INR'],
+  // Visa and work-rights rules change and are never in the directory: any number beside one is invented.
+  [/\b(visas?|work permits?|work rights?|post-?study work|psw|graduate route|stay[- ]back|part-?time work)\b[^.\n]{0,80}\d|\d+\s*(?:hours?|hrs?)\s*(?:a|per)\s*week/i, 'Draft states a visa or work-rights rule'],
 ]
 
 /** Removes contact details before text is passed to any provider. */
@@ -76,6 +84,8 @@ const FIGURE_PATTERNS: RegExp[] = [
   /(?:#\s?\d+|\b(?:rank(?:ed|ing)?|position|top)\s+(?:#\s?)?\d+)/gi, // ranks
   /\b(?:IELTS|TOEFL|PTE|Duolingo|GPA|CGPA|GRE|GMAT|SAT)\b[^.\n\d]{0,20}\d+(?:\.\d+)?/gi, // test scores
   /\b\d[\d,]{2,}(?:\.\d+)?\b/g, // any other large number (e.g. a bare fee)
+  // dates such as "15 January", "1st of March" or "January 15th" (invented deadlines)
+  /\b\d{1,2}(?:st|nd|rd|th)?(?:\s+of)?\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\b|\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?\b/gi,
 ]
 
 const digits = (s: string) => (s.match(/\d+(?:\.\d+)?/g) ?? []).map((d) => d.replace(/^0+(?=\d)/, ''))
@@ -105,6 +115,8 @@ export function assessDraft(
   const reasons = [...question.reasons]
   if (modelUncertain) (level = worst(level, 'uncertain')), reasons.push('Derek reported it could not answer from the evidence')
   for (const [re, label] of FORBIDDEN_CLAIMS) if (re.test(draft)) (level = worst(level, 'high')), reasons.push(label)
+  if (!evidence.length && (draft.includes(DIRECTORY_LABEL) || /\b(lockin|our directory) (has )?(verified|confirms?)\b|\bverified by lockin\b/i.test(draft)))
+    (level = worst(level, 'high')), reasons.push('Draft claims LockIn-verified information, but no verified evidence was provided')
   const invented = unsupportedFigures(draft, evidence)
   if (invented.length) {
     level = worst(level, 'high')

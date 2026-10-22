@@ -56,7 +56,7 @@ export async function applyEvent(
 export async function lockConversation(conn: PoolConnection, id: number, studentProfileId?: number): Promise<Row & { status: ConversationStatus }> {
   const rows = await selectRows(
     conn,
-    `SELECT c.*, s.status AS student_status, s.user_id AS student_user_id
+    `SELECT c.*, s.status AS student_status, s.user_id AS student_user_id, s.age_confirmed_at AS student_age_confirmed_at
        FROM conversations c JOIN student_profiles s ON s.id = c.student_profile_id
       WHERE c.id = ? ${studentProfileId != null ? 'AND c.student_profile_id = ?' : ''} FOR UPDATE`,
     studentProfileId != null ? [id, studentProfileId] : [id],
@@ -165,6 +165,8 @@ export async function sendStudentMessage(pool: Pool, student: StudentActor, conv
       'UPDATE conversations SET last_student_message_id = ?, student_last_read_id = GREATEST(student_last_read_id, ?), last_message_at = UTC_TIMESTAMP(3) WHERE id = ?',
       [messageId, messageId, conversationId],
     )
+    // Pending drafts answered an earlier message; they must not be approved for this conversation now.
+    await conn.query("UPDATE ai_drafts SET status = 'superseded' WHERE conversation_id = ? AND status IN ('generating', 'ready')", [conversationId])
     await applyEvent(conn, { id: conversationId, status: conv.status }, { type: 'student_message' }, { kind: 'student', id: student.userId })
     await createNotification(conn, {
       audience: 'staff_support',
@@ -180,7 +182,7 @@ export async function sendStudentMessage(pool: Pool, student: StudentActor, conv
 export interface StudentConversationSummary {
   id: number
   subject: string
-  status: string
+  /** Friendly label only: internal review and failure states are never sent to students. */
   statusLabel: string
   lastMessageAt: string
   unread: number
@@ -197,7 +199,6 @@ export async function listStudentConversations(db: Db, student: StudentActor): P
   return rows.map((r) => ({
     id: Number(r.id),
     subject: String(r.subject),
-    status: String(r.status),
     statusLabel: isConversationStatus(r.status) ? STUDENT_STATUS_LABEL[r.status] : 'Waiting for the LockIn team',
     lastMessageAt: String(r.last_message_at),
     unread: Number(r.unread),
@@ -267,7 +268,6 @@ export async function getStudentMessages(db: Db, student: StudentActor, conversa
     conversation: {
       id: conversationId,
       subject: String(conv[0].subject),
-      status,
       statusLabel: isConversationStatus(status) ? STUDENT_STATUS_LABEL[status] : 'Waiting for the LockIn team',
     },
     messages: rows.map((r) => toView(r, 'student', student.userId)),

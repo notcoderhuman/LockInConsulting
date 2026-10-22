@@ -26,6 +26,17 @@ import type { Pool } from 'mysql2/promise'
 // 4. Only JSON bodies (what the app's own forms send) reach Better Auth's sign-in. It also
 //    accepts form-encoded bodies, which this wrapper would not see the email of, so anything
 //    else is refused with 415 before any password is checked.
+// 5. Request budget before the password hash (~60 ms of CPU on Node's main thread, run even for
+//    unknown emails). Every unrecognised-browser attempt takes a token from one process-wide
+//    bucket (signInRateLimits.global), so a flood of random emails cannot saturate the process
+//    whatever IP headers it sends; recognised devices skip it, so owners still sign in during a
+//    flood. Tokens are given back when nothing was hashed. Only with a verified
+//    AUTH_CLIENT_IP_HEADER is a per-IP bucket applied first (a request without that header shares
+//    one bucket), so one client cannot drain the global budget.
+//    shortcut: in-memory, per Node process; with several processes each has its own budget, so
+//    move it to a shared store if the app is ever scaled out.
+// 6. Rows idle for QUIET_RESET_MS already count as empty, so at most once per CLEANUP_INTERVAL_MS
+//    any sign-in request (successful or not) deletes a bounded batch of them.
 
 type Env = Record<string, string | undefined>
 type Db = Pick<Pool, 'query' | 'getConnection'>
@@ -42,6 +53,54 @@ const TOO_MANY = { message: 'Too many requests. Please try again later.' }
 
 /** Injectable for tests; the throttle never reads Date.now() directly. */
 export const clock = { now: () => Date.now() }
+
+// ≈4 hashes a second keeps password checks to about a quarter of one CPU core.
+export const signInRateLimits = { global: { burst: 10, perSecond: 4 }, perIp: { burst: 5, perSecond: 1 / 60 } }
+export const CLEANUP_INTERVAL_MS = 10 * 60 * 1000
+// Rows are only created after a global token, so one batch outpaces creation (~2,400 per interval).
+export const CLEANUP_BATCH = 5000
+const MAX_TRACKED_IPS = 10_000
+
+type Limit = { burst: number; perSecond: number }
+type Bucket = { tokens: number; at: number; limit: Limit }
+const buckets = new Map<string, Bucket>()
+let nextCleanup = 0
+
+/** Clears in-memory request buckets and the cleanup timer (tests). */
+export function resetRequestBuckets() {
+  buckets.clear()
+  nextCleanup = 0
+}
+
+const refilled = (b: Bucket, now: number) => Math.min(b.limit.burst, b.tokens + (Math.max(0, now - b.at) / 1000) * b.limit.perSecond)
+
+/** Takes one token: 0 when granted, otherwise ms until the next one. */
+function takeToken(key: string, limit: Limit, now: number): number {
+  // Full buckets carry no information, so forgetting them keeps one entry per active client IP.
+  if (buckets.size > MAX_TRACKED_IPS) for (const [k, b] of buckets) if (refilled(b, now) >= b.limit.burst) buckets.delete(k)
+  const b = buckets.get(key) ?? { tokens: limit.burst, at: now, limit }
+  b.tokens = refilled(b, now)
+  b.at = now
+  buckets.set(key, b)
+  if (b.tokens >= 1) {
+    b.tokens -= 1
+    return 0
+  }
+  return Math.ceil(((1 - b.tokens) / limit.perSecond) * 1000)
+}
+
+function giveTokenBack(key: string) {
+  const b = buckets.get(key)
+  if (b) b.tokens = Math.min(b.limit.burst, b.tokens + 1)
+}
+
+/** Deletes up to `limit` rows idle for QUIET_RESET_MS, which reserveAttempt already treats as empty. */
+export async function pruneStaleRows(db: Pick<Pool, 'query'>, now = clock.now(), limit = CLEANUP_BATCH): Promise<number> {
+  // shortcut: no index on lastRequest, so this scans the table; fine while cleanup keeps it to a
+  // few thousand rows, add an index if it ever grows to hundreds of thousands.
+  const [res] = await db.query('DELETE FROM auth_rate_limit WHERE lastRequest < ? LIMIT ?', [now - QUIET_RESET_MS, limit])
+  return (res as { affectedRows: number }).affectedRows
+}
 
 /** The header a trusted proxy overwrites with the client IP, or null to trust no header. */
 export function clientIpHeader(env: Env = process.env): string | null {
@@ -165,6 +224,11 @@ export async function throttleEmailSignIn(
   db: Db,
   secret = process.env.BETTER_AUTH_SECRET ?? '',
 ): Promise<Response> {
+  const now = clock.now()
+  if (now >= nextCleanup) {
+    nextCleanup = now + CLEANUP_INTERVAL_MS
+    await pruneStaleRows(db, now).catch((error) => console.error('[auth] throttle cleanup failed', error instanceof Error ? error.name : 'unknown error'))
+  }
   // Exact match: a missing, form, multipart or doubled ("a, b") Content-Type never reaches Better Auth.
   if ((request.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase() !== 'application/json')
     return Response.json({ message: 'Unsupported content type.' }, { status: 415, headers: { 'Cache-Control': 'no-store' } })
@@ -183,14 +247,33 @@ export async function throttleEmailSignIn(
   const accountKey = accountThrottleKey(email)
   const token = readCookie(request, DEVICE_COOKIE)
   const device = token ? verifyDeviceToken(token, email, secret, await storedCredential(db, email)) : null
+  const tooMany = (ms: number) =>
+    Response.json(TOO_MANY, { status: 429, headers: { 'Cache-Control': 'no-store', 'Retry-After': String(Math.max(1, Math.ceil(ms / 1000))) } })
+
+  // Request budget, before anything is hashed. The IP comes only from a verified proxy header.
+  const ipHeader = clientIpHeader()
+  if (ipHeader) {
+    const ipWait = takeToken(`ip:${(request.headers.get(ipHeader) ?? '').trim().slice(0, 64) || 'missing'}`, signInRateLimits.perIp, now)
+    if (ipWait > 0) return tooMany(ipWait)
+  }
+  const budget = device ? null : 'global'
+  if (budget) {
+    const globalWait = takeToken(budget, signInRateLimits.global, now)
+    if (globalWait > 0) return tooMany(globalWait)
+  }
+
   // A recognised device has its own bucket; everyone else shares the account's bucket.
   const key = device ? deviceThrottleKey(device) : accountKey
   const wait = await reserveAttempt(db, key)
-  if (wait > 0)
-    return Response.json(TOO_MANY, { status: 429, headers: { 'Cache-Control': 'no-store', 'Retry-After': String(Math.ceil(wait / 1000)) } })
+  if (wait > 0) {
+    if (budget) giveTokenBack(budget)
+    return tooMany(wait)
+  }
 
   // The attempt is already counted; only a successful sign-in gives it back.
   const response = await forward()
+  // 200 and 401 are the only answers that hashed a password; anything else did not use the budget.
+  if (budget && response.status !== 200 && response.status !== 401) giveTokenBack(budget)
   if (!response.ok) return response
 
   // Proven knowledge of the password: clear the bucket this attempt used and (re)issue the device

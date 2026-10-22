@@ -3,6 +3,7 @@ import { betterAuth } from 'better-auth'
 import { getAdminConfigStatus, resolveAuthBaseUrl } from '@/lib/admin/config'
 import { getAuthPool } from '@/lib/db/pool'
 import { AUTH_MODELS, DISABLED_AUTH_PATHS, PASSWORD_POLICY, RATE_LIMIT } from '@/lib/auth-options.mjs'
+import { authIpAddressOptions } from '@/lib/auth-throttle'
 
 /** Exported so tests can check the real cookie attributes for an https staging origin. */
 export function createAuth(baseURL = resolveAuthBaseUrl()) {
@@ -38,18 +39,20 @@ export function createAuth(baseURL = resolveAuthBaseUrl()) {
           ]
         : []),
     ],
-    ...(process.env.NODE_ENV === 'development'
-      ? {
-          advanced: {
+    advanced: {
+      // Client IP only from an explicitly trusted proxy header (lib/auth-throttle.ts).
+      ipAddress: authIpAddressOptions(),
+      ...(process.env.NODE_ENV === 'development'
+        ? {
             // Required by the cross-site v0 preview iframe. Without these
             // attributes, login succeeds but the next request appears signed out.
             defaultCookieAttributes: {
               sameSite: 'none' as const,
               secure: true,
             },
-          },
-        }
-      : {}),
+          }
+        : {}),
+    },
   })
 }
 

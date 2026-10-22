@@ -10,7 +10,8 @@ import { formatDate, recordHref } from '@/lib/admin/view'
 import { getAdminPool } from '@/lib/db/pool'
 import { getDerekStatus } from '@/lib/derek/config'
 import { getInboxCounts } from '@/lib/support/conversations'
-import { countUnreadNotifications, staffViewer, syncOverdueReviewNotifications } from '@/lib/support/notifications'
+import { countUnreadNotifications, staffViewer } from '@/lib/support/notifications'
+import { SyncReviewNotices } from '@/components/admin/support-forms'
 import { getSupportSettings } from '@/lib/support/settings'
 import { STATUS_LABEL } from '@/lib/support/state'
 
@@ -33,11 +34,6 @@ export default async function OverviewPage() {
   const [counts, queue, chain] = await Promise.all([getStatusCounts(db), getReviewQueue(db), getChainStatus(db)])
   const tally = { expired: 0, in_review: 0, due_soon: 0 }
   for (const item of queue) tally[item.reason]++
-  if (can(actor.role, 'data.review'))
-    await syncOverdueReviewNotifications(
-      db,
-      queue.filter((q) => q.reason === 'expired').map((q) => ({ entity: q.entity, id: q.id, title: q.title, reviewDueAt: q.reviewDueAt, validTo: q.validTo, href: recordHref(q.entity, q.id) })),
-    )
   const [inbox, unreadNotifications, support] = await Promise.all([
     actorCan(actor, 'support.read') ? getInboxCounts(db, actor) : null,
     countUnreadNotifications(db, staffViewer(actor)),
@@ -47,6 +43,7 @@ export default async function OverviewPage() {
 
   return (
     <>
+      {can(actor.role, 'data.review') ? <SyncReviewNotices /> : null}
       <PageHeader
         title={`Good to see you, ${actor.name.split(' ')[0]}`}
         description={`Signed in as ${ROLE_LABEL[actor.role]}. Only verified, published records reach students; everything else stays here.`}

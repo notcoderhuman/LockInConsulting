@@ -7,11 +7,13 @@ import { createNotification } from '@/lib/support/notifications'
 import { autoReplyActive, getSupportSettings } from '@/lib/support/settings'
 import { TransitionError } from '@/lib/support/state'
 import { messageBody, reasonText } from '@/lib/support/validation'
-import { createProvider, getDerekStatus, type DerekStatus } from './config'
+import { createProvider, derekMaxAttempts, getDerekStatus, type DerekStatus } from './config'
 import { loadEvidence } from './evidence'
+import { analyseQuestion } from './guidance'
 import { DEREK_INSTRUCTIONS, type AiProvider, type EvidenceItem } from './provider'
 import { callProvider } from './runtime'
 import { assessDraft, assessQuestion, redactPersonalData } from './safeguards'
+import { tidyDraft } from './style'
 
 // Derek's draft lifecycle.
 //
@@ -32,6 +34,8 @@ export type WorkerOutcome =
   | { state: 'disabled' }
   | { state: 'duplicate' }
   | { state: 'stale' }
+  | { state: 'ineligible' } // provider policy forbids this student (no recorded 18+ confirmation)
+  | { state: 'quota' } // provider's daily draft cap reached
   | { state: 'superseded'; draftId: number }
   | { state: 'failed'; draftId: number; code: string }
   | { state: 'review'; draftId: number; risk: string }
@@ -58,6 +62,15 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     if (!trigger || conv.status === 'resolved' || conv.student_status !== 'active') return null
     const [answered] = await selectRows(conn, "SELECT id FROM messages WHERE conversation_id = ? AND id > ? AND author_kind <> 'student' LIMIT 1", [conversationId, triggerMessageId])
     if (answered) return null
+    // External-provider policy, checked before anything leaves this server. The question stays in
+    // the Live Inbox for a human either way.
+    if (provider.policy?.requiresAdultStudent && conv.student_age_confirmed_at == null) return 'ineligible' as const
+    if (provider.policy?.external) {
+      // Serialise external claims on the settings row so concurrent workers cannot overshoot the cap.
+      await conn.query('SELECT id FROM support_settings WHERE id = 1 FOR UPDATE')
+      const [[used]] = await conn.query<Row[]>('SELECT COUNT(*) AS n FROM ai_drafts WHERE provider = ? AND created_at > UTC_TIMESTAMP(3) - INTERVAL 1 DAY', [provider.id])
+      if (Number(used.n) >= provider.policy.dailyDraftLimit) return 'quota' as const
+    }
     try {
       const [res] = await conn.query("INSERT INTO ai_drafts (conversation_id, trigger_message_id, status, provider, model) VALUES (?, ?, 'generating', ?, ?)", [
         conversationId,
@@ -72,6 +85,8 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     }
   })
   if (claim === 'duplicate') return { state: 'duplicate' }
+  if (claim === 'ineligible') return { state: 'ineligible' }
+  if (claim === 'quota') return { state: 'quota' }
   if (!claim) return { state: 'stale' }
 
   // 2. Build the request from redacted text and verified evidence only. No lock is held during
@@ -83,15 +98,16 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
   )
   const question = redactPersonalData(claim.question)
   const evidence = await (deps.loadEvidence ?? loadEvidence)(pool, claim.question)
+  const history = historyRows.reverse().map((r) => ({ role: r.author_kind === 'student' ? ('student' as const) : ('team' as const), text: redactPersonalData(String(r.body)) }))
+  const guidance = analyseQuestion(
+    question,
+    evidence,
+    history.filter((h) => h.role === 'student').map((h) => h.text).join('\n'),
+  )
   const outcome = await callProvider(
     provider,
-    {
-      question,
-      history: historyRows.reverse().map((r) => ({ role: r.author_kind === 'student' ? 'student' : 'team', text: redactPersonalData(String(r.body)) })),
-      evidence,
-      instructions: DEREK_INSTRUCTIONS,
-    },
-    deps.callOptions,
+    { question, history, evidence, instructions: DEREK_INSTRUCTIONS, guidance },
+    deps.callOptions ?? { maxAttempts: derekMaxAttempts() },
   )
 
   // 3. Record the result under the conversation lock.
@@ -100,7 +116,7 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     const [draft] = await selectRows(conn, 'SELECT * FROM ai_drafts WHERE id = ? FOR UPDATE', [claim.draftId])
     if (!draft || draft.status !== 'generating') return { state: 'superseded', draftId: claim.draftId }
     const [answered] = await selectRows(conn, "SELECT id FROM messages WHERE conversation_id = ? AND id > ? AND author_kind <> 'student' LIMIT 1", [conversationId, triggerMessageId])
-    if (answered) {
+    if (answered || Number(conv.last_student_message_id) !== triggerMessageId) {
       await conn.query("UPDATE ai_drafts SET status = 'superseded' WHERE id = ?", [claim.draftId])
       return { state: 'superseded', draftId: claim.draftId }
     }
@@ -127,7 +143,7 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
       return { state: 'failed', draftId: claim.draftId, code: outcome.code }
     }
 
-    const text = messageBody.safeParse(outcome.result.text)
+    const text = messageBody.safeParse(tidyDraft(outcome.result.text))
     if (!text.success) {
       await conn.query("UPDATE ai_drafts SET status = 'failed', error_code = 'invalid_response', attempts = ? WHERE id = ?", [outcome.attempts, claim.draftId])
       await applyEvent(conn, { id: conversationId, status: conv.status }, { type: 'ai_failed' }, { kind: 'system', id: null }, 'Derek invalid_response').catch((e) => {
@@ -236,8 +252,11 @@ async function lockDraft(conn: PoolConnection, draftId: number) {
   return { draft: fresh, conv, revision }
 }
 
-function requireReady(draft: Row) {
+function requireReady(draft: Row, conv: Row) {
   if (draft.status !== 'ready') throw new SupportError(409, `This draft is ${String(draft.status)} and can no longer be changed.`)
+  // Never send an answer to an earlier question when the student has written since.
+  if (Number(draft.trigger_message_id) !== Number(conv.last_student_message_id))
+    throw new SupportError(409, 'The student has sent a newer message. Reply to that message instead.')
 }
 
 function requireRevision(draft: Row, revision: unknown) {
@@ -250,8 +269,8 @@ export async function editDraft(pool: Pool, actor: AdminActor, draftId: number, 
   const body = messageBody.safeParse(input.body)
   if (!body.success) throw new SupportError(400, 'Check the draft text.', { body: body.error.issues.map((i) => i.message) })
   return inTransaction(pool, async (conn) => {
-    const { draft, revision } = await lockDraft(conn, draftId)
-    requireReady(draft)
+    const { draft, conv, revision } = await lockDraft(conn, draftId)
+    requireReady(draft, conv)
     requireRevision(draft, input.revision)
     if (revision && revision.body === body.data) return Number(draft.current_revision)
     const next = Number(draft.current_revision) + 1
@@ -281,8 +300,8 @@ export async function editDraft(pool: Pool, actor: AdminActor, draftId: number, 
 export async function approveDraft(pool: Pool, actor: AdminActor, draftId: number, input: { revision: unknown; bodySha256: unknown }): Promise<void> {
   assertActor(actor, 'support.review_ai')
   await inTransaction(pool, async (conn) => {
-    const { draft, revision } = await lockDraft(conn, draftId)
-    requireReady(draft)
+    const { draft, conv, revision } = await lockDraft(conn, draftId)
+    requireReady(draft, conv)
     requireRevision(draft, input.revision)
     if (!revision || revision.body_sha256 !== input.bodySha256) throw new SupportError(409, 'The draft text changed since you reviewed it. Reload and review it again.')
     await recordApproval(conn, actor, draftId, revision)
@@ -313,7 +332,7 @@ export async function sendApprovedDraft(pool: Pool, actor: AdminActor, draftId: 
   assertActor(actor, 'support.review_ai')
   return inTransaction(pool, async (conn) => {
     const { draft, conv, revision } = await lockDraft(conn, draftId)
-    requireReady(draft)
+    requireReady(draft, conv)
     if (!revision) throw new SupportError(409, 'This draft has no text.')
     const [approval] = await selectRows(
       conn,
@@ -331,7 +350,7 @@ export async function approveAndSendDraft(pool: Pool, actor: AdminActor, draftId
   assertActor(actor, 'support.review_ai')
   return inTransaction(pool, async (conn) => {
     const { draft, conv, revision } = await lockDraft(conn, draftId)
-    requireReady(draft)
+    requireReady(draft, conv)
     requireRevision(draft, input.revision)
     if (!revision || revision.body_sha256 !== input.bodySha256) throw new SupportError(409, 'The draft text changed since you reviewed it. Reload and review it again.')
     if (conv.student_status !== 'active') throw new SupportError(409, 'This student account is no longer active.')
@@ -346,7 +365,7 @@ export async function rejectDraft(pool: Pool, actor: AdminActor, draftId: number
   if (!reason.success) throw new SupportError(400, 'Give a reason for rejecting the draft.', { reason: reason.error.issues.map((i) => i.message) })
   await inTransaction(pool, async (conn) => {
     const { draft, conv, revision } = await lockDraft(conn, draftId)
-    requireReady(draft)
+    requireReady(draft, conv)
     requireRevision(draft, input.revision)
     await conn.query("INSERT INTO draft_reviews (draft_id, revision, body_sha256, decision, reviewer_id, reason) VALUES (?, ?, ?, 'reject', ?, ?)", [
       draftId,
@@ -388,6 +407,10 @@ export interface DraftView {
   editedByName: string | null
   approvedForCurrentRevision: boolean
   createdAt: string
+  /** The student message this draft answers. */
+  answers: { messageId: number; excerpt: string }
+  /** For superseded drafts: what came first after the question it answered. */
+  supersededBy: 'newer_message' | 'human_reply' | 'other_draft' | null
 }
 
 const parseList = (v: unknown): string[] => {
@@ -403,12 +426,14 @@ export async function listDrafts(db: Pick<Pool, 'query'>, actor: AdminActor, con
   assertActor(actor, 'support.read')
   const rows = await selectRows(
     db,
-    `SELECT d.*, r.body, r.body_sha256, r.created_by_kind, u.name AS edited_by_name,
+    `SELECT d.*, r.body, r.body_sha256, r.created_by_kind, u.name AS edited_by_name, LEFT(t.body, 160) AS trigger_excerpt,
+            (SELECT x.author_kind FROM messages x WHERE x.conversation_id = d.conversation_id AND x.id > d.trigger_message_id ORDER BY x.id LIMIT 1) AS next_author,
             EXISTS (SELECT 1 FROM draft_reviews v WHERE v.draft_id = d.id AND v.revision = d.current_revision
                       AND v.body_sha256 = r.body_sha256 AND v.decision = 'approve') AS approved
        FROM ai_drafts d
        LEFT JOIN ai_draft_revisions r ON r.draft_id = d.id AND r.revision = d.current_revision
        LEFT JOIN auth_user u ON u.id = r.created_by
+       LEFT JOIN messages t ON t.id = d.trigger_message_id
       WHERE d.conversation_id = ? ORDER BY d.id DESC LIMIT 20`,
     [conversationId],
   )
@@ -433,6 +458,9 @@ export async function listDrafts(db: Pick<Pool, 'query'>, actor: AdminActor, con
     editedByName: r.created_by_kind === 'staff' && r.edited_by_name != null ? String(r.edited_by_name) : null,
     approvedForCurrentRevision: Number(r.approved) === 1,
     createdAt: String(r.created_at),
+    answers: { messageId: Number(r.trigger_message_id), excerpt: String(r.trigger_excerpt ?? '') },
+    supersededBy:
+      r.status !== 'superseded' ? null : r.next_author === 'student' ? 'newer_message' : r.next_author === 'staff' ? 'human_reply' : r.next_author === 'derek' ? 'other_draft' : null,
   }))
 }
 
@@ -446,5 +474,8 @@ export async function requestDraftForConversation(pool: Pool, actor: AdminActor,
   const outcome = await prepareDerekDraft(pool, conversationId, Number(conv.last_student_message_id), { ...deps, status })
   if (outcome.state === 'duplicate') throw new SupportError(409, 'Derek has already drafted (or is drafting) a reply to this message.')
   if (outcome.state === 'stale') throw new SupportError(409, 'The latest message has already been answered.')
+  if (outcome.state === 'ineligible')
+    throw new SupportError(409, 'This provider only drafts for students with a recorded 18+ confirmation. Please answer this one yourself.')
+  if (outcome.state === 'quota') throw new SupportError(429, 'Derek’s daily draft limit for this provider has been reached. Please answer this one yourself.')
   return outcome
 }

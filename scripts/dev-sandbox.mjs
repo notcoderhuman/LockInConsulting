@@ -55,7 +55,9 @@ const ctx = await auth.$context
 const studentPw = password()
 const student = await ctx.internalAdapter.createUser({ email: 'student@sandbox.test', name: 'Sandbox Student', emailVerified: false })
 await ctx.internalAdapter.linkAccount({ userId: student.id, providerId: 'credential', accountId: student.id, password: await ctx.password.hash(studentPw) })
-await conn.query("INSERT INTO student_profiles (user_id, display_name) VALUES (?, 'Sandbox Student')", [student.id])
+// Marked as a confirmed adult so a supervised Gemini smoke test can run against this SYNTHETIC
+// account (Gemini only drafts for students with a recorded 18+ confirmation). Mock mode ignores it.
+await conn.query("INSERT INTO student_profiles (user_id, display_name, age_confirmed_at) VALUES (?, 'Sandbox Student', UTC_TIMESTAMP(3))", [student.id])
 accounts['student@sandbox.test'] = studentPw
 await authPool.end()
 await conn.end()
@@ -67,6 +69,7 @@ const lines = [
   'BETTER_AUTH_URL=http://localhost:3000',
   'STUDENT_ACCOUNTS_ENABLED=true',
   '# Mock Derek (offline, no network, refused in production). Remove these two lines to test with Derek off.',
+  '# For the supervised Gemini smoke test only, see docs/ENVIRONMENT.md: never put GEMINI_API_KEY in this file.',
   'DEREK_AI_ENABLED=true',
   'DEREK_PROVIDER=mock',
   ...Object.entries(accounts).map(([email, pw]) => `# ${email}  ${pw}`),

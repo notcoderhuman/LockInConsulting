@@ -2,6 +2,7 @@ import type { RowDataPacket } from 'mysql2/promise'
 import { todayIso } from '@/lib/data/publication'
 import { fetchDestinationDirectory, type Queryable } from '@/lib/db/directory-queries'
 import { MONTH_NAMES } from '@/lib/admin/entities'
+import { detectDestinations } from './guidance'
 import type { EvidenceItem } from './provider'
 
 // Derek's only knowledge source: the same public_* views the website renders. Those views already
@@ -11,6 +12,7 @@ import type { EvidenceItem } from './provider'
 
 const MAX_UNIVERSITIES = 3
 const MAX_ITEMS = 25
+const MAX_LISTINGS_PER_DESTINATION = 5
 
 /** A fee for an academic year that has already ended is stale even if its record is still live. */
 export function isStaleAcademicYear(academicYear: string | null, today = todayIso()): boolean {
@@ -31,7 +33,7 @@ export async function loadEvidence(db: Queryable, question: string, today = toda
   const matched = unis
     .filter((u) => q.includes(` ${norm(String(u.name))} `) || q.includes(` ${norm(String(u.slug))} `))
     .slice(0, MAX_UNIVERSITIES)
-  if (!matched.length) return []
+  if (!matched.length) return destinationListings(db, question, today)
 
   const items: EvidenceItem[] = []
   for (const iso of new Set(matched.map((u) => String(u.destination_iso2)))) {
@@ -73,4 +75,24 @@ export async function loadEvidence(db: Queryable, question: string, today = toda
     }
   }
   return items.slice(0, MAX_ITEMS)
+}
+
+/**
+ * Broad questions ("Tell me about UK universities") name a destination but no university. Offer
+ * only the destination's published, verified directory listings (name, city, official website) so
+ * Derek can point to them; never facts about them that the student did not ask for.
+ */
+async function destinationListings(db: Queryable, question: string, today: string): Promise<EvidenceItem[]> {
+  const items: EvidenceItem[] = []
+  for (const destination of detectDestinations(question).slice(0, 2)) {
+    const listed = await fetchDestinationDirectory(db, destination.iso2, today)
+    for (const u of listed.slice(0, MAX_LISTINGS_PER_DESTINATION))
+      items.push({
+        ref: `university:${u.id}`,
+        text: `${u.name}${u.city ? `, ${u.city}` : ''} (${destination.shortName}) is listed in the LockIn directory; official website ${u.officialWebsite}`,
+        sourceUrl: u.source.url,
+        checkedAt: u.source.checkedAt,
+      })
+  }
+  return items
 }

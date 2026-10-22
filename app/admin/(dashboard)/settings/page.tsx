@@ -61,7 +61,7 @@ export default async function SettingsPage() {
   const approved = fxProviders.filter((p) => p.terms_status === 'approved')
   const support = await getSupportSettings(getAdminPool())
   const derek = getDerekStatus()
-  const blockers = [...new Set([...(derek.state === 'ready' ? [] : derek.reasons), ...(derek.autoReply.permitted ? [] : derek.autoReply.blockers)])]
+  const blockers = [...new Set([...(derek.state === 'ready' ? derek.notes : derek.reasons), ...(derek.autoReply.permitted ? [] : derek.autoReply.blockers)])]
   const studentAccounts = process.env.STUDENT_ACCOUNTS_ENABLED === 'true'
 
   return (

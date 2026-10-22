@@ -2,7 +2,7 @@
 // offline mock provider, no network. Run with `npm run test:db`.
 import { randomUUID } from 'node:crypto'
 import type { Connection, RowDataPacket } from 'mysql2/promise'
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { connect, startTestDatabase, type TestDatabase } from './harness'
 import { loadMigrations, migrate } from '../../scripts/migrate.mjs'
 import { runAdminCli } from '../../scripts/admin-user.mjs'
@@ -26,7 +26,12 @@ const D = await import('@/lib/derek/drafts')
 const W = await import('@/lib/admin/workflow')
 const { MockProvider } = await import('@/lib/derek/providers/mock')
 const { createAuth } = await import('@/lib/auth')
-const { throttleEmailSignIn, issueDeviceToken, FREE_FAILURES, clock, DEVICE_COOKIE, MAX_DELAY_MS, QUIET_RESET_MS } = await import('@/lib/auth-throttle')
+const { throttleEmailSignIn, issueDeviceToken, reserveAttempt, pruneStaleRows, resetRequestBuckets, signInRateLimits, FREE_FAILURES, clock, DEVICE_COOKIE, MAX_DELAY_MS, QUIET_RESET_MS, CLEANUP_INTERVAL_MS } =
+  await import('@/lib/auth-throttle')
+// The real request budget, kept for the tests about it; the other tests sign in far faster than a
+// person would (with a frozen clock), so they get an unlimited one.
+const productionLimits = structuredClone(signInRateLimits)
+signInRateLimits.global = { burst: 1e9, perSecond: 1e9 }
 const { getAdminPool, getAuthPool, getPool } = await import('@/lib/db/pool')
 const { toNextJsHandler } = await import('better-auth/next-js')
 const authRoute = await import('@/app/api/auth/[...all]/route')
@@ -467,6 +472,120 @@ describe('sign-in throttling cannot be used to lock a user out', () => {
     ])
     expect(attempts.map((r) => r.status)).toEqual([404, 404])
     expect((await authRoute.POST(signInRequest(email, PASSWORD))).status).toBe(200) // password unchanged
+  })
+
+  describe('request budget before password hashing (CPU protection)', () => {
+    let hashed = 0
+    // Stands in for Better Auth: every call is one password hash.
+    const hashing = (status = 401) => async () => {
+      hashed++
+      return Response.json({ message: 'Invalid email or password' }, { status })
+    }
+    const post = (email: string, headers: Record<string, string> = {}, handle = hashing()) =>
+      throttleEmailSignIn(signInRequest(email, 'guess-password-1', headers), handle, getAuthPool())
+    const someone = () => `flood-${randomUUID()}@test.example`
+    const spoofed = (i: number): Record<string, string> =>
+      [{}, { 'x-forwarded-for': `198.51.100.${i % 250}` }, { 'x-real-ip': `192.0.2.${i % 250}` }, { forwarded: `for=203.0.113.${i % 250}` }][i % 4]
+
+    beforeEach(() => {
+      signInRateLimits.global = { ...productionLimits.global }
+      signInRateLimits.perIp = { ...productionLimits.perIp }
+      resetRequestBuckets()
+      hashed = 0
+    })
+    afterEach(() => {
+      signInRateLimits.global = { burst: 1e9, perSecond: 1e9 }
+      delete process.env.AUTH_CLIENT_IP_HEADER
+      resetRequestBuckets()
+    })
+
+    it('a flood of unknown emails is hashed only as fast as the budget allows, whatever IP headers it sends', async () => {
+      const { burst, perSecond } = productionLimits.global
+      const first = await Promise.all(Array.from({ length: 40 }, (_, i) => post(someone(), spoofed(i))))
+      expect(statusCounts(first)).toEqual({ 401: burst, 429: 40 - burst })
+      expect(hashed).toBe(burst)
+      expect(first.find((r) => r.status === 429)!.headers.get('retry-after')).toBe('1')
+      advance(1000)
+      const next = await Promise.all(Array.from({ length: 40 }, (_, i) => post(someone(), spoofed(i))))
+      expect(statusCounts(next)).toEqual({ 401: perSecond, 429: 40 - perSecond })
+      expect(hashed).toBe(burst + perSecond)
+    })
+
+    it('the owner’s recognised browser still signs in while a flood has used up the budget', async () => {
+      signInRateLimits.global = { burst: 1e9, perSecond: 1e9 }
+      const owner = await account('flood-owner')
+      const cookie = deviceCookie(await authRoute.POST(signInRequest(owner, PASSWORD)))!
+      signInRateLimits.global = { ...productionLimits.global }
+      resetRequestBuckets()
+      await Promise.all(Array.from({ length: 30 }, () => post(someone())))
+      expect((await authRoute.POST(signInRequest(owner, PASSWORD))).status).toBe(429) // unrecognised browser waits
+      expect((await authRoute.POST(signInRequest(owner, PASSWORD, withCookie(cookie)))).status).toBe(200)
+    })
+
+    it('requests that never hash a password give their token back', async () => {
+      const { burst } = productionLimits.global
+      const target = someone()
+      for (let i = 0; i < 30; i++) await post(target) // the account schedule refuses all but the free attempts
+      expect(hashed).toBe(FREE_FAILURES)
+      for (let i = 0; i < 20; i++) expect((await post(someone(), {}, hashing(400))).status).toBe(400) // rejected before hashing
+      hashed = 0
+      expect(statusCounts(await Promise.all(Array.from({ length: 20 }, () => post(someone()))))).toEqual({ 401: burst - FREE_FAILURES, 429: 20 - (burst - FREE_FAILURES) })
+    })
+
+    it('with a verified proxy header, one client IP cannot use up the shared budget, and a missing IP gets no extra', async () => {
+      process.env.AUTH_CLIENT_IP_HEADER = 'x-real-ip'
+      const { burst: ipBurst } = productionLimits.perIp
+      const flood = await Promise.all(Array.from({ length: 100 }, (_, i) => post(someone(), { 'x-real-ip': '203.0.113.7', 'x-forwarded-for': `198.51.100.${i % 250}` })))
+      expect(statusCounts(flood)).toEqual({ 401: ipBurst, 429: 100 - ipBurst })
+      expect((await post(someone(), { 'x-real-ip': '203.0.113.8' })).status).toBe(401) // another client still gets in
+      advance(3000) // refill the shared budget; per-IP buckets refill far more slowly
+      hashed = 0
+      const missing = []
+      for (let i = 0; i < 8; i++) missing.push(await post(someone(), spoofed(i % 2 ? 1 : 3))) // no x-real-ip: one shared bucket
+      expect(statusCounts(missing)).toEqual({ 401: ipBurst, 429: 8 - ipBurst })
+      expect(hashed).toBe(ipBurst)
+    })
+  })
+
+  describe('stale throttle rows are cleaned up', () => {
+    const insertRow = (key: string, count: number, lastRequest: number) =>
+      db.query('INSERT INTO auth_rate_limit (id, `key`, `count`, lastRequest) VALUES (?, ?, ?, ?)', [randomUUID(), key, count, lastRequest])
+    const row = async (key: string) => (await rows<{ count: number; lastRequest: string }>('SELECT `count`, lastRequest FROM auth_rate_limit WHERE `key` = ?', [key]))[0]
+    const failedSignIn = () => throttleEmailSignIn(signInRequest(`nobody-${randomUUID()}@test.example`, 'guess-password-1'), async () => Response.json({}, { status: 401 }), getAuthPool())
+
+    beforeEach(() => resetRequestBuckets()) // cleanup is due on the next request
+
+    it('removes idle rows even when nobody ever signs in successfully, and keeps active counters exactly', async () => {
+      const id = randomUUID()
+      const stale = [`account:stale-${id}|/sign-in/email`, `device:stale-${id}|/sign-in/email`, `198.51.100.${id.length}-${id}|/sign-in/email`]
+      for (const key of stale) await insertRow(key, 9, now - QUIET_RESET_MS - 1)
+      const active = `account:active-${id}|/sign-in/email`
+      await insertRow(active, 6, now - 10_000)
+
+      expect((await failedSignIn()).status).toBe(401)
+      for (const key of stale) expect(await row(key)).toBeUndefined()
+      const kept = await row(active)
+      expect([Number(kept.count), Number(kept.lastRequest)]).toEqual([6, now - 10_000])
+      // Its schedule is unchanged: after 6 attempts the next waits 30 s, 10 s of which have passed.
+      expect(await reserveAttempt(getAuthPool(), active)).toBe(20_000)
+    })
+
+    it('runs at most once per interval and deletes a bounded batch', async () => {
+      const id = randomUUID()
+      expect((await failedSignIn()).status).toBe(401) // this run happens now
+      const late = `account:late-${id}|/sign-in/email`
+      await insertRow(late, 3, now - QUIET_RESET_MS - 1)
+      await failedSignIn()
+      expect(await row(late)).toBeDefined() // not again within the interval
+      advance(CLEANUP_INTERVAL_MS)
+      await failedSignIn()
+      expect(await row(late)).toBeUndefined()
+
+      const batch = [1, 2, 3].map((n) => `account:batch-${n}-${id}|/sign-in/email`)
+      for (const key of batch) await insertRow(key, 1, now - QUIET_RESET_MS - 1)
+      expect(await pruneStaleRows(getAuthPool(), now, 2)).toBe(2)
+      expect((await Promise.all(batch.map(row))).filter(Boolean)).toHaveLength(1)
+    })
   })
 })
 

@@ -68,8 +68,16 @@ export interface AiProvider {
   readonly model: string
   /** Data-handling policy the worker enforces before any call. Omitted = in-process provider. */
   readonly policy?: ProviderPolicy
+  /**
+   * Whether this adapter's provider terms allow replies that no person reviewed. Omitted = not
+   * permitted. Necessary but not sufficient: the owner must also record that review for this
+   * provider (DEREK_AUTO_REPLY_CLEARED, lib/derek/config.ts).
+   */
+  readonly autoReply?: AutoReplyCapability
   generate(request: DraftRequest, options: { signal: AbortSignal }): Promise<DraftResult>
 }
+
+export type AutoReplyCapability = { permitted: true } | { permitted: false; reason: string }
 
 export interface ProviderPolicy {
   /** The request leaves this server (an external API). */

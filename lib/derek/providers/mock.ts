@@ -1,4 +1,4 @@
-import { DIRECTORY_LABEL, ProviderError, type AiProvider, type DraftRequest, type DraftResult } from '../provider'
+import { DIRECTORY_LABEL, ProviderError, type AiProvider, type AutoReplyCapability, type DraftRequest, type DraftResult } from '../provider'
 
 // Deterministic, offline provider for development and automated tests. It never makes a network
 // call, costs nothing and sees only synthetic data. It is refused in production (lib/derek/config.ts).
@@ -14,8 +14,11 @@ export type MockBehaviour =
   | { kind: 'hang' }
 
 export class MockProvider implements AiProvider {
+  /** Offline and synthetic, so no third-party terms apply; production refuses the mock anyway. */
+  static readonly autoReply: AutoReplyCapability = { permitted: true }
   readonly id = 'mock'
   readonly model = 'mock-derek-1'
+  readonly autoReply = MockProvider.autoReply
   calls = 0
   readonly requests: DraftRequest[] = []
 

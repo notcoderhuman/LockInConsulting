@@ -100,7 +100,7 @@ describe('Gemini drafts through the worker (fake fetch)', () => {
     const q = await C.createConversation(pool(), s, { body: 'What is a conditional offer? Reach me on asha@example.com or +91 98765 43210.', clientRequestId: rid() })
     // Force every automatic-reply gate open in the database and environment: Gemini must still only draft.
     await db.query("UPDATE support_settings SET support_mode = 'offline', auto_reply_enabled = TRUE WHERE id = 1")
-    Object.assign(process.env, ENV, { DEREK_AUTO_REPLY_CLEARED: 'true' })
+    Object.assign(process.env, ENV, { DEREK_AUTO_REPLY_CLEARED: 'gemini' })
     try {
       const { provider, calls } = gemini(() => geminiReply('A conditional offer means a place is held for you once you meet the remaining conditions, such as final results. Conditions vary by university.'))
       const out = await D.prepareDerekDraft(pool(), q.conversationId, q.triggerMessageId!, { status: status(), provider })

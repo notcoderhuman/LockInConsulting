@@ -4,10 +4,11 @@ import type { AdminActor } from '@/lib/admin/roles'
 import { applyEvent, lockConversation } from '@/lib/support/conversations'
 import { assertActor, inTransaction, isDuplicate, selectRows, sha256, SupportError, type Row } from '@/lib/support/db'
 import { createNotification } from '@/lib/support/notifications'
-import { autoReplyActive, getSupportSettings } from '@/lib/support/settings'
+import { getSupportSettings } from '@/lib/support/settings'
 import { TransitionError } from '@/lib/support/state'
 import { messageBody, reasonText } from '@/lib/support/validation'
-import { createProvider, derekMaxAttempts, getDerekStatus, type DerekStatus } from './config'
+import { decideAutoReply } from './auto-reply'
+import { createProvider, derekDailyTokenLimit, derekMaxAttempts, getDerekStatus, type DerekStatus } from './config'
 import { loadEvidence } from './evidence'
 import { analyseQuestion } from './guidance'
 import { DEREK_INSTRUCTIONS, type AiProvider, type EvidenceItem } from './provider'
@@ -65,12 +66,17 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     // External-provider policy, checked before anything leaves this server. The question stays in
     // the Live Inbox for a human either way.
     if (provider.policy?.requiresAdultStudent && conv.student_age_confirmed_at == null) return 'ineligible' as const
-    if (provider.policy?.external) {
-      // Serialise external claims on the settings row so concurrent workers cannot overshoot the cap.
-      await conn.query('SELECT id FROM support_settings WHERE id = 1 FOR UPDATE')
-      const [[used]] = await conn.query<Row[]>('SELECT COUNT(*) AS n FROM ai_drafts WHERE provider = ? AND created_at > UTC_TIMESTAMP(3) - INTERVAL 1 DAY', [provider.id])
-      if (Number(used.n) >= provider.policy.dailyDraftLimit) return 'quota' as const
-    }
+    // Serialise claims on the settings row so concurrent workers cannot overshoot the caps.
+    await conn.query('SELECT id FROM support_settings WHERE id = 1 FOR UPDATE')
+    const [[used]] = await conn.query<Row[]>(
+      `SELECT COALESCE(SUM(provider = ?), 0) AS drafts, COALESCE(SUM(COALESCE(input_tokens, 0) + COALESCE(output_tokens, 0)), 0) AS tokens
+         FROM ai_drafts WHERE created_at > UTC_TIMESTAMP(3) - INTERVAL 1 DAY`,
+      [provider.id],
+    )
+    if (provider.policy?.external && Number(used.drafts) >= provider.policy.dailyDraftLimit) return 'quota' as const
+    // Spend cap for every provider. shortcut: drafts still generating are not counted yet, so the
+    // overshoot is bounded by the drafts in flight; fine at LockIn's volume.
+    if (Number(used.tokens) >= derekDailyTokenLimit()) return 'quota' as const
     try {
       const [res] = await conn.query("INSERT INTO ai_drafts (conversation_id, trigger_message_id, status, provider, model) VALUES (?, ?, 'generating', ?, ?)", [
         conversationId,
@@ -172,16 +178,31 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
       ],
     )
 
-    // Automatic reply: every gate is re-read now, inside the lock, not when the job started.
-    const settings = await getSupportSettings(conn)
-    const stillLatest = Number(conv.last_student_message_id) === triggerMessageId
-    if (risk.level === 'low' && stillLatest && autoReplyActive(settings, getDerekStatus())) {
-      const messageId = await deliverDraft(conn, conv, claim.draftId, text.data, null)
+    // Automatic reply: every gate is re-read now, inside the lock, not when the job started. The
+    // newer-message and human-reply checks above already returned 'superseded'.
+    const decision = await decideAutoReply(conn, {
+      settings: await getSupportSettings(conn),
+      status: getDerekStatus(),
+      provider,
+      conv,
+      risk: risk.level,
+      text: text.data,
+      evidence,
+    })
+    if (decision.send) {
+      const messageId = await deliverDraft(conn, conv, claim.draftId, text.data, null, { provider: provider.id, model: outcome.result.model.slice(0, 120) })
       return { state: 'auto_sent', draftId: claim.draftId, messageId }
     }
+    const held = decision.heldReason
 
     try {
-      await applyEvent(conn, { id: conversationId, status: conv.status }, { type: 'draft_needs_review' }, { kind: 'derek', id: null }, `Draft risk: ${risk.level}`)
+      await applyEvent(
+        conn,
+        { id: conversationId, status: conv.status },
+        { type: 'draft_needs_review' },
+        { kind: 'derek', id: null },
+        held ? `Automatic reply held: ${held}`.slice(0, 300) : `Draft risk: ${risk.level}`,
+      )
     } catch (e) {
       if (!(e instanceof TransitionError)) throw e
     }
@@ -189,8 +210,9 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
       audience: 'staff_support',
       kind: risk.level === 'low' ? 'draft_ready' : 'high_risk',
       conversationId,
-      title:
-        risk.level === 'low'
+      title: held
+        ? `Derek’s automatic reply in conversation #${conversationId} was held (${held}) — review before sending`
+        : risk.level === 'low'
           ? `Derek drafted a reply for conversation #${conversationId} — review before sending`
           : `${risk.level === 'high' ? 'High-risk' : 'Uncertain'} Derek draft in conversation #${conversationId} — human review required`,
       targetPath: `/admin/inbox/${conversationId}`,
@@ -200,7 +222,14 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
 }
 
 /** Inserts the Derek message for a draft. Caller holds the conversation lock. */
-async function deliverDraft(conn: PoolConnection, conv: Row, draftId: number, body: string, reviewer: AdminActor | null): Promise<number> {
+async function deliverDraft(
+  conn: PoolConnection,
+  conv: Row,
+  draftId: number,
+  body: string,
+  reviewer: AdminActor | null,
+  automatic?: { provider: string; model: string },
+): Promise<number> {
   const conversationId = Number(conv.id)
   let messageId: number
   try {
@@ -228,7 +257,7 @@ async function deliverDraft(conn: PoolConnection, conv: Row, draftId: number, bo
     actorRole: reviewer?.role ?? 'derek',
     reason: reviewer ? null : 'Automatic reply (offline mode)',
     before: { conversationStatus: conv.status },
-    after: { conversationId, conversationStatus: to, messageId, bodySha256: sha256(body), reviewedBy: reviewer?.userId ?? null },
+    after: { conversationId, conversationStatus: to, messageId, bodySha256: sha256(body), reviewedBy: reviewer?.userId ?? null, ...(automatic ?? {}) },
   })
   await createNotification(conn, {
     audience: 'user',

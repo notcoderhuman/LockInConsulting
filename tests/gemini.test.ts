@@ -282,7 +282,7 @@ describe('Gemini configuration', () => {
   })
 
   it('never permits automatic replies with Gemini, even with every other gate open', () => {
-    const status = getDerekStatus({ ...base, DEREK_AUTO_REPLY_CLEARED: 'true', GEMINI_PAID_TIER: 'true' })
+    const status = getDerekStatus({ ...base, DEREK_AUTO_REPLY_CLEARED: 'gemini', GEMINI_PAID_TIER: 'true' })
     expect(status.autoReply).toEqual({ permitted: false, blockers: [expect.stringMatching(/not approved for Gemini/)] })
   })
 

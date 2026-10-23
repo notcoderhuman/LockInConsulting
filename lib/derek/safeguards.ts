@@ -19,6 +19,11 @@ export interface RiskAssessment {
 const ORDER: Record<RiskLevel, number> = { low: 0, uncertain: 1, high: 2 }
 const worst = (a: RiskLevel, b: RiskLevel): RiskLevel => (ORDER[a] >= ORDER[b] ? a : b)
 
+/** The stricter of two assessments, with both sets of reasons. */
+export function combineRisk(a: RiskAssessment, b: RiskAssessment): RiskAssessment {
+  return { level: worst(a.level, b.level), reasons: [...new Set([...a.reasons, ...b.reasons])] }
+}
+
 const HIGH_RISK_TOPICS: [RegExp, string][] = [
   [/\b(visa|immigration|immigrate|work permit|study permit|residence permit|permanent residen|\bpr\b|deport|asylum|overstay)/i, 'Visa or immigration question'],
   [/\b(suicid|kill myself|self[- ]?harm|hurt myself|end my life|hopeless|abuse[ds]?)\b/i, 'Possible distress or safeguarding concern'],
@@ -48,6 +53,8 @@ export function factTopicsIn(text: string): string[] {
 }
 
 const FORBIDDEN_CLAIMS: [RegExp, string][] = [
+  // Derek is the AI assistant; only staff messages carry a person's identity.
+  [/\b(?:i am|i'm|i’m|as) (?:a |an )?(?:human|real person|counsell?or|advis[eo]r at lockin|member of (?:the )?lockin team|lockin (?:staff|employee|counsell?or))\b/i, 'Draft claims to be a person'],
   [/\b(guarantee[ds]?|assured|certain(?:ly)? (?:get|be admitted)|100 ?% (?:chance|sure))\b/i, 'Draft makes a guarantee'],
   [/\b(you will (?:definitely )?(?:get|be (?:admitted|accepted|granted))|visa will be (?:approved|granted))\b/i, 'Draft predicts an outcome'],
   [/\b(approximately|about|around|roughly)\s+(?:INR|₹|rs\.?)\s?\d/i, 'Draft converts to INR'],

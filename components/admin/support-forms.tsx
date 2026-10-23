@@ -11,10 +11,12 @@ import {
   rejectDraftAction,
   replyAction,
   requestDraftAction,
+  returnToDerekAction,
   revokeMemberAction,
   setStatusAction,
   setSupportAccessAction,
   syncReviewNoticesAction,
+  takeOverAction,
   updateSupportSettingsAction,
 } from '@/app/admin/support-actions'
 import { controlClass, describedBy, Field, FormMessage } from './form-controls'
@@ -88,6 +90,20 @@ export function StatusForm({ conversationId, current, options }: { conversationI
       <FormMessage state={state} />
       <Button type="submit" variant="outline" disabled={pending} className="self-start">
         Update status
+      </Button>
+    </form>
+  )
+}
+
+/** Take the conversation over from Derek, or (reviewers) hand it back explicitly. */
+export function HandoverForm({ conversationId, takenOver }: { conversationId: number; takenOver: boolean }) {
+  const { state, pending, onSubmit } = useFormAction(takenOver ? returnToDerekAction : takeOverAction)
+  return (
+    <form onSubmit={onSubmit} className="flex flex-col gap-2" noValidate>
+      <input type="hidden" name="conversationId" value={conversationId} />
+      <FormMessage state={state} />
+      <Button type="submit" variant="outline" size="sm" disabled={pending} className="self-start">
+        {takenOver ? 'Return to Derek' : 'Take over from Derek'}
       </Button>
     </form>
   )

@@ -6,7 +6,7 @@ import { LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { authClient } from '@/lib/auth-client'
 
-export function SignOutButton({ compact = false }: { compact?: boolean }) {
+export function SignOutButton({ compact = false, redirectTo = '/admin/sign-in' }: { compact?: boolean; redirectTo?: string }) {
   const router = useRouter()
   const [pending, setPending] = useState(false)
 
@@ -15,7 +15,7 @@ export function SignOutButton({ compact = false }: { compact?: boolean }) {
     try {
       await authClient.signOut()
     } finally {
-      router.replace('/admin/sign-in')
+      router.replace(redirectTo)
       router.refresh()
     }
   }

@@ -5,7 +5,7 @@ import type { StudentActor } from '@/lib/student/access'
 import { attributionLabel, type AuthorKind } from './attribution'
 import { assertActor, inTransaction, isDuplicate, selectRows, sha256, SupportError, type Row } from './db'
 import { createNotification, markConversationNotificationsRead, staffViewer } from './notifications'
-import { isConversationStatus, nextStatus, STUDENT_STATUS_LABEL, TransitionError, type ConversationEvent, type ConversationStatus } from './state'
+import { isConversationStatus, nextStatus, STUDENT_ACKNOWLEDGEMENT, STUDENT_STATUS_LABEL, TransitionError, type ConversationEvent, type ConversationStatus } from './state'
 import { deriveSubject, newConversationInput, newMessageInput, reasonText } from './validation'
 
 // Conversations and messages. Ownership and permissions are checked here, on the server, for
@@ -260,15 +260,25 @@ function toView(r: Row, viewer: 'student' | 'staff', viewerUserId: string): Mess
 }
 
 export async function getStudentMessages(db: Db, student: StudentActor, conversationId: number, { before = null, limit = 30 }: { before?: number | null; limit?: number } = {}) {
-  const conv = await selectRows(db, 'SELECT id, subject, status FROM conversations WHERE id = ? AND student_profile_id = ?', [conversationId, student.profileId])
+  const conv = await selectRows(
+    db,
+    `SELECT c.id, c.subject, c.status, c.last_student_message_id,
+            (SELECT MAX(m.id) FROM messages m WHERE m.conversation_id = c.id AND m.author_kind <> 'student') AS last_reply_id
+       FROM conversations c WHERE c.id = ? AND c.student_profile_id = ?`,
+    [conversationId, student.profileId],
+  )
   if (!conv[0]) throw new SupportError(404, 'Conversation not found.')
   const { rows, hasMore } = await readMessages(db, conversationId, before, limit)
   const status = String(conv[0].status)
+  // The student's latest message has no reply yet (held for review, escalated, failed, or simply
+  // waiting): say plainly that a person will follow up. Never why, and never any internal state.
+  const waiting = status !== 'resolved' && Number(conv[0].last_student_message_id) > Number(conv[0].last_reply_id ?? 0)
   return {
     conversation: {
       id: conversationId,
       subject: String(conv[0].subject),
       statusLabel: isConversationStatus(status) ? STUDENT_STATUS_LABEL[status] : 'Waiting for the LockIn team',
+      acknowledgement: waiting ? STUDENT_ACKNOWLEDGEMENT : null,
     },
     messages: rows.map((r) => toView(r, 'student', student.userId)),
     hasMore,
@@ -295,8 +305,22 @@ export async function markStudentRead(db: Db, student: StudentActor, conversatio
 
 export const INBOX_PAGE_SIZE = 25
 
+/** Cross-status views of the queue. */
+export const INBOX_VIEWS = ['held', 'escalated', 'taken_over'] as const
+export type InboxView = (typeof INBOX_VIEWS)[number]
+
+// held       Auto Mode wrote a reply but held it for a person
+// escalated  Derek failed, or its open draft is high-risk (visa, legal, distress, invented facts…)
+// taken_over a team member is handling it and Derek is paused
+const VIEW_SQL: Record<InboxView, string> = {
+  held: "EXISTS (SELECT 1 FROM ai_drafts d WHERE d.conversation_id = c.id AND d.status = 'ready' AND d.hold_reason IS NOT NULL)",
+  escalated: "(c.status = 'failed' OR EXISTS (SELECT 1 FROM ai_drafts d WHERE d.conversation_id = c.id AND d.status = 'ready' AND d.risk_level = 'high'))",
+  taken_over: 'c.ai_paused_by IS NOT NULL',
+}
+
 export interface InboxFilters {
   status?: ConversationStatus | null
+  view?: InboxView | null
   unread?: boolean
   page?: number
 }
@@ -306,6 +330,7 @@ export async function listInbox(db: Db, actor: AdminActor, filters: InboxFilters
   const where: string[] = []
   const params: unknown[] = []
   if (filters.status) where.push('c.status = ?'), params.push(filters.status)
+  if (filters.view) where.push(VIEW_SQL[filters.view])
   if (filters.unread) where.push('c.last_student_message_id > c.staff_last_read_id')
   const clause = where.length ? `WHERE ${where.join(' AND ')}` : ''
   const page = Math.max(1, filters.page ?? 1)
@@ -313,7 +338,7 @@ export async function listInbox(db: Db, actor: AdminActor, filters: InboxFilters
     selectRows(
       db,
       `SELECT c.id, c.subject, c.status, c.last_message_at, sp.display_name, sp.status AS student_status,
-              (c.last_student_message_id > c.staff_last_read_id) AS unread,
+              (c.last_student_message_id > c.staff_last_read_id) AS unread, (c.ai_paused_by IS NOT NULL) AS taken_over,
               (SELECT COUNT(*) FROM ai_drafts d WHERE d.conversation_id = c.id AND d.status = 'ready') AS pending_drafts
          FROM conversations c JOIN student_profiles sp ON sp.id = c.student_profile_id
          ${clause} ORDER BY c.last_message_at DESC, c.id DESC LIMIT ? OFFSET ?`,
@@ -331,6 +356,7 @@ export async function listInbox(db: Db, actor: AdminActor, filters: InboxFilters
       lastMessageAt: String(r.last_message_at),
       studentName: String(r.display_name),
       unread: Number(r.unread) === 1,
+      takenOver: Number(r.taken_over) === 1,
       pendingDrafts: Number(r.pending_drafts),
     })),
   }
@@ -349,15 +375,20 @@ export async function getInboxCounts(db: Db, actor: AdminActor) {
     unread += Number(r.unread ?? 0)
   }
   const [[drafts]] = await db.query<Row[]>("SELECT COUNT(*) AS n FROM ai_drafts WHERE status = 'ready'")
-  return { byStatus, unread, pendingDrafts: Number(drafts.n) }
+  const [[views]] = await db.query<Row[]>(
+    `SELECT ${INBOX_VIEWS.map((v) => `COALESCE(SUM(${VIEW_SQL[v]}), 0) AS ${v}`).join(', ')} FROM conversations c`,
+  )
+  const byView = Object.fromEntries(INBOX_VIEWS.map((v) => [v, Number(views[v])])) as Record<InboxView, number>
+  return { byStatus, byView, unread, pendingDrafts: Number(drafts.n) }
 }
 
 export async function getConversationForStaff(db: Db, actor: AdminActor, conversationId: number, { before = null, limit = 40 }: { before?: number | null; limit?: number } = {}) {
   assertActor(actor, 'support.read')
   const conv = await selectRows(
     db,
-    `SELECT c.*, sp.display_name, sp.status AS student_status, sp.id AS profile_id
-       FROM conversations c JOIN student_profiles sp ON sp.id = c.student_profile_id WHERE c.id = ?`,
+    `SELECT c.*, sp.display_name, sp.status AS student_status, sp.id AS profile_id, pu.name AS ai_paused_by_name
+       FROM conversations c JOIN student_profiles sp ON sp.id = c.student_profile_id
+       LEFT JOIN auth_user pu ON pu.id = c.ai_paused_by WHERE c.id = ?`,
     [conversationId],
   )
   if (!conv[0]) throw new SupportError(404, 'Conversation not found.')
@@ -379,6 +410,8 @@ export async function getConversationForStaff(db: Db, actor: AdminActor, convers
       studentActive: c.student_status === 'active',
       createdAt: String(c.created_at),
       lastStudentMessageId: Number(c.last_student_message_id),
+      /** Set while a team member has taken the conversation over from Derek. */
+      takenOver: c.ai_paused_by == null ? null : { byName: c.ai_paused_by_name == null ? 'a team member' : String(c.ai_paused_by_name), at: String(c.ai_paused_at) },
     },
     messages: rows.map((r) => toView(r, 'staff', actor.userId)),
     hasMore,
@@ -471,6 +504,66 @@ export async function setConversationStatus(pool: Pool, actor: AdminActor, conve
     })
     return next
   })
+}
+
+/**
+ * A team member takes the conversation over from Derek: no new drafts start for it, a draft that
+ * is still being written is discarded, and nothing is sent automatically until someone returns it.
+ * Drafts that are already ready stay visible for the team to use. Idempotent.
+ */
+export async function takeOverConversation(pool: Pool, actor: AdminActor, conversationId: number): Promise<void> {
+  assertActor(actor, 'support.reply')
+  await inTransaction(pool, async (conn) => {
+    const conv = await lockConversation(conn, conversationId)
+    if (conv.ai_paused_by != null) return
+    await conn.query('UPDATE conversations SET ai_paused_by = ?, ai_paused_at = UTC_TIMESTAMP(3) WHERE id = ?', [actor.userId, conversationId])
+    await conn.query("UPDATE ai_drafts SET status = 'superseded' WHERE conversation_id = ? AND status = 'generating'", [conversationId])
+    await recordNote(conn, conv, actor, 'Taken over from Derek by a team member')
+    await appendChangeLog(conn, {
+      entityType: 'conversation',
+      entityId: conversationId,
+      action: 'ai_takeover',
+      actorId: actor.userId,
+      actorRole: actor.role,
+      reason: null,
+      before: { aiPaused: false },
+      after: { aiPaused: true },
+    })
+  })
+}
+
+/** Explicitly hands the conversation back to Derek's normal drafting (and Auto Mode, if on). */
+export async function returnToDerek(pool: Pool, actor: AdminActor, conversationId: number): Promise<void> {
+  // Re-enabling unreviewed AI handling is a reviewer decision, never delegated to editors.
+  assertActor(actor, 'support.review_ai')
+  await inTransaction(pool, async (conn) => {
+    const conv = await lockConversation(conn, conversationId)
+    if (conv.ai_paused_by == null) return
+    await conn.query('UPDATE conversations SET ai_paused_by = NULL, ai_paused_at = NULL WHERE id = ?', [conversationId])
+    await recordNote(conn, conv, actor, 'Returned to Derek by a team member')
+    await appendChangeLog(conn, {
+      entityType: 'conversation',
+      entityId: conversationId,
+      action: 'ai_return',
+      actorId: actor.userId,
+      actorRole: actor.role,
+      reason: null,
+      before: { aiPaused: true },
+      after: { aiPaused: false },
+    })
+  })
+}
+
+/** A history entry that does not change the status (from = to). */
+async function recordNote(conn: PoolConnection, conv: Row & { status: ConversationStatus }, actor: AdminActor, reason: string) {
+  await conn.query('INSERT INTO conversation_events (conversation_id, from_status, to_status, actor_kind, actor_id, reason) VALUES (?, ?, ?, ?, ?, ?)', [
+    Number(conv.id),
+    conv.status,
+    conv.status,
+    'staff',
+    actor.userId,
+    reason,
+  ])
 }
 
 // ---------------------------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import type { AiProvider } from './provider'
+import type { AiProvider, AutoReplyCapability } from './provider'
 import { GEMINI_MODEL, GeminiProvider } from './providers/gemini'
 import { MockProvider } from './providers/mock'
 
@@ -13,11 +13,17 @@ import { MockProvider } from './providers/mock'
 //   DEREK_GEMINI_DAILY_DRAFT_LIMIT optional cost cap (default 100 drafts per rolling 24 h, max 2000)
 //   DEREK_MAX_ATTEMPTS=1|2         provider attempts per draft (default 2: one retry on 429/5xx/timeout);
 //                                  1 guarantees at most one request, e.g. for a supervised smoke test
-//   DEREK_AUTO_REPLY_CLEARED=true  records the review for UNREVIEWED automatic replies; never
-//                                  enough for gemini, which is drafts-only until separately approved
+//   DEREK_DAILY_TOKEN_LIMIT        optional spend cap for every provider (default 500000 input+output
+//                                  tokens per rolling 24 h, max 5000000); new drafts wait for a human
+//   DEREK_AUTO_REPLY_CLEARED=<id>  records that the provider-terms, privacy and age-eligibility review
+//                                  for UNREVIEWED automatic replies was done for THAT provider id
+//                                  (e.g. "mock"); "true" or another provider's id clears nothing.
+//                                  Never enough on its own: the provider's adapter must also declare
+//                                  `autoReply.permitted` (Gemini never does: drafts only)
 //
 // Automatic replies additionally need the owner to switch the support mode to offline and turn
-// automatic replies on in /admin/settings. Even then, only low-risk drafts are auto-sent.
+// automatic replies on in /admin/settings. Even then, only low-risk drafts that pass the
+// send-time checks in lib/derek/auto-reply.ts are auto-sent.
 
 type Env = Record<string, string | undefined>
 
@@ -30,7 +36,25 @@ export type AutoReplyStatus = { permitted: true } | { permitted: false; blockers
 
 export const DEFAULT_GEMINI_DAILY_DRAFT_LIMIT = 100
 const MAX_GEMINI_DAILY_DRAFT_LIMIT = 2000
-const GEMINI_AUTO_BLOCKER = 'Automatic replies are not approved for Gemini: Derek only prepares drafts for human review.'
+export const DEFAULT_DAILY_TOKEN_LIMIT = 500_000
+const MAX_DAILY_TOKEN_LIMIT = 5_000_000
+
+/** Rolling 24-hour input+output token cap across all providers. */
+export function derekDailyTokenLimit(env: Env = process.env): number {
+  const n = Number(env.DEREK_DAILY_TOKEN_LIMIT)
+  return Number.isInteger(n) && n > 0 ? Math.min(n, MAX_DAILY_TOKEN_LIMIT) : DEFAULT_DAILY_TOKEN_LIMIT
+}
+
+/** Both the adapter's own declaration and the owner's recorded review for this exact provider. */
+function autoReplyFor(providerId: string, capability: AutoReplyCapability, env: Env): AutoReplyStatus {
+  if (!capability.permitted) return { permitted: false, blockers: [capability.reason] }
+  if (env.DEREK_AUTO_REPLY_CLEARED !== providerId)
+    return {
+      permitted: false,
+      blockers: [`The provider-terms, privacy and age-eligibility review for unreviewed replies by "${providerId}" is not recorded (DEREK_AUTO_REPLY_CLEARED).`],
+    }
+  return { permitted: true }
+}
 
 /**
  * The Gemini API key exactly as it will be sent: surrounding whitespace (an accidental paste)
@@ -86,10 +110,7 @@ export function getDerekStatus(env: Env = process.env): DerekStatus {
       state: 'ready',
       providerId,
       notes: ['Offline mock provider: no data leaves this server.'],
-      autoReply:
-        env.DEREK_AUTO_REPLY_CLEARED === 'true'
-          ? { permitted: true }
-          : { permitted: false, blockers: ['The provider-terms, privacy and age-eligibility review for unreviewed replies is not recorded (DEREK_AUTO_REPLY_CLEARED).'] },
+      autoReply: autoReplyFor('mock', MockProvider.autoReply, env),
     }
   }
 
@@ -109,7 +130,7 @@ export function getDerekStatus(env: Env = process.env): DerekStatus {
         `Cost cap: ${geminiDailyDraftLimit(env)} drafts per rolling 24 hours.`,
         ...(env.GEMINI_PAID_TIER === 'true' ? [] : ['Unpaid tier: synthetic test data only. Never real student messages.']),
       ],
-      autoReply: { permitted: false, blockers: [GEMINI_AUTO_BLOCKER] },
+      autoReply: autoReplyFor('gemini', GeminiProvider.autoReply, env),
     }
   }
 

@@ -17,7 +17,10 @@ describe('device cookie', () => {
     expect(verifyDeviceToken(token, ' asha@example.com ', secret, hash, now + 1000)).toMatch(/^[A-Za-z0-9_-]{22}$/)
     expect(verifyDeviceToken(token, 'other@example.com', secret, hash, now)).toBeNull()
     expect(verifyDeviceToken(token, 'asha@example.com', 'x'.repeat(40), hash, now)).toBeNull()
-    expect(verifyDeviceToken(`${token.slice(0, -1)}A`, 'asha@example.com', secret, hash, now)).toBeNull()
+    // Change the MAC's first character: always significant (the last one is partly base64 padding).
+    const at = token.lastIndexOf('.') + 1
+    const tampered = `${token.slice(0, at)}${token[at] === 'A' ? 'B' : 'A'}${token.slice(at + 1)}`
+    expect(verifyDeviceToken(tampered, 'asha@example.com', secret, hash, now)).toBeNull()
     expect(verifyDeviceToken(token, 'asha@example.com', secret, hash, now + 181 * 86_400_000)).toBeNull()
     for (const bad of [undefined, '', 'a.b.c', 'a.b.c.d.e']) expect(verifyDeviceToken(bad, 'asha@example.com', secret, hash, now)).toBeNull()
     expect(token).not.toContain('asha')

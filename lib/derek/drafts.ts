@@ -4,16 +4,20 @@ import type { AdminActor } from '@/lib/admin/roles'
 import { applyEvent, lockConversation } from '@/lib/support/conversations'
 import { assertActor, inTransaction, isDuplicate, selectRows, sha256, SupportError, type Row } from '@/lib/support/db'
 import { createNotification } from '@/lib/support/notifications'
-import { autoReplyActive, getSupportSettings } from '@/lib/support/settings'
+import { getSupportSettings } from '@/lib/support/settings'
 import { TransitionError } from '@/lib/support/state'
 import { messageBody, reasonText } from '@/lib/support/validation'
-import { createProvider, derekMaxAttempts, getDerekStatus, type DerekStatus } from './config'
+import { decideAutoReply } from './auto-reply'
+import { createProvider, derekDailyTokenLimit, derekMaxAttempts, getDerekStatus, type DerekStatus } from './config'
 import { loadEvidence } from './evidence'
 import { analyseQuestion } from './guidance'
 import { DEREK_INSTRUCTIONS, type AiProvider, type EvidenceItem } from './provider'
-import { callProvider } from './runtime'
-import { assessDraft, assessQuestion, redactPersonalData } from './safeguards'
-import { tidyDraft } from './style'
+import { callProvider, type CallOutcome } from './runtime'
+import { assessDraft, assessQuestion, combineRisk, redactPersonalData } from './safeguards'
+import { CLARIFY_REPLY, classifyMessage, OFF_TOPIC_REPLY, RULES_PROVIDER_ID, scopeRisk } from './scope'
+
+const RULES_MODEL = 'derek-rules-1'
+import { styleIssues, tidyDraft } from './style'
 
 // Derek's draft lifecycle.
 //
@@ -36,6 +40,7 @@ export type WorkerOutcome =
   | { state: 'stale' }
   | { state: 'ineligible' } // provider policy forbids this student (no recorded 18+ confirmation)
   | { state: 'quota' } // provider's daily draft cap reached
+  | { state: 'taken_over' } // a team member is handling this conversation; Derek stays out
   | { state: 'superseded'; draftId: number }
   | { state: 'failed'; draftId: number; code: string }
   | { state: 'review'; draftId: number; risk: string }
@@ -46,6 +51,8 @@ export interface WorkerDeps {
   provider?: AiProvider | null
   callOptions?: Parameters<typeof callProvider>[2]
   loadEvidence?: (db: Pool, question: string) => Promise<EvidenceItem[]>
+  /** A team member asked for this draft, so it is prepared even in a taken-over conversation. */
+  manual?: boolean
 }
 
 const HISTORY_TURNS = 6
@@ -62,15 +69,45 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     if (!trigger || conv.status === 'resolved' || conv.student_status !== 'active') return null
     const [answered] = await selectRows(conn, "SELECT id FROM messages WHERE conversation_id = ? AND id > ? AND author_kind <> 'student' LIMIT 1", [conversationId, triggerMessageId])
     if (answered) return null
+    if (conv.ai_paused_by != null && !deps.manual) return 'taken_over' as const
+
+    // Scope guard, before any provider is contacted (lib/derek/scope.ts).
+    let classification = classifyMessage(String(trigger.body))
+    let fixed: string | null = classification.scope === 'off_topic' ? OFF_TOPIC_REPLY : null
+    if (classification.scope === 'greeting') {
+      const [lastTeam] = await selectRows(conn, "SELECT body FROM messages WHERE conversation_id = ? AND id < ? AND author_kind <> 'student' ORDER BY id DESC LIMIT 1", [conversationId, triggerMessageId])
+      // At most one clarifying question; after that a person decides.
+      if (String(lastTeam?.body ?? '') !== CLARIFY_REPLY) fixed = CLARIFY_REPLY
+      else classification = { ...classification, scope: 'unclear' }
+    }
+    if (fixed) {
+      const [res] = await conn.query("INSERT INTO ai_drafts (conversation_id, trigger_message_id, status, provider, model) VALUES (?, ?, 'generating', ?, ?)", [
+        conversationId,
+        triggerMessageId,
+        RULES_PROVIDER_ID,
+        RULES_MODEL,
+      ]).catch((e) => {
+        if (isDuplicate(e)) return ['duplicate'] as const
+        throw e
+      })
+      if (res === 'duplicate') return 'duplicate' as const
+      return { draftId: Number((res as { insertId: number }).insertId), question: String(trigger.body), classification, fixed }
+    }
+
     // External-provider policy, checked before anything leaves this server. The question stays in
     // the Live Inbox for a human either way.
     if (provider.policy?.requiresAdultStudent && conv.student_age_confirmed_at == null) return 'ineligible' as const
-    if (provider.policy?.external) {
-      // Serialise external claims on the settings row so concurrent workers cannot overshoot the cap.
-      await conn.query('SELECT id FROM support_settings WHERE id = 1 FOR UPDATE')
-      const [[used]] = await conn.query<Row[]>('SELECT COUNT(*) AS n FROM ai_drafts WHERE provider = ? AND created_at > UTC_TIMESTAMP(3) - INTERVAL 1 DAY', [provider.id])
-      if (Number(used.n) >= provider.policy.dailyDraftLimit) return 'quota' as const
-    }
+    // Serialise claims on the settings row so concurrent workers cannot overshoot the caps.
+    await conn.query('SELECT id FROM support_settings WHERE id = 1 FOR UPDATE')
+    const [[used]] = await conn.query<Row[]>(
+      `SELECT COALESCE(SUM(provider = ?), 0) AS drafts, COALESCE(SUM(COALESCE(input_tokens, 0) + COALESCE(output_tokens, 0)), 0) AS tokens
+         FROM ai_drafts WHERE created_at > UTC_TIMESTAMP(3) - INTERVAL 1 DAY`,
+      [provider.id],
+    )
+    if (provider.policy?.external && Number(used.drafts) >= provider.policy.dailyDraftLimit) return 'quota' as const
+    // Spend cap for every provider. shortcut: drafts still generating are not counted yet, so the
+    // overshoot is bounded by the drafts in flight; fine at LockIn's volume.
+    if (Number(used.tokens) >= derekDailyTokenLimit()) return 'quota' as const
     try {
       const [res] = await conn.query("INSERT INTO ai_drafts (conversation_id, trigger_message_id, status, provider, model) VALUES (?, ?, 'generating', ?, ?)", [
         conversationId,
@@ -78,7 +115,7 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
         provider.id,
         provider.model,
       ])
-      return { draftId: Number((res as { insertId: number }).insertId), question: String(trigger.body) }
+      return { draftId: Number((res as { insertId: number }).insertId), question: String(trigger.body), classification, fixed: null }
     } catch (e) {
       if (isDuplicate(e)) return 'duplicate' as const
       throw e
@@ -87,28 +124,34 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
   if (claim === 'duplicate') return { state: 'duplicate' }
   if (claim === 'ineligible') return { state: 'ineligible' }
   if (claim === 'quota') return { state: 'quota' }
+  if (claim === 'taken_over') return { state: 'taken_over' }
   if (!claim) return { state: 'stale' }
 
   // 2. Build the request from redacted text and verified evidence only. No lock is held during
-  //    the provider call.
-  const historyRows = await selectRows(
-    pool,
-    'SELECT author_kind, body FROM messages WHERE conversation_id = ? AND id < ? ORDER BY id DESC LIMIT ?',
-    [conversationId, triggerMessageId, HISTORY_TURNS],
-  )
-  const question = redactPersonalData(claim.question)
-  const evidence = await (deps.loadEvidence ?? loadEvidence)(pool, claim.question)
-  const history = historyRows.reverse().map((r) => ({ role: r.author_kind === 'student' ? ('student' as const) : ('team' as const), text: redactPersonalData(String(r.body)) }))
-  const guidance = analyseQuestion(
-    question,
-    evidence,
-    history.filter((h) => h.role === 'student').map((h) => h.text).join('\n'),
-  )
-  const outcome = await callProvider(
-    provider,
-    { question, history, evidence, instructions: DEREK_INSTRUCTIONS, guidance },
-    deps.callOptions ?? { maxAttempts: derekMaxAttempts() },
-  )
+  //    the provider call. A fixed reply needs neither evidence nor a provider.
+  let evidence: EvidenceItem[] = []
+  let outcome: CallOutcome
+  if (claim.fixed) outcome = { ok: true, result: { text: claim.fixed, model: RULES_MODEL }, attempts: 0, latencyMs: 0 }
+  else {
+    const historyRows = await selectRows(
+      pool,
+      'SELECT author_kind, body FROM messages WHERE conversation_id = ? AND id < ? ORDER BY id DESC LIMIT ?',
+      [conversationId, triggerMessageId, HISTORY_TURNS],
+    )
+    const question = redactPersonalData(claim.question)
+    evidence = await (deps.loadEvidence ?? loadEvidence)(pool, claim.question)
+    const history = historyRows.reverse().map((r) => ({ role: r.author_kind === 'student' ? ('student' as const) : ('team' as const), text: redactPersonalData(String(r.body)) }))
+    const guidance = analyseQuestion(
+      question,
+      evidence,
+      history.filter((h) => h.role === 'student').map((h) => h.text).join('\n'),
+    )
+    outcome = await callProvider(
+      provider,
+      { question, history, evidence, instructions: DEREK_INSTRUCTIONS, guidance },
+      deps.callOptions ?? { maxAttempts: derekMaxAttempts() },
+    )
+  }
 
   // 3. Record the result under the conversation lock.
   return inTransaction(pool, async (conn) => {
@@ -151,7 +194,12 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
       })
       return { state: 'failed', draftId: claim.draftId, code: 'invalid_response' }
     }
-    const risk = assessDraft(text.data, assessQuestion(claim.question, evidence), evidence, { modelUncertain: outcome.result.uncertain })
+    // A fixed reply states no facts, so only the question's high-risk topics carry over to it.
+    const asked = assessQuestion(claim.question, evidence)
+    const questionRisk = claim.fixed && asked.level !== 'high' ? { level: 'low' as const, reasons: [] } : asked
+    const risk = combineRisk(assessDraft(text.data, questionRisk, evidence, { modelUncertain: outcome.result.uncertain }), scopeRisk(claim.classification))
+    // Editorial findings are for the reviewer (and stop automatic sending); they do not raise the risk level.
+    if (!claim.fixed) risk.reasons.push(...styleIssues(text.data).map((s) => `Style: ${s}`))
     await conn.query(
       "INSERT INTO ai_draft_revisions (draft_id, revision, body, body_sha256, created_by_kind, created_by) VALUES (?, 1, ?, ?, 'derek', NULL)",
       [claim.draftId, text.data, sha256(text.data)],
@@ -172,16 +220,36 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
       ],
     )
 
-    // Automatic reply: every gate is re-read now, inside the lock, not when the job started.
-    const settings = await getSupportSettings(conn)
-    const stillLatest = Number(conv.last_student_message_id) === triggerMessageId
-    if (risk.level === 'low' && stillLatest && autoReplyActive(settings, getDerekStatus())) {
-      const messageId = await deliverDraft(conn, conv, claim.draftId, text.data, null)
+    // Automatic reply: every gate is re-read now, inside the lock, not when the job started. The
+    // newer-message and human-reply checks above already returned 'superseded'.
+    const decision = await decideAutoReply(conn, {
+      settings: await getSupportSettings(conn),
+      status: getDerekStatus(),
+      provider,
+      builtIn: claim.fixed != null,
+      conv,
+      risk: risk.level,
+      text: text.data,
+      evidence,
+    })
+    if (decision.send) {
+      const messageId = await deliverDraft(conn, conv, claim.draftId, text.data, null, {
+        provider: claim.fixed ? RULES_PROVIDER_ID : provider.id,
+        model: outcome.result.model.slice(0, 120),
+      })
       return { state: 'auto_sent', draftId: claim.draftId, messageId }
     }
+    const held = decision.heldReason
+    if (held) await conn.query('UPDATE ai_drafts SET hold_reason = ? WHERE id = ?', [held.slice(0, 300), claim.draftId])
 
     try {
-      await applyEvent(conn, { id: conversationId, status: conv.status }, { type: 'draft_needs_review' }, { kind: 'derek', id: null }, `Draft risk: ${risk.level}`)
+      await applyEvent(
+        conn,
+        { id: conversationId, status: conv.status },
+        { type: 'draft_needs_review' },
+        { kind: 'derek', id: null },
+        held ? `Automatic reply held: ${held}`.slice(0, 300) : `Draft risk: ${risk.level}`,
+      )
     } catch (e) {
       if (!(e instanceof TransitionError)) throw e
     }
@@ -189,8 +257,9 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
       audience: 'staff_support',
       kind: risk.level === 'low' ? 'draft_ready' : 'high_risk',
       conversationId,
-      title:
-        risk.level === 'low'
+      title: held
+        ? `Derek’s automatic reply in conversation #${conversationId} was held (${held}) — review before sending`
+        : risk.level === 'low'
           ? `Derek drafted a reply for conversation #${conversationId} — review before sending`
           : `${risk.level === 'high' ? 'High-risk' : 'Uncertain'} Derek draft in conversation #${conversationId} — human review required`,
       targetPath: `/admin/inbox/${conversationId}`,
@@ -200,7 +269,14 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
 }
 
 /** Inserts the Derek message for a draft. Caller holds the conversation lock. */
-async function deliverDraft(conn: PoolConnection, conv: Row, draftId: number, body: string, reviewer: AdminActor | null): Promise<number> {
+async function deliverDraft(
+  conn: PoolConnection,
+  conv: Row,
+  draftId: number,
+  body: string,
+  reviewer: AdminActor | null,
+  automatic?: { provider: string; model: string },
+): Promise<number> {
   const conversationId = Number(conv.id)
   let messageId: number
   try {
@@ -228,7 +304,7 @@ async function deliverDraft(conn: PoolConnection, conv: Row, draftId: number, bo
     actorRole: reviewer?.role ?? 'derek',
     reason: reviewer ? null : 'Automatic reply (offline mode)',
     before: { conversationStatus: conv.status },
-    after: { conversationId, conversationStatus: to, messageId, bodySha256: sha256(body), reviewedBy: reviewer?.userId ?? null },
+    after: { conversationId, conversationStatus: to, messageId, bodySha256: sha256(body), reviewedBy: reviewer?.userId ?? null, ...(automatic ?? {}) },
   })
   await createNotification(conn, {
     audience: 'user',
@@ -404,6 +480,8 @@ export interface DraftView {
   model: string | null
   usage: { inputTokens: number | null; outputTokens: number | null; latencyMs: number | null; attempts: number }
   errorCode: string | null
+  /** Why Auto Mode did not send this draft, if it was held. Staff only. */
+  holdReason: string | null
   editedByName: string | null
   approvedForCurrentRevision: boolean
   createdAt: string
@@ -455,6 +533,7 @@ export async function listDrafts(db: Pick<Pool, 'query'>, actor: AdminActor, con
       attempts: Number(r.attempts),
     },
     errorCode: r.error_code == null ? null : String(r.error_code),
+    holdReason: r.hold_reason == null ? null : String(r.hold_reason),
     editedByName: r.created_by_kind === 'staff' && r.edited_by_name != null ? String(r.edited_by_name) : null,
     approvedForCurrentRevision: Number(r.approved) === 1,
     createdAt: String(r.created_at),
@@ -471,7 +550,7 @@ export async function requestDraftForConversation(pool: Pool, actor: AdminActor,
   if (status.state !== 'ready') throw new SupportError(503, status.reasons.join(' '))
   const [conv] = await selectRows(pool, 'SELECT last_student_message_id FROM conversations WHERE id = ?', [conversationId])
   if (!conv) throw new SupportError(404, 'Conversation not found.')
-  const outcome = await prepareDerekDraft(pool, conversationId, Number(conv.last_student_message_id), { ...deps, status })
+  const outcome = await prepareDerekDraft(pool, conversationId, Number(conv.last_student_message_id), { ...deps, status, manual: true })
   if (outcome.state === 'duplicate') throw new SupportError(409, 'Derek has already drafted (or is drafting) a reply to this message.')
   if (outcome.state === 'stale') throw new SupportError(409, 'The latest message has already been answered.')
   if (outcome.state === 'ineligible')

@@ -6,7 +6,7 @@ import { EmptyState, PageHeader } from '@/components/admin/page-header'
 import { requireAdminPage } from '@/lib/admin/access'
 import { firstParam, formatUtc, positiveInt } from '@/lib/admin/view'
 import { getAdminPool } from '@/lib/db/pool'
-import { getInboxCounts, INBOX_PAGE_SIZE, listInbox } from '@/lib/support/conversations'
+import { getInboxCounts, INBOX_PAGE_SIZE, INBOX_VIEWS, listInbox, type InboxView } from '@/lib/support/conversations'
 import { CONVERSATION_STATUSES, isConversationStatus, STATUS_LABEL } from '@/lib/support/state'
 import { cn } from '@/lib/utils'
 
@@ -14,9 +14,12 @@ export const metadata: Metadata = { title: 'Live Inbox' }
 
 type Search = Promise<Record<string, string | string[] | undefined>>
 
-function href(params: { status?: string | null; unread?: boolean; page?: number }) {
+const VIEW_LABEL: Record<InboxView, string> = { held: 'Held by Derek', escalated: 'Escalated', taken_over: 'Taken over' }
+
+function href(params: { status?: string | null; view?: string | null; unread?: boolean; page?: number }) {
   const q = new URLSearchParams()
   if (params.status) q.set('status', params.status)
+  if (params.view) q.set('view', params.view)
   if (params.unread) q.set('unread', '1')
   if (params.page && params.page > 1) q.set('page', String(params.page))
   const s = q.toString()
@@ -28,23 +31,26 @@ export default async function InboxPage({ searchParams }: { searchParams: Search
   const sp = await searchParams
   const rawStatus = firstParam(sp.status)
   const status = isConversationStatus(rawStatus) ? rawStatus : null
+  const rawView = firstParam(sp.view)
+  const view = (INBOX_VIEWS as readonly string[]).includes(rawView ?? '') ? (rawView as InboxView) : null
   const unread = firstParam(sp.unread) === '1'
   const page = positiveInt(firstParam(sp.page)) ?? 1
   const db = getAdminPool()
-  const [{ rows, total }, counts] = await Promise.all([listInbox(db, actor, { status, unread, page }), getInboxCounts(db, actor)])
+  const [{ rows, total }, counts] = await Promise.all([listInbox(db, actor, { status, view, unread, page }), getInboxCounts(db, actor)])
   const pages = Math.max(1, Math.ceil(total / INBOX_PAGE_SIZE))
 
   const filters: { label: string; to: string; active: boolean; count?: number }[] = [
-    { label: 'All', to: href({}), active: !status && !unread },
-    { label: 'Unread', to: href({ unread: true }), active: unread && !status, count: counts.unread },
-    ...CONVERSATION_STATUSES.map((s) => ({ label: STATUS_LABEL[s], to: href({ status: s }), active: status === s && !unread, count: counts.byStatus[s] })),
+    { label: 'All', to: href({}), active: !status && !view && !unread },
+    { label: 'Unread', to: href({ unread: true }), active: unread && !status && !view, count: counts.unread },
+    ...INBOX_VIEWS.map((v) => ({ label: VIEW_LABEL[v], to: href({ view: v }), active: view === v && !unread, count: counts.byView[v] })),
+    ...CONVERSATION_STATUSES.map((s) => ({ label: STATUS_LABEL[s], to: href({ status: s }), active: status === s && !view && !unread, count: counts.byStatus[s] })),
   ]
 
   return (
     <>
       <PageHeader
         title="Live Inbox"
-        description="Student questions, newest activity first. Replies you send are labelled with your name. Derek drafts are never sent without review unless the owner has enabled automatic replies."
+        description="Student questions, newest activity first. Replies you send are labelled with your name. Derek drafts are never sent without review unless the owner has enabled automatic replies. Notifications are in-site only: held and escalated questions wait here until someone signs in."
       />
 
       <nav aria-label="Filter conversations">
@@ -88,6 +94,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Search
                       <span className={cn('truncate', r.unread && 'font-semibold')}>{`#${r.id} · ${r.subject}`}</span>
                     </Link>
                     {r.pendingDrafts ? <span className="mt-1 block pl-4 text-xs text-primary">Derek draft awaiting review</span> : null}
+                    {r.takenOver ? <span className="mt-1 block pl-4 text-xs text-muted-foreground">Taken over by a team member · Derek paused</span> : null}
                   </th>
                   <td className="px-4 py-3 text-muted-foreground">{r.studentName}</td>
                   <td className="px-4 py-3">
@@ -101,7 +108,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Search
         </div>
       ) : (
         <EmptyState>
-          {total === 0 && !status && !unread
+          {total === 0 && !status && !view && !unread
             ? 'No student conversations yet. Student accounts are not open, so this stays empty until they are.'
             : 'No conversations match this filter.'}
         </EmptyState>
@@ -110,7 +117,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Search
       {pages > 1 ? (
         <nav aria-label="Pagination" className="flex items-center justify-between gap-3">
           {page > 1 ? (
-            <Link href={href({ status, unread, page: page - 1 })} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+            <Link href={href({ status, view, unread, page: page - 1 })} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
               Newer
             </Link>
           ) : (
@@ -118,7 +125,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Search
           )}
           <span className="text-xs text-muted-foreground">{`Page ${page} of ${pages}`}</span>
           {page < pages ? (
-            <Link href={href({ status, unread, page: page + 1 })} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+            <Link href={href({ status, view, unread, page: page + 1 })} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
               Older
             </Link>
           ) : (

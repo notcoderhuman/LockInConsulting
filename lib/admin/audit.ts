@@ -46,6 +46,8 @@ export type LogAction =
   | 'support_grant'
   | 'support_revoke'
   | 'student_erase'
+  | 'ai_takeover'
+  | 'ai_return'
 
 export interface ChangeLogEntry {
   entityType: LogEntityType

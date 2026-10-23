@@ -60,6 +60,8 @@ Legend: `[x]` done and verified · `[~]` partial · `[ ]` not started
 11. Remove the Remote MySQL allow-list entry.
 
 ## Open items
+- Apply `db/migrations/0004_derek_handoff.sql` (`npm run db:migrate`) wherever this branch is deployed: `/admin` and `/support` report the database as unavailable until it is applied. Additive only; MariaDB 10.5 compatibility not yet run (R-013).
+- Before enabling Derek Auto Mode: an approved provider (none is: Gemini drafts only, the mock is refused in production), the 18+ decision (R-026), a currency spending cap from that provider's verified pricing (the token budget is not one), and a review of held/sent replies to extend the keyword lists (R-034).
 - Review and commit the R-029 fix (public directory reads only `public_*` views again) and R-030 restorations; decide on one package manager and the Windows build script (R-030)
 - Before `STUDENT_ACCOUNTS_ENABLED=true`: R-026 legal/privacy review, age and guardian-consent flow, privacy notice, retention period
 - Derek can only cite university-specific facts that are entered, reviewed and published in `/admin`. None are yet, so every fee, deadline or requirement question is answered as "not verified yet". The schema has no scholarship, living-cost or visa records, so those topics can never be sourced from the directory (D-036)

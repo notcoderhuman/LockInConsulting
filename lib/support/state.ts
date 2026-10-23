@@ -63,6 +63,9 @@ export const STATUS_LABEL: Record<ConversationStatus, string> = {
   failed: 'Needs intervention',
 }
 
+/** Shown under a student's latest message until someone replies. Team notifications are in-site only, so a person follows up when they next sign in. */
+export const STUDENT_ACKNOWLEDGEMENT = 'Your question has been received. A member of the LockIn team will follow up.'
+
 /** What the student sees. Internal review and failure states are never exposed as such. */
 export const STUDENT_STATUS_LABEL: Record<ConversationStatus, string> = {
   open: 'Waiting for the LockIn team',

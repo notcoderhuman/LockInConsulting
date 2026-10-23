@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { SignOutButton } from '@/components/admin/sign-out-button'
 import { SiteFooter } from '@/components/site/site-footer'
 import { SiteHeader } from '@/components/site/site-header'
 import { SkipLink } from '@/components/site/skip-link'
@@ -29,7 +30,7 @@ export default async function SupportPage({ searchParams }: { searchParams: Prom
           <p className="text-xs font-medium uppercase tracking-[0.28em] text-primary">Student support</p>
           <h1 className="font-serif text-4xl font-medium leading-[1.05] text-balance text-foreground md:text-5xl">Ask the LockIn team</h1>
           <p className="text-base leading-relaxed text-pretty text-muted-foreground">
-            Replies are always labelled: a person from the team, or Derek, our AI assistant, with the team member who reviewed it. No admission, scholarship or visa outcome is ever guaranteed.
+            Replies are always labelled: a named person from the team, or Derek, our AI assistant, either with the team member who reviewed the reply or as an automatic reply that no person reviewed. No admission, scholarship or visa outcome is ever guaranteed.
           </p>
         </div>
 
@@ -54,6 +55,9 @@ export default async function SupportPage({ searchParams }: { searchParams: Prom
         ) : ctx.state === 'forbidden' ? (
           <Card title="This account can’t use student support">
             <p>Team accounts and student accounts are kept separate. Sign in with a student account instead.</p>
+            <div>
+              <SignOutButton compact redirectTo="/support" />
+            </div>
           </Card>
         ) : ctx.state === 'signed_out' ? (
           <Card title="Sign in">
@@ -63,7 +67,12 @@ export default async function SupportPage({ searchParams }: { searchParams: Prom
             </div>
           </Card>
         ) : (
-          <StudentChat initialConversationId={initial} />
+          <>
+            <div className="-mt-4 flex justify-end">
+              <SignOutButton compact redirectTo="/support" />
+            </div>
+            <StudentChat initialConversationId={initial} />
+          </>
         )}
       </main>
       <SiteFooter />

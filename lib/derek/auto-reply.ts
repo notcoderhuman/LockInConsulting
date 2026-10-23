@@ -4,6 +4,7 @@ import { autoReplyActive, type SupportSettings } from '@/lib/support/settings'
 import type { DerekStatus } from './config'
 import type { AiProvider, EvidenceItem } from './provider'
 import type { RiskLevel } from './safeguards'
+import { styleIssues } from './style'
 
 // The last gate before Derek sends a reply that nobody reviewed ("Auto Mode", offline only).
 // Called by the draft worker inside the conversation lock, after the draft was checked against the
@@ -31,6 +32,7 @@ export function autoReplyContentBlockers(text: string, evidence: EvidenceItem[])
   // A link a student may follow must come from a verified record, never from the model's memory.
   if ((text.match(/https?:\/\/\S+/gi) ?? []).map(trimUrl).some((u) => !allowed.has(u))) reasons.push('Contains a link that is not from verified evidence')
   if (REFUSAL.test(text)) reasons.push('Reads like a refusal')
+  for (const issue of styleIssues(text)) reasons.push(`Style: ${issue}`)
   return reasons
 }
 
@@ -47,6 +49,8 @@ export async function decideAutoReply(
     settings: SupportSettings
     status: DerekStatus
     provider: AiProvider
+    /** LockIn's own fixed text (scope refusal, clarifying question): no model wrote it. */
+    builtIn?: boolean
     conv: Row
     risk: RiskLevel
     text: string
@@ -57,11 +61,14 @@ export async function decideAutoReply(
   if (!autoReplyActive(settings, status)) return { send: false, heldReason: null }
   if (input.risk !== 'low') return { send: false, heldReason: null } // already routed by risk
   const hold = (heldReason: string): AutoReplyDecision => ({ send: false, heldReason })
-  if (status.state !== 'ready' || status.providerId !== provider.id || provider.autoReply?.permitted !== true)
+  // Fixed replies still need Auto Mode fully on (checked above), but no provider clearance.
+  if (!input.builtIn && (status.state !== 'ready' || status.providerId !== provider.id || provider.autoReply?.permitted !== true))
     return hold('the provider that wrote this draft is not cleared for automatic replies')
+  if (conv.ai_paused_by != null) return hold('a team member has taken over this conversation')
   if (conv.status === 'resolved') return hold('the conversation was resolved')
   if (conv.student_status !== 'active') return hold('the student account is not active')
-  const content = autoReplyContentBlockers(input.text, input.evidence)
+  // LockIn's fixed texts are approved wording; the content checks are for model output.
+  const content = input.builtIn ? [] : autoReplyContentBlockers(input.text, input.evidence)
   if (content.length) return hold(content.join('; ').toLowerCase())
 
   await conn.query('SELECT id FROM support_settings WHERE id = 1 FOR UPDATE')

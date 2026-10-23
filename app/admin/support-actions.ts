@@ -10,7 +10,7 @@ import { recordHref } from '@/lib/admin/view'
 import { revokeMember, setSupportAccess } from '@/lib/admin/team'
 import { getAdminPool } from '@/lib/db/pool'
 import { approveAndSendDraft, editDraft, rejectDraft, requestDraftForConversation } from '@/lib/derek/drafts'
-import { eraseStudent, markStaffRead, setConversationStatus, staffReply } from '@/lib/support/conversations'
+import { eraseStudent, markStaffRead, returnToDerek, setConversationStatus, staffReply, takeOverConversation } from '@/lib/support/conversations'
 import { SupportError } from '@/lib/support/db'
 import { markNotificationsRead, staffViewer, syncOverdueReviewNotifications } from '@/lib/support/notifications'
 import { updateSupportSettings } from '@/lib/support/settings'
@@ -58,6 +58,20 @@ export async function replyAction(_prev: ActionState, form: FormData): Promise<A
       clientRequestId: formText(form, 'clientRequestId'),
     })
     return { message: duplicate ? 'This reply was already sent.' : 'Reply sent and saved.' }
+  })
+}
+
+export async function takeOverAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  return run('support.reply', async (actor) => {
+    await takeOverConversation(getAdminPool(), actor, conversationId(form))
+    return { message: 'You have taken over. Derek will not draft or send anything here until it is returned.' }
+  })
+}
+
+export async function returnToDerekAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  return run('support.review_ai', async (actor) => {
+    await returnToDerek(getAdminPool(), actor, conversationId(form))
+    return { message: 'Returned to Derek.' }
   })
 }
 

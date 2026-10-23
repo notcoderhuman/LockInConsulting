@@ -134,7 +134,7 @@ describe('Derek configuration fails closed', () => {
   it('permits automatic replies only with every gate open', () => {
     const drafting = getDerekStatus({ DEREK_AI_ENABLED: 'true', DEREK_PROVIDER: 'mock', NODE_ENV: 'test' })
     expect(drafting).toMatchObject({ state: 'ready', autoReply: { permitted: false } })
-    const cleared = getDerekStatus({ DEREK_AI_ENABLED: 'true', DEREK_PROVIDER: 'mock', NODE_ENV: 'test', DEREK_AUTO_REPLY_CLEARED: 'true' })
+    const cleared = getDerekStatus({ DEREK_AI_ENABLED: 'true', DEREK_PROVIDER: 'mock', NODE_ENV: 'test', DEREK_AUTO_REPLY_CLEARED: 'mock' })
     expect(cleared.autoReply.permitted).toBe(true)
     const on = { mode: 'offline' as const, autoReplyEnabled: true, updatedBy: null, updatedAt: '' }
     expect(autoReplyActive(on, cleared)).toBe(true)

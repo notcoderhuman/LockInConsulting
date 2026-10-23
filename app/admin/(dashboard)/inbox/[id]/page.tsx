@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ConversationBadge, RiskBadge } from '@/components/admin/conversation-badge'
 import { EmptyState, PageHeader, Panel } from '@/components/admin/page-header'
-import { DraftReviewForms, MarkConversationRead, ReplyForm, RequestDraftForm, StatusForm } from '@/components/admin/support-forms'
+import { DraftReviewForms, HandoverForm, MarkConversationRead, ReplyForm, RequestDraftForm, StatusForm } from '@/components/admin/support-forms'
 import { requireAdminPage } from '@/lib/admin/access'
 import { actorCan } from '@/lib/admin/roles'
 import { firstParam, formatUtc, positiveInt } from '@/lib/admin/view'
@@ -129,10 +129,16 @@ export default async function ConversationPage({ params, searchParams }: { param
             title="Derek"
             description={
               derek.state === 'ready'
-                ? [`Derek is enabled (provider: ${derek.providerId}). Drafts need review before they reach the student.`, ...derek.notes].join(' ')
+                ? [`Derek is enabled (provider: ${derek.providerId}). Drafts need review before they reach the student unless the owner has turned on automatic replies.`, ...derek.notes].join(' ')
                 : derek.reasons.join(' ')
             }
           >
+            {c.takenOver ? (
+              <p role="status" className="rounded-md border border-border bg-background px-3 py-2 text-xs leading-relaxed text-foreground">
+                {`Taken over by ${c.takenOver.byName} on ${formatUtc(c.takenOver.at)}. Derek starts no drafts for new messages and sends nothing automatically here until a reviewer returns it.`}
+              </p>
+            ) : null}
+            {(c.takenOver ? canReviewAi : canReply) ? <HandoverForm key={c.takenOver ? 'return' : 'take'} conversationId={id} takenOver={c.takenOver != null} /> : null}
             {canReviewAi && derek.state === 'ready' && awaitingAnswer && !openDraft ? <RequestDraftForm conversationId={id} /> : null}
             {drafts.length ? (
               <ul className="flex flex-col gap-4">
@@ -146,6 +152,7 @@ export default async function ConversationPage({ params, searchParams }: { param
                     <p className="text-xs leading-relaxed text-muted-foreground">
                       {`Answers message #${d.answers.messageId}: “${d.answers.excerpt}${d.answers.excerpt.length >= 160 ? '…' : ''}”`}
                     </p>
+                    {d.holdReason ? <p className="text-xs font-medium text-foreground">{`Automatic reply held: ${d.holdReason}`}</p> : null}
                     {d.riskReasons.length ? (
                       <ul className="list-disc pl-5 text-xs leading-relaxed text-muted-foreground">
                         {d.riskReasons.map((r) => (

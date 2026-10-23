@@ -1,4 +1,4 @@
-import { ProviderError, UNCERTAIN_MARKER, type AiProvider, type DraftRequest, type DraftResult, type ProviderPolicy } from '../provider'
+import { ProviderError, UNCERTAIN_MARKER, type AiProvider, type AutoReplyCapability, type DraftRequest, type DraftResult, type ProviderPolicy } from '../provider'
 
 // Google Gemini API adapter (REST `models.generateContent`), checked 21 Oct 2026 against
 // https://ai.google.dev/gemini-api/docs/models (gemini-3.5-flash-lite: Stable),
@@ -110,9 +110,16 @@ export function parseGeminiResponse(body: unknown, fallbackModel: string): Draft
 }
 
 export class GeminiProvider implements AiProvider {
+  // Drafts only (D-035, R-027): whether Google's terms allow unreviewed replies to LockIn's
+  // students is unresolved, so this adapter never permits them, whatever the configuration says.
+  static readonly autoReply: AutoReplyCapability = {
+    permitted: false,
+    reason: 'Automatic replies are not approved for Gemini: Derek only prepares drafts for human review.',
+  }
   readonly id = 'gemini'
   readonly model: string
   readonly policy: ProviderPolicy
+  readonly autoReply = GeminiProvider.autoReply
   readonly #apiKey: string
   readonly #fetch: typeof fetch
 

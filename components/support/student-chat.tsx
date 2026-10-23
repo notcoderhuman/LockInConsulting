@@ -76,6 +76,7 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
   const [threadState, setThreadState] = useState<Load>('ready')
   const [subject, setSubject] = useState('')
   const [statusLabel, setStatusLabel] = useState('')
+  const [acknowledgement, setAcknowledgement] = useState<string | null>(null)
   const [pending, setPending] = useState<Pending[]>([])
   const [draft, setDraft] = useState('')
   const [loadingOlder, setLoadingOlder] = useState(false)
@@ -95,9 +96,10 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
       if (!quiet) setThreadState(r.status === 404 ? 'error' : stateFor(r.status))
       return
     }
-    const conv = r.data.conversation as { subject: string; statusLabel: string }
+    const conv = r.data.conversation as { subject: string; statusLabel: string; acknowledgement?: string | null }
     setSubject(conv.subject)
     setStatusLabel(conv.statusLabel)
+    setAcknowledgement(conv.acknowledgement ?? null)
     setMessages((prev) => {
       const latest = r.data.messages as Message[]
       // Keep older pages the student already loaded.
@@ -118,6 +120,7 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
   useEffect(() => {
     setMessages([])
     setPending([])
+    setAcknowledgement(null)
     if (selected == null) return
     void loadThread(selected)
     const t = setInterval(() => document.visibilityState !== 'hidden' && loadThread(selected, { quiet: true }), POLL_MS)
@@ -220,7 +223,9 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
         {selected == null ? (
           <div className="flex flex-col gap-1">
             <h2 className="font-serif text-2xl text-foreground">Ask the LockIn team</h2>
-            <p className="text-sm leading-relaxed text-muted-foreground">A person from the team reads every question. Please don’t share passport numbers, bank details or other sensitive documents here.</p>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Ask about universities, courses, admissions or studying abroad. The LockIn team reads your questions; Derek, LockIn’s AI assistant, may answer some of them, and his replies are always labelled. Please don’t share passport numbers, bank details or other sensitive documents here.
+            </p>
           </div>
         ) : (
           <div className="flex flex-col gap-1">
@@ -274,6 +279,11 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
               </li>
             ))}
           </ol>
+          {acknowledgement && !pending.length && threadState === 'ready' ? (
+            <p role="status" className="self-end text-xs text-muted-foreground">
+              {acknowledgement}
+            </p>
+          ) : null}
           <div ref={bottomRef} />
         </div>
 

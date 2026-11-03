@@ -1,6 +1,7 @@
 import type { Pool, PoolConnection, Connection, RowDataPacket } from 'mysql2/promise'
 import { convertToInr, type StoredFxRate } from '@/lib/data/money'
 import type {
+  DirectoryEntry,
   IsoDate,
   PublicAcceptanceRate,
   PublicCourse,
@@ -33,15 +34,107 @@ function numOrNull(v: unknown): number | null {
   return v == null ? null : Number(v)
 }
 
+// The public page lists at most 50 universities, 5 at a time, loaded from the server.
+export const DIRECTORY_PAGE_SIZE = 5
+export const DIRECTORY_MAX = 50
+
+// Order: the latest published overall QS rank or band — only when QS is licensed (the public view
+// enforces that, D-014) AND the owner recorded that the licence covers ordering (allow_ordering,
+// D-042) — then name, then id so pages never overlap or skip. A provisional entry has no public
+// ranking, so it sorts by name; a card keeps its place when it becomes verified unless it gains a rank.
+const qsRank = (alias: string) => `(SELECT COALESCE(r.rank_position, r.rank_band_low)
+     FROM public_university_rankings r JOIN ranking_providers p ON p.id = r.provider_id
+    WHERE r.university_id = ${alias}.id AND p.slug = 'qs' AND r.subject = '' AND r.allow_ordering = 1
+    ORDER BY r.ranking_year DESC LIMIT 1)`
+const order = (alias: string) => `ORDER BY qs_rank IS NULL, qs_rank, ${alias}.name, ${alias}.id`
+
+/**
+ * One page of the public directory (verified and provisional entries together, D-043), plus how many
+ * entries exist in all (capped at 50) and how many of those are verified. Reads only
+ * public_directory_listings / public_provisional_universities / the public_* detail views.
+ */
+export async function fetchDirectoryPage(
+  db: Queryable,
+  iso2: string,
+  today: IsoDate,
+  offset: number,
+): Promise<{ entries: DirectoryEntry[]; total: number; verifiedTotal: number; otherTotal: number }> {
+  const [count] = await select(
+    db,
+    `SELECT COUNT(*) AS n, COALESCE(SUM(listing_state = 'verified'), 0) AS verified,
+            (SELECT COUNT(*) FROM public_provisional_universities p WHERE p.destination_iso2 = ? AND p.institution_category = 'other') AS other
+       FROM public_directory_listings WHERE destination_iso2 = ?`,
+    [iso2, iso2],
+  )
+  const total = Math.min(Number(count.n), DIRECTORY_MAX)
+  const limit = Math.max(0, Math.min(DIRECTORY_PAGE_SIZE, total - offset))
+  const verifiedTotal = Number(count.verified)
+  // shortcut: past the 50 cap the split counts the whole destination, not only the 50 shown; no destination is mixed and over 50 today.
+  const otherTotal = Math.min(Number(count.other), total)
+  if (!limit) return { entries: [], total, verifiedTotal, otherTotal }
+
+  const rows = await select(
+    db,
+    `SELECT l.id, l.listing_state, ${qsRank('l')} AS qs_rank FROM public_directory_listings l WHERE l.destination_iso2 = ? ${order('l')} LIMIT ? OFFSET ?`,
+    [iso2, limit, offset],
+  )
+  const ids = (state: string) => rows.filter((r) => r.listing_state === state).map((r) => Number(r.id))
+  const verifiedIds = ids('verified')
+  const provisionalIds = ids('provisional')
+  const [verified, provisional] = await Promise.all([
+    verifiedIds.length ? fetchDestinationDirectory(db, iso2, today, verifiedIds) : Promise.resolve([]),
+    provisionalIds.length ? select(db, 'SELECT * FROM public_provisional_universities WHERE id IN (?)', [provisionalIds]) : Promise.resolve([]),
+  ])
+  const byId = new Map<number, DirectoryEntry>([
+    ...verified.map((u): [number, DirectoryEntry] => [u.id, { ...u, listing: 'verified' }]),
+    ...provisional.map((p): [number, DirectoryEntry] => [Number(p.id), toProvisional(p)]),
+  ])
+  // A row that changed state between the two reads is skipped rather than shown wrongly.
+  return { entries: rows.map((r) => byId.get(Number(r.id))).filter((e): e is DirectoryEntry => e !== undefined), total, verifiedTotal, otherTotal }
+}
+
+// Identity fields only — the type has no room for courses, fees, rankings or requirements.
+function toProvisional(p: Row): DirectoryEntry {
+  return {
+    listing: 'provisional',
+    id: Number(p.id),
+    slug: str(p.slug),
+    name: str(p.name),
+    identityStatus: p.identity_status === 'checked' ? 'checked' : 'pending',
+    category: p.institution_category === 'other' ? 'other' : 'university',
+    officialWebsite: strOrNull(p.official_website),
+    city: strOrNull(p.city),
+    identityCheckedAt: strOrNull(p.identity_checked_at),
+  }
+}
+
+/**
+ * One listed university by destination + slug, for its profile page: the same entry the directory
+ * would show (verified or provisional), read from the same public views. Not listed → null.
+ */
+export async function fetchUniversityProfile(db: Queryable, iso2: string, slug: string, today: IsoDate): Promise<DirectoryEntry | null> {
+  const [row] = await select(db, 'SELECT id, listing_state FROM public_directory_listings WHERE destination_iso2 = ? AND slug = ? LIMIT 1', [iso2, slug])
+  if (!row) return null
+  const id = Number(row.id)
+  if (row.listing_state === 'verified') {
+    const [u] = await fetchDestinationDirectory(db, iso2, today, [id])
+    return u ? { ...u, listing: 'verified' } : null
+  }
+  const [p] = await select(db, 'SELECT * FROM public_provisional_universities WHERE id = ?', [id])
+  return p ? toProvisional(p) : null
+}
+
+/** Verified, published universities with their approved details (all of a destination, or the given ids). */
 export async function fetchDestinationDirectory(
   db: Queryable,
   iso2: string,
   today: IsoDate,
+  ids?: number[],
 ): Promise<PublicUniversity[]> {
   const universities = await select(
     db,
-    'SELECT * FROM public_universities WHERE destination_iso2 = ? ORDER BY name',
-    [iso2],
+    `SELECT u.*, ${qsRank('u')} AS qs_rank FROM public_universities u WHERE u.destination_iso2 = ?${ids ? ' AND u.id IN (?)' : ''} ${order('u')}`,
+    ids ? [iso2, ids] : [iso2],
   )
   if (universities.length === 0) return []
   const uniIds = universities.map((u) => Number(u.id))
@@ -158,6 +251,8 @@ export async function fetchDestinationDirectory(
     position: numOrNull(r.rank_position),
     bandLow: numOrNull(r.rank_band_low),
     bandHigh: numOrNull(r.rank_band_high),
+    attribution: strOrNull(r.attribution_text),
+    aiUseAllowed: Number(r.allow_ai_use) === 1,
     source: ref(r),
   }))
 

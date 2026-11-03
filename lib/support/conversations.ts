@@ -1,11 +1,15 @@
 import type { Pool, PoolConnection } from 'mysql2/promise'
 import { appendChangeLog } from '@/lib/admin/audit'
 import { actorCan, type AdminActor } from '@/lib/admin/roles'
+import { getDerekStatus } from '@/lib/derek/config'
+import { classifyMessage, isSmallTalk } from '@/lib/derek/scope'
 import type { StudentActor } from '@/lib/student/access'
 import { attributionLabel, type AuthorKind } from './attribution'
 import { assertActor, inTransaction, isDuplicate, selectRows, sha256, SupportError, type Row } from './db'
 import { createNotification, markConversationNotificationsRead, staffViewer } from './notifications'
-import { isConversationStatus, nextStatus, STUDENT_ACKNOWLEDGEMENT, STUDENT_STATUS_LABEL, TransitionError, type ConversationEvent, type ConversationStatus } from './state'
+import { getTeamPresence } from './presence'
+import { autoReplyActive, getSupportSettings } from './settings'
+import { DEREK_FAILED, DEREK_PENDING_SECONDS, DEREK_WRITING, isConversationStatus, nextStatus, STUDENT_ACKNOWLEDGEMENT, STUDENT_STATUS_LABEL, TransitionError, type ConversationEvent, type ConversationStatus } from './state'
 import { deriveSubject, newConversationInput, newMessageInput, reasonText } from './validation'
 
 // Conversations and messages. Ownership and permissions are checked here, on the server, for
@@ -165,8 +169,11 @@ export async function sendStudentMessage(pool: Pool, student: StudentActor, conv
       'UPDATE conversations SET last_student_message_id = ?, student_last_read_id = GREATEST(student_last_read_id, ?), last_message_at = UTC_TIMESTAMP(3) WHERE id = ?',
       [messageId, messageId, conversationId],
     )
-    // Pending drafts answered an earlier message; they must not be approved for this conversation now.
-    await conn.query("UPDATE ai_drafts SET status = 'superseded' WHERE conversation_id = ? AND status IN ('generating', 'ready')", [conversationId])
+    // Pending drafts answered an earlier message; a new question means they must not be approved
+    // now. A greeting or thanks changes nothing they say, so they stay valid (and the earlier
+    // question stays in the review queue) instead of being hidden by small talk.
+    if (!isSmallTalk(classifyMessage(data.body)))
+      await conn.query("UPDATE ai_drafts SET status = 'superseded' WHERE conversation_id = ? AND status IN ('generating', 'ready')", [conversationId])
     await applyEvent(conn, { id: conversationId, status: conv.status }, { type: 'student_message' }, { kind: 'student', id: student.userId })
     await createNotification(conn, {
       audience: 'staff_support',
@@ -224,7 +231,7 @@ async function readMessages(db: Db, conversationId: number, before: number | nul
     db,
     `SELECT m.id, m.author_kind, m.author_user_id, m.reviewed_by, m.body, m.created_at,
             au.name AS author_name, rv.name AS reviewer_name, sp.display_name AS student_name,
-            (r.created_by_kind = 'staff') AS edited_by_human
+            (r.created_by_kind = 'staff') AS edited_by_human, d.provider AS draft_provider
        FROM messages m
        LEFT JOIN auth_user au ON au.id = m.author_user_id AND m.author_kind = 'staff'
        LEFT JOIN auth_user rv ON rv.id = m.reviewed_by
@@ -250,6 +257,7 @@ function toView(r: Row, viewer: 'student' | 'staff', viewerUserId: string): Mess
         authorName: authorKind === 'student' ? (r.student_name == null ? null : String(r.student_name)) : r.author_name == null ? null : String(r.author_name),
         reviewedByName: r.reviewer_name == null ? (r.reviewed_by == null ? null : 'a LockIn team member') : String(r.reviewer_name),
         editedByHuman: Number(r.edited_by_human) === 1,
+        testOnly: r.draft_provider === 'mock',
       },
       viewer,
     ),
@@ -262,7 +270,7 @@ function toView(r: Row, viewer: 'student' | 'staff', viewerUserId: string): Mess
 export async function getStudentMessages(db: Db, student: StudentActor, conversationId: number, { before = null, limit = 30 }: { before?: number | null; limit?: number } = {}) {
   const conv = await selectRows(
     db,
-    `SELECT c.id, c.subject, c.status, c.last_student_message_id,
+    `SELECT c.id, c.subject, c.status, c.last_student_message_id, c.ai_paused_by,
             (SELECT MAX(m.id) FROM messages m WHERE m.conversation_id = c.id AND m.author_kind <> 'student') AS last_reply_id
        FROM conversations c WHERE c.id = ? AND c.student_profile_id = ?`,
     [conversationId, student.profileId],
@@ -270,15 +278,42 @@ export async function getStudentMessages(db: Db, student: StudentActor, conversa
   if (!conv[0]) throw new SupportError(404, 'Conversation not found.')
   const { rows, hasMore } = await readMessages(db, conversationId, before, limit)
   const status = String(conv[0].status)
-  // The student's latest message has no reply yet (held for review, escalated, failed, or simply
-  // waiting): say plainly that a person will follow up. Never why, and never any internal state.
+  // The student's latest message has no reply yet. Say what happens next in plain words: Derek is
+  // writing (he may answer in a moment), he could not, or a person will follow up. Never why it
+  // was held, and never any internal risk or review state.
   const waiting = status !== 'resolved' && Number(conv[0].last_student_message_id) > Number(conv[0].last_reply_id ?? 0)
+  // What Derek is answering: the latest unanswered message that is not small talk ("thanks" after a
+  // question waits for the question's answer), else the latest message.
+  const unanswered = waiting
+    ? await selectRows(
+        db,
+        `SELECT m.id, m.body, m.created_at > UTC_TIMESTAMP(3) - INTERVAL ${DEREK_PENDING_SECONDS} SECOND AS recent,
+                (SELECT d.status FROM ai_drafts d WHERE d.trigger_message_id = m.id) AS draft_status
+           FROM messages m WHERE m.conversation_id = ? AND m.author_kind = 'student' AND m.id > ? ORDER BY m.id DESC LIMIT 20`,
+        [conversationId, Number(conv[0].last_reply_id ?? 0)],
+      )
+    : []
+  const target = unanswered.find((m) => !isSmallTalk(classifyMessage(String(m.body)))) ?? unanswered[0]
+  const draft = target?.draft_status == null ? null : String(target.draft_status)
+  let derekWriting =
+    Boolean(target) && conv[0].ai_paused_by == null && status !== 'awaiting_human_review' && status !== 'failed' && (draft === 'generating' || (draft == null && Number(target.recent) === 1))
+  if (derekWriting) {
+    // Only promise a reply Derek may actually send now: LockIn's fixed replies, or any low-risk
+    // answer when the provider is cleared. Otherwise the usual "a person will follow up".
+    const derek = getDerekStatus()
+    const settings = await getSupportSettings(db)
+    const fixed = ['greeting', 'thanks', 'off_topic'].includes(classifyMessage(String(target.body)).scope)
+    derekWriting =
+      derek.state === 'ready' && settings.autoReplyEnabled && (fixed || autoReplyActive(settings, derek)) && (await getTeamPresence(db)).state === 'offline' // else a person answers
+  }
   return {
     conversation: {
       id: conversationId,
       subject: String(conv[0].subject),
       statusLabel: isConversationStatus(status) ? STUDENT_STATUS_LABEL[status] : 'Waiting for the LockIn team',
-      acknowledgement: waiting ? STUDENT_ACKNOWLEDGEMENT : null,
+      acknowledgement: !waiting ? null : derekWriting ? DEREK_WRITING : draft === 'failed' ? DEREK_FAILED : STUDENT_ACKNOWLEDGEMENT,
+      /** The client checks back quickly while true. */
+      replyPending: derekWriting,
     },
     messages: rows.map((r) => toView(r, 'student', student.userId)),
     hasMore,
@@ -445,6 +480,14 @@ export async function staffReply(pool: Pool, actor: AdminActor, conversationId: 
       [conversationId, data.clientRequestId],
     )
     if (dup[0]) return { messageId: Number(dup[0].id), duplicate: true }
+    // Derek may have answered automatically (e.g. a handoff) after this person opened the
+    // conversation: never send a second answer on top without them reading his first.
+    const rawSeen = (input as { seenUpToId?: unknown } | null)?.seenUpToId
+    const seen = rawSeen === '' || rawSeen == null ? NaN : Number(rawSeen)
+    if (Number.isSafeInteger(seen) && seen >= 0) {
+      const [auto] = await selectRows(conn, "SELECT id FROM messages WHERE conversation_id = ? AND id > ? AND author_kind = 'derek' AND reviewed_by IS NULL LIMIT 1", [conversationId, seen])
+      if (auto) throw new SupportError(409, 'Derek has just answered this automatically. Read his reply first, then send yours if it is still needed.')
+    }
     const [msg] = await conn.query(
       "INSERT INTO messages (conversation_id, author_kind, author_user_id, body, client_request_id) VALUES (?, 'staff', ?, ?, ?)",
       [conversationId, actor.userId, data.body, data.clientRequestId],
@@ -473,7 +516,7 @@ export async function staffReply(pool: Pool, actor: AdminActor, conversationId: 
       kind: 'staff_reply',
       conversationId,
       title: 'The LockIn team replied to your question',
-      targetPath: `/support?c=${conversationId}`,
+      targetPath: `/chat?c=${conversationId}`,
     })
     return { messageId, duplicate: false }
   })

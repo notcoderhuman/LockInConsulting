@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto'
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import mysql from 'mysql2/promise'
+import { SESSION_SETUP } from '../lib/db/session.mjs'
 import { describeServer, probeAdvice, probeDdlCapabilities } from './db-capabilities.mjs'
 
 export const MIGRATIONS_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'db', 'migrations')
@@ -32,20 +32,27 @@ export async function migrate(connection, migrations) {
     applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   ) ENGINE=InnoDB`)
 
-  const [rows] = await connection.query('SELECT name, checksum FROM schema_migrations')
-  const applied = new Map(rows.map((r) => [r.name, r.checksum]))
-  const pending = []
-  for (const m of migrations) {
-    const previous = applied.get(m.name)
-    if (!previous) pending.push(m)
-    else if (previous !== m.checksum)
-      throw new Error(`Migration ${m.name} was modified after being applied. Create a new migration instead.`)
+  const findPending = async () => {
+    const [rows] = await connection.query('SELECT name, checksum FROM schema_migrations')
+    const applied = new Map(rows.map((r) => [r.name, r.checksum]))
+    const pending = []
+    for (const m of migrations) {
+      const previous = applied.get(m.name)
+      if (!previous) pending.push(m)
+      else if (previous !== m.checksum)
+        throw new Error(`Migration ${m.name} was modified after being applied. Create a new migration instead.`)
+    }
+    return pending
   }
-  if (!pending.length) return []
+  if (!(await findPending()).length) return []
 
   const [lockRows] = await connection.query("SELECT GET_LOCK('lockin_schema_migrate', 0) AS got")
   if (Number(lockRows[0]?.got) !== 1) throw new Error('Another migration run holds the lock. Wait for it to finish.')
   try {
+    // Read again under the lock: another process may have finished between the first read and here.
+    const pending = await findPending()
+    if (!pending.length) return []
+
     // DDL auto-commits, so prove every required feature works for this user BEFORE changing
     // anything, rather than discovering a refused CREATE TRIGGER halfway through 0002.
     const probe = await probeDdlCapabilities(connection)
@@ -82,8 +89,11 @@ if (isCli) {
     console.error('DATABASE_URL is not set.')
     process.exit(1)
   }
+  // Imported here because a deployed server loads this file from disk, where it cannot resolve mysql2.
+  const { default: mysql } = await import('mysql2/promise')
   const connection = await mysql.createConnection({ uri: url, multipleStatements: true })
   try {
+    await connection.query(SESSION_SETUP)
     const ran = await migrate(connection, await loadMigrations())
     console.log(ran.length ? `Applied: ${ran.join(', ')}` : 'Database is up to date.')
   } catch (e) {

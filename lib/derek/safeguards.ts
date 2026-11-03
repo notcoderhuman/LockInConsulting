@@ -70,12 +70,17 @@ export function redactPersonalData(text: string): string {
     .replace(/\b[A-Z][0-9]{7}\b/g, '[document number removed]')
 }
 
-export function assessQuestion(question: string, evidence: EvidenceItem[]): RiskAssessment {
+/**
+ * `general`: the question asks how something usually works rather than for a named university's
+ * fact (lib/derek/guidance.ts). Its answer carries no figures, and assessDraft still rejects any
+ * figure that is not in the evidence, so missing evidence alone is no reason to hold it.
+ */
+export function assessQuestion(question: string, evidence: EvidenceItem[], { general = false }: { general?: boolean } = {}): RiskAssessment {
   let level: RiskLevel = 'low'
   const reasons: string[] = []
   for (const [re, label] of HIGH_RISK_TOPICS) if (re.test(question)) (level = worst(level, 'high')), reasons.push(label)
   for (const [re, label] of UNCERTAIN_TOPICS) if (re.test(question)) (level = worst(level, 'uncertain')), reasons.push(label)
-  for (const [re, label, evidenceRe] of FACT_TOPICS) {
+  if (!general) for (const [re, label, evidenceRe] of FACT_TOPICS) {
     if (re.test(question) && !evidence.some((e) => evidenceRe.test(e.ref) || evidenceRe.test(e.text))) {
       level = worst(level, 'uncertain')
       reasons.push(`No verified evidence for ${label}`)

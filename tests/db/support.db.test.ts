@@ -33,11 +33,12 @@ const W = await import('@/lib/admin/workflow')
 const { loadEvidence } = await import('@/lib/derek/evidence')
 const { MockProvider } = await import('@/lib/derek/providers/mock')
 const { AUTO_REPLY_LIMITS } = await import('@/lib/derek/auto-reply')
-const { CLARIFY_REPLY, OFF_TOPIC_REPLY } = await import('@/lib/derek/scope')
+const { GREETING_REPLY, OFF_TOPIC_REPLY, THANKS_REPLY } = await import('@/lib/derek/scope')
 const { DIRECTORY_LABEL } = await import('@/lib/derek/provider')
 const { unsupportedFigures } = await import('@/lib/derek/safeguards')
 const { CONVERSATION_STATUSES } = await import('@/lib/support/state')
 const { verifyAuditChain } = await import('@/lib/admin/audit')
+const O = await import('@/lib/student/onboarding')
 const { resolveAdminContext } = await import('@/lib/admin/access')
 const { resolveStudentContext } = await import('@/lib/student/access')
 const { getAuth } = await import('@/lib/auth')
@@ -120,12 +121,13 @@ afterAll(async () => {
 })
 
 describe('schema 0003', () => {
-  it('keeps conversation statuses in sync with the state machine and starts in human-only mode', async () => {
+  it('keeps conversation statuses in sync with the state machine; automatic replies start on (0005)', async () => {
     const [col] = await rows<{ COLUMN_TYPE: string }>(
       "SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'conversations' AND COLUMN_NAME = 'status'",
     )
     expect([...col.COLUMN_TYPE.matchAll(/'([^']+)'/g)].map((m) => m[1])).toEqual([...CONVERSATION_STATUSES])
-    expect(await S.getSupportSettings(pool())).toMatchObject({ mode: 'online', autoReplyEnabled: false })
+    // On by default since 0005, but nothing a model wrote is sent until the provider is cleared.
+    expect(await S.getSupportSettings(pool())).toMatchObject({ mode: 'online', autoReplyEnabled: true })
   })
 
   it('refuses a Derek message without a draft and a human message carrying a draft', async () => {
@@ -197,6 +199,87 @@ describe('identity separation', () => {
     }
   })
 
+  it('routes students through /auth to /chat, keeps /admin separate, and hands over through the student’s own chat', async () => {
+    const env = { STUDENT_ACCOUNTS_ENABLED: 'true', DEREK_AI_ENABLED: 'true', DEREK_PROVIDER: 'mock', DEREK_AUTO_REPLY_CLEARED: 'mock' }
+    Object.assign(process.env, env)
+    const chatPage = (await import('@/app/chat/page')).default
+    const authPage = (await import('@/app/auth/page')).default
+    const supportPage = (await import('@/app/support/page')).default
+    const adminPresence = await import('@/app/api/admin/presence/route')
+    const studentPresence = await import('@/app/api/student/presence/route')
+    const sp = (q: Record<string, string>) => ({ searchParams: Promise.resolve(q) })
+    const redirectOf = async (p: Promise<unknown>) => {
+      try {
+        await p
+        return null
+      } catch (e) {
+        return String((e as Error).message).replace(/^NEXT_REDIRECT:/, '')
+      }
+    }
+    const as = (cookie: string) => (requestState.headers = new Headers(cookie ? { cookie } : {}))
+    try {
+      await S.updateSupportSettings(pool(), owner, { autoReplyEnabled: true })
+      // Signed out: /chat sends the student to /auth and back to the same conversation afterwards.
+      as('')
+      expect(await redirectOf(chatPage(sp({})))).toBe('/auth?next=%2Fchat')
+      expect(await redirectOf(chatPage(sp({ c: '42' })))).toBe('/auth?next=%2Fchat%3Fc%3D42')
+      expect(await redirectOf(authPage(sp({ next: '//evil.example/x' })))).toBeNull() // shows the sign-in tabs
+      // Signed in: /auth goes straight to /chat, and only ever to /chat (no open redirect).
+      as(studentCookie)
+      for (const [next, to] of [['/chat?c=7', '/chat?c=7'], ['https://evil.example', '/chat'], ['//evil.example', '/chat'], ['/admin', '/chat'], ['/chat?c=1&x=//e', '/chat']])
+        expect(await redirectOf(authPage(sp({ next }))), next).toBe(to)
+      expect(await redirectOf(chatPage(sp({})))).toBeNull()
+      // Old /support links keep working.
+      expect(await redirectOf(supportPage(sp({ c: '9' })))).toBe('/chat?c=9')
+      expect(await redirectOf(supportPage(sp({ error: 'access_denied' })))).toBe('/auth?error=access_denied&next=%2Fchat')
+      expect(await redirectOf(supportPage(sp({})))).toBe('/chat')
+      // Staff stay in /admin: a team account is not sent into the student chat.
+      as(staffCookie)
+      expect(await redirectOf(chatPage(sp({})))).toBeNull() // renders "This account can’t use the student chat"
+      expect(await resolveAdminContext(new Headers({ cookie: staffCookie }))).toMatchObject({ state: 'ok', actor: { role: 'reviewer' } })
+
+      // Presence: only staff with support access can write it, students only read it.
+      const beat = (cookie: string, origin = ORIGIN) =>
+        adminPresence.POST(new Request(`${ORIGIN}/api/admin/presence`, { method: 'POST', headers: { cookie, origin, 'content-type': 'application/json' }, body: '{}' }))
+      expect((await beat('')).status).toBe(401)
+      expect((await beat(studentCookie)).status).toBe(403)
+      expect((await beat(staffCookie, 'https://evil.example')).status).toBe(403)
+      expect((await beat(staffCookie)).status).toBe(204)
+      const presence = async () => (await studentPresence.GET(new Request(`${ORIGIN}/api/student/presence`, { headers: { cookie: studentCookie } }))).json()
+      expect(await presence()).toEqual({ state: 'online', name: 'Staff', derekAvailable: true })
+      expect((await studentPresence.GET(new Request(`${ORIGIN}/api/student/presence`))).status).toBe(401)
+
+      // A question while Staff is online waits for a person…
+      const created = await (
+        await conversationsRoute.POST(
+          new Request(`${ORIGIN}/api/student/conversations`, {
+            method: 'POST',
+            headers: { cookie: studentCookie, origin: ORIGIN, 'content-type': 'application/json' },
+            body: JSON.stringify({ body: 'What is a statement of purpose?', clientRequestId: rid() }),
+          }),
+        )
+      ).json()
+      const id = Number(created.conversationId)
+      await vi.waitFor(async () => expect((await rows<{ status: string }>('SELECT status FROM ai_drafts WHERE conversation_id = ?', [id]))[0]?.status).toBe('ready'), { timeout: 10_000 })
+      const read = async () => (await messagesRoute.GET(new Request(`${ORIGIN}/api/student/conversations/${id}/messages`, { headers: { cookie: studentCookie } }), { params: Promise.resolve({ id: String(id) }) })).json()
+      expect((await read()).messages.map((m: { authorKind: string }) => m.authorKind)).toEqual(['student'])
+      // …then Staff's browser closes. The student's next check-in hands over to Derek, notice first.
+      await db.query('UPDATE staff_presence SET last_seen_at = UTC_TIMESTAMP(3) - INTERVAL 10 MINUTE')
+      expect(await presence()).toMatchObject({ state: 'offline', name: 'Staff' })
+      const after = await read()
+      expect(after.messages.at(-1)).toMatchObject({ authorKind: 'derek', label: expect.stringMatching(/^Replied by Derek · AI assistant/) })
+      expect(after.messages.at(-1).body.startsWith(D.handoffNoticeText(null))).toBe(true) // no person had replied in this conversation
+      // Another student's conversation is never touched or shown.
+      const other = await ask(await makeStudent(), 'What is a statement of purpose?')
+      expect((await messagesRoute.GET(new Request(`${ORIGIN}/x`, { headers: { cookie: studentCookie } }), { params: Promise.resolve({ id: String(other.conversationId) }) })).status).toBe(404)
+    } finally {
+      for (const k of Object.keys(env)) delete process.env[k]
+      as('')
+      await db.query('DELETE FROM staff_presence')
+      await db.query("UPDATE support_settings SET support_mode = 'online', auto_reply_enabled = FALSE WHERE id = 1")
+    }
+  })
+
   it('serves the student API only to the owning, signed-in student, from this origin', async () => {
     process.env.STUDENT_ACCOUNTS_ENABLED = 'true'
     try {
@@ -245,7 +328,7 @@ describe('identity separation', () => {
 
       // Notifications: only the student's own.
       const notes = await (await studentNotificationsRoute.GET(new Request(`${ORIGIN}/api/student/notifications`, { headers: { cookie: studentCookie } }))).json()
-      expect(notes.notifications.every((n: { targetPath: string }) => n.targetPath.startsWith('/support'))).toBe(true)
+      expect(notes.notifications.every((n: { targetPath: string }) => n.targetPath.startsWith('/chat'))).toBe(true)
 
       // Staff cookies get nothing from the student API, and the admin count endpoint needs staff.
       expect((await conversationsRoute.GET(new Request(`${ORIGIN}/x`, { headers: { cookie: staffCookie } }))).status).toBe(403)
@@ -320,7 +403,7 @@ describe('admin support server actions enforce roles before touching data', () =
     expect(await actions.requestDraftAction(null, form({ conversationId: String(conversationId) }))).toMatchObject({ ok: false, message: expect.stringMatching(/DEREK_AI_ENABLED/) })
 
     as('act-owner')
-    expect(await actions.updateSupportSettingsAction(null, form({ mode: 'offline', autoReplyEnabled: '1' }))).toMatchObject({ ok: false, message: expect.stringMatching(/cannot be enabled/) })
+    expect(await actions.updateSupportSettingsAction(null, form({ autoReplyEnabled: '1' }))).toMatchObject({ ok: true, message: 'Support settings saved.' })
     expect(await actions.eraseStudentAction(null, form({ profileId: String(s.profileId), confirm: 'erase', reason: 'Requested' }))).toMatchObject({ ok: false, fieldErrors: { confirm: expect.any(Array) } })
     await expect(actions.eraseStudentAction(null, form({ profileId: String(s.profileId), confirm: 'ERASE', reason: 'Student request (synthetic)' }))).rejects.toThrow(`NEXT_REDIRECT:/admin/students/${s.profileId}`)
     expect((await rows<{ status: string }>('SELECT status FROM student_profiles WHERE id = ?', [s.profileId]))[0].status).toBe('erased')
@@ -509,7 +592,7 @@ describe('Derek drafts (mock provider)', () => {
     const msgs = (await C.getStudentMessages(pool(), s, conversationId)).messages
     expect(msgs.map((m) => [m.authorKind, m.label])).toEqual([
       ['student', 'You'],
-      ['derek', 'Drafted by Derek · AI assistant · edited and approved by Rhea Reviewer'],
+      ['derek', 'Drafted by Derek · AI assistant · edited and approved by Rhea Reviewer · test reply from the offline mock, not a real AI answer'],
     ])
     expect(await rows("SELECT id FROM messages WHERE conversation_id = ? AND author_kind = 'derek'", [conversationId])).toHaveLength(1)
     const actions = await rows<{ action: string }>("SELECT action FROM data_change_log WHERE entity_type = 'ai_draft' AND entity_id = ? ORDER BY id", [draftId])
@@ -523,7 +606,7 @@ describe('Derek drafts (mock provider)', () => {
     const [v1] = await D.listDrafts(pool(), reviewer, conversationId)
     await D.approveAndSendDraft(pool(), owner, draftId, { revision: 1, bodySha256: v1.bodySha256 })
     const msgs = (await C.getConversationForStaff(pool(), reviewer, conversationId)).messages
-    expect(msgs[1].label).toBe('Replied by Derek · AI assistant · reviewed by Olive Owner')
+    expect(msgs[1].label).toBe('Replied by Derek · AI assistant · reviewed by Olive Owner · test reply from the offline mock, not a real AI answer')
   })
 
   it('rejects with a reason and hands the question back to a human', async () => {
@@ -635,20 +718,29 @@ describe('Derek drafts (mock provider)', () => {
 describe('automatic replies', () => {
   const env = { DEREK_AI_ENABLED: 'true', DEREK_PROVIDER: 'mock', DEREK_AUTO_REPLY_CLEARED: 'mock' }
 
-  it('stay off by default and cannot be enabled until the provider gates allow it', async () => {
-    await expect(S.updateSupportSettings(pool(), reviewer, { mode: 'offline', autoReplyEnabled: false })).rejects.toMatchObject({ status: 403 })
-    await expect(S.updateSupportSettings(pool(), owner, { mode: 'offline', autoReplyEnabled: true })).rejects.toMatchObject({ status: 409 })
-    expect(await S.getSupportSettings(pool())).toMatchObject({ autoReplyEnabled: false })
-
-    // Offline mode alone, without auto replies, still routes everything to a human.
-    await S.updateSupportSettings(pool(), owner, { mode: 'offline', autoReplyEnabled: false })
-    Object.assign(process.env, env)
+  it('send only fixed replies until the provider is cleared, and nothing at all once the owner pauses them', async () => {
+    await expect(S.updateSupportSettings(pool(), reviewer, { autoReplyEnabled: false })).rejects.toMatchObject({ status: 403 })
+    const notCleared = { DEREK_AI_ENABLED: 'true', DEREK_PROVIDER: 'mock' }
+    Object.assign(process.env, notCleared)
     try {
+      await S.updateSupportSettings(pool(), owner, { autoReplyEnabled: true })
       const s = await makeStudent()
+      // The owner's switch is on, but this provider is not cleared: model-written text waits for a person.
       const q = await ask(s)
-      expect((await D.prepareDerekDraft(pool(), q.conversationId, q.triggerMessageId!, { provider: new MockProvider() })).state).toBe('review')
+      expect(await D.prepareDerekDraft(pool(), q.conversationId, q.triggerMessageId!, { provider: new MockProvider() })).toMatchObject({ state: 'review' })
+      expect((await rows<{ hold_reason: string | null }>('SELECT hold_reason FROM ai_drafts WHERE trigger_message_id = ?', [q.triggerMessageId]))[0].hold_reason).toBeNull()
+      // LockIn's own greeting involves no provider, so it is answered straight away.
+      const hi = await ask(s, 'hello')
+      expect(await D.prepareDerekDraft(pool(), hi.conversationId, hi.triggerMessageId!, { provider: new MockProvider() })).toMatchObject({ state: 'auto_sent' })
+
+      // Paused by the owner: even the greeting waits for a person.
+      await S.updateSupportSettings(pool(), owner, { autoReplyEnabled: false })
+      const paused = await ask(s, 'hi')
+      expect(await D.prepareDerekDraft(pool(), paused.conversationId, paused.triggerMessageId!, { provider: new MockProvider() })).toMatchObject({ state: 'review' })
+      const audit = await rows<{ after_data: unknown }>("SELECT after_data FROM data_change_log WHERE entity_type = 'support_settings' ORDER BY id DESC LIMIT 1")
+      expect(typeof audit[0].after_data === 'string' ? JSON.parse(audit[0].after_data) : audit[0].after_data).toMatchObject({ autoReplyEnabled: false })
     } finally {
-      for (const k of Object.keys(env)) delete process.env[k]
+      for (const k of Object.keys(notCleared)) delete process.env[k]
       await S.updateSupportSettings(pool(), owner, { mode: 'online', autoReplyEnabled: false })
     }
   })
@@ -663,7 +755,7 @@ describe('automatic replies', () => {
       const sent = await D.prepareDerekDraft(pool(), low.conversationId, low.triggerMessageId!, { provider: new MockProvider({ kind: 'fixed', text: 'A LockIn team member will reply here in this chat.' }) })
       expect(sent.state).toBe('auto_sent')
       const msgs = (await C.getStudentMessages(pool(), s, low.conversationId)).messages
-      expect(msgs[1]).toMatchObject({ authorKind: 'derek', label: 'Replied by Derek · AI assistant · automatic reply, not reviewed by a person' })
+      expect(msgs[1]).toMatchObject({ authorKind: 'derek', label: 'Replied by Derek · AI assistant · automatic reply, not reviewed by a person · test reply from the offline mock, not a real AI answer' })
 
       const visa = await ask(s, 'Will my student visa be approved?')
       expect((await D.prepareDerekDraft(pool(), visa.conversationId, visa.triggerMessageId!, { provider: new MockProvider({ kind: 'fixed', text: 'Please check the official government page.' }) })).state).toBe('review')
@@ -731,12 +823,12 @@ describe('Derek Auto Mode (offline, mock providers only)', () => {
     const out = await run(q, fixed('A statement of purpose is a short essay about your goals and why you chose the course.'))
     expect(out.state).toBe('auto_sent')
     expect(await derekMessages(q.conversationId)).toEqual([{ reviewed_by: null }])
-    expect((await C.getStudentMessages(pool(), s, q.conversationId)).messages.at(-1)).toMatchObject({ label: 'Replied by Derek · AI assistant · automatic reply, not reviewed by a person' })
+    expect((await C.getStudentMessages(pool(), s, q.conversationId)).messages.at(-1)).toMatchObject({ label: 'Replied by Derek · AI assistant · automatic reply, not reviewed by a person · test reply from the offline mock, not a real AI answer' })
     const [audit] = await rows<{ actor_id: string; reason: string; after_data: unknown }>(
       "SELECT actor_id, reason, after_data FROM data_change_log WHERE entity_type = 'ai_draft' AND entity_id = ? AND action = 'draft_send'",
       [String((out as { draftId: number }).draftId)],
     )
-    expect(audit).toMatchObject({ actor_id: 'derek', reason: 'Automatic reply (offline mode)' })
+    expect(audit).toMatchObject({ actor_id: 'derek', reason: 'Automatic reply (not reviewed by a person)' })
     const after = typeof audit.after_data === 'string' ? JSON.parse(audit.after_data) : audit.after_data // JSON column
     expect(after).toMatchObject({ provider: 'mock', model: 'mock-derek-1', reviewedBy: null })
   })
@@ -857,7 +949,7 @@ describe('Derek Auto Mode (offline, mock providers only)', () => {
     const out = await run(q, provider)
     expect(out.state).toBe('auto_sent')
     expect(provider.calls).toBe(0)
-    expect((await C.getStudentMessages(pool(), s, q.conversationId)).messages.at(-1)).toMatchObject({ authorKind: 'derek', body: OFF_TOPIC_REPLY })
+    expect((await C.getStudentMessages(pool(), s, q.conversationId)).messages.at(-1)).toMatchObject({ authorKind: 'derek', body: `${D.handoffNoticeText(null)}\n\n${OFF_TOPIC_REPLY}` })
     const [draft] = await D.listDrafts(pool(), reviewer, q.conversationId)
     expect(draft).toMatchObject({ provider: 'derek-rules', usage: { inputTokens: null, outputTokens: null, attempts: 0 } })
   })
@@ -870,15 +962,336 @@ describe('Derek Auto Mode (offline, mock providers only)', () => {
     expect(await derekMessages(q.conversationId)).toHaveLength(0)
   })
 
-  it('asks one clarifying question for a bare greeting, then leaves it to a person', async () => {
+  it('answers greetings and thanks with a short reply of its own, never a model essay', async () => {
     const s = await makeStudent()
-    const provider = fixed('Hello! How can I help?')
+    const provider = fixed('Studying abroad is a big decision. Universities differ in course content, cost and location…')
     const first = await ask(s, 'hi')
     expect((await run(first, provider)).state).toBe('auto_sent')
     expect(provider.calls).toBe(0)
-    expect((await C.getStudentMessages(pool(), s, first.conversationId)).messages.at(-1)).toMatchObject({ body: CLARIFY_REPLY })
-    const again = await C.sendStudentMessage(pool(), s, first.conversationId, { body: 'hello', clientRequestId: rid() })
-    expect(await run({ conversationId: first.conversationId, triggerMessageId: again.triggerMessageId }, provider)).toMatchObject({ state: 'review', risk: 'uncertain' })
+    expect((await C.getStudentMessages(pool(), s, first.conversationId)).messages.at(-1)).toMatchObject({ authorKind: 'derek', body: `${D.handoffNoticeText(null)}\n\n${GREETING_REPLY}` })
+    for (const [body, reply] of [
+      ['hello', GREETING_REPLY],
+      ['namaste ji, kaise ho', GREETING_REPLY],
+      ['thanks!', THANKS_REPLY],
+    ]) {
+      const m = await C.sendStudentMessage(pool(), s, first.conversationId, { body, clientRequestId: rid() })
+      expect(await run({ conversationId: first.conversationId, triggerMessageId: m.triggerMessageId }, provider), body).toMatchObject({ state: 'auto_sent' })
+      expect((await C.getStudentMessages(pool(), s, first.conversationId)).messages.at(-1), body).toMatchObject({ body: reply })
+    }
+    expect(provider.calls).toBe(0)
+    // No review task was created for any of them.
+    expect(await rows("SELECT id FROM notifications WHERE conversation_id = ? AND kind IN ('draft_ready', 'high_risk', 'ai_failure')", [first.conversationId])).toHaveLength(0)
+  })
+
+  it('answers the question after a greeting, with the greeting removed', async () => {
+    const provider = fixed('Germany has many public universities; course content, language of teaching and city are the main things to compare.')
+    const q = await ask(await makeStudent(), 'hi, tell me about Germany')
+    expect(await run(q, provider)).toMatchObject({ state: 'auto_sent' })
+    expect(provider.requests[0].question).toBe('tell me about Germany')
+  })
+
+  describe('country comparisons: concise answers send, overlong ones are shortened once or held', () => {
+    const compare = 'Compare computer science master’s programmes in Germany and Italy.'
+    const concise = [
+      '- Course structure: German programmes are often research-oriented; Italian ones mix lectures and projects.',
+      '- Language: both countries offer English-taught options, but many courses are in German or Italian.',
+      '- Admissions: both look at your previous degree and transcripts; some ask for language tests.',
+      '- Costs: public universities in both are usually cheaper than private ones.',
+      'Exact requirements and costs vary by university and are on each official course page.',
+    ].join('\n')
+    const long = [
+      concise,
+      '- Location: German campuses are spread across many mid-sized cities, while Italian programmes cluster in a few large ones.',
+      '- Teaching style: seminars in Germany expect a lot of independent reading, and Italian courses often include oral exams.',
+      '- Application timing: intakes and deadlines differ between universities, so plan early and check each course page.',
+      '- Scholarships: funding schemes differ between the two countries and between universities, so look for each programme’s official funding page early.',
+    ].join('\n')
+    /** A provider that answers each call with the next text, recording what it was asked. */
+    const sequence = (...texts: string[]) => {
+      const requests: Parameters<AiProvider['generate']>[0][] = []
+      const provider: AiProvider = {
+        id: 'mock',
+        model: 'mock-derek-1',
+        autoReply: MockProvider.autoReply,
+        async generate(request) {
+          requests.push(request)
+          const text = texts[Math.min(requests.length, texts.length) - 1]
+          return { text, model: 'mock-derek-1', usage: { inputTokens: 100, outputTokens: text.length } }
+        },
+      }
+      return { provider, requests }
+    }
+    const lastDraft = async (conversationId: number) =>
+      (await rows<{ hold_reason: string | null; risk_level: string; attempts: number; output_tokens: number }>('SELECT hold_reason, risk_level, attempts, output_tokens FROM ai_drafts WHERE conversation_id = ? ORDER BY id DESC LIMIT 1', [conversationId]))[0]
+    const derekBody = async (id: number) => (await rows<{ body: string }>("SELECT body FROM messages WHERE conversation_id = ? AND author_kind = 'derek'", [id]))[0]?.body
+
+    it('sends a concise, low-risk comparison automatically, with one provider call', async () => {
+      expect(concise.length).toBeLessThanOrEqual(750)
+      const q = await ask(await makeStudent(), compare)
+      const { provider, requests } = sequence(concise)
+      expect(await run(q, provider, { loadEvidence: async () => [] })).toMatchObject({ state: 'auto_sent' })
+      expect(requests).toHaveLength(1)
+      expect(requests[0].guidance?.note).toMatch(/500 to 700 characters.*at most four short bullets/)
+      expect((await derekBody(q.conversationId)).endsWith(concise)).toBe(true)
+    })
+
+    it('shortens an overlong answer once, re-checks it, and sends the shorter one if it keeps every caveat', async () => {
+      expect(long.length).toBeGreaterThan(900)
+      const q = await ask(await makeStudent(), compare)
+      const { provider, requests } = sequence(long, concise)
+      expect(await run(q, provider, { loadEvidence: async () => [] })).toMatchObject({ state: 'auto_sent' })
+      expect(requests).toHaveLength(2)
+      expect(requests[1].guidance?.note).toMatch(
+        /REWRITE SHORTER: .*500 to 700 characters: at most four short bullets.*No introduction and no other conclusion.*Keep every statement of uncertainty.*Do not add any fact, figure, name, fee, ranking, deadline or admission requirement/,
+      )
+      expect((await derekBody(q.conversationId)).endsWith(concise)).toBe(true)
+      expect(await lastDraft(q.conversationId)).toMatchObject({ attempts: 2, output_tokens: long.length + concise.length })
+    })
+
+    it('keeps an overlong answer held when the shorter one is still too long, drops a caveat, or invents a figure', async () => {
+      const dropsCaveat = concise.replace('Exact requirements and costs vary by university and are on each official course page.', 'Both are good choices.')
+      const invents = concise.replace('are usually cheaper than private ones', 'charge about EUR 1500 a year')
+      for (const [label, second] of [['still too long', long], ['drops the caveat', dropsCaveat]] as const) {
+        // (each case: the first answer is too long, the single rewrite fails a check, the original stays held)
+        const q = await ask(await makeStudent(), compare)
+        const { provider, requests } = sequence(long, second)
+        expect(await run(q, provider, { loadEvidence: async () => [] }), label).toMatchObject({ state: 'review' })
+        expect(requests, label).toHaveLength(2)
+        expect(await lastDraft(q.conversationId), label).toMatchObject({ hold_reason: 'longer than 900 characters', risk_level: 'low' })
+        expect(await derekBody(q.conversationId), label).toBeUndefined()
+      }
+      // A shorter text with an invented figure or an unsupported claim fits, but every usual check runs on it: held as high risk.
+      const guarantees = concise.replace('Exact requirements and costs vary by university', 'Admission is guaranteed in both countries. Exact requirements and costs vary by university')
+      for (const [label, second] of [['invents a figure', invents], ['makes a guarantee', guarantees]] as const) {
+        const q = await ask(await makeStudent(), compare)
+        const { provider, requests } = sequence(long, second)
+        expect(await run(q, provider, { loadEvidence: async () => [] }), label).toMatchObject({ state: 'review', risk: 'high' })
+        expect(requests, label).toHaveLength(2)
+        expect(await derekBody(q.conversationId), label).toBeUndefined()
+      }
+    })
+
+    it('never spends more than the attempt budget: with one attempt, an overlong answer is simply held', async () => {
+      const q = await ask(await makeStudent(), compare)
+      const { provider, requests } = sequence(long, concise)
+      expect(await run(q, provider, { loadEvidence: async () => [], callOptions: { maxAttempts: 1 } })).toMatchObject({ state: 'review' })
+      expect(requests).toHaveLength(1)
+      expect((await lastDraft(q.conversationId)).hold_reason).toBe('longer than 900 characters')
+    })
+
+    it('spends no rewrite request while the team is online (the answer waits for a person anyway)', async () => {
+      await db.query("INSERT IGNORE INTO auth_user (id, name, email, emailVerified, updatedAt) VALUES ('u-short-dev', 'Dev Short', 'short-dev@test.example', 1, UTC_TIMESTAMP(3))")
+      await db.query("INSERT IGNORE INTO admin_members (user_id, role, status, granted_by) VALUES ('u-short-dev', 'reviewer', 'active', 'cli:test')")
+      await db.query("INSERT INTO staff_presence (user_id, last_seen_at) VALUES ('u-short-dev', UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE last_seen_at = UTC_TIMESTAMP(3)")
+      try {
+        const q = await ask(await makeStudent(), compare)
+        const { provider, requests } = sequence(long, concise)
+        expect(await run(q, provider, { loadEvidence: async () => [] })).toMatchObject({ state: 'review' })
+        expect(requests).toHaveLength(1)
+      } finally {
+        await db.query('DELETE FROM staff_presence')
+        await db.query("DELETE FROM admin_members WHERE user_id = 'u-short-dev'")
+      }
+    })
+
+    it('does not shorten when nothing could be sent automatically (team online or a taken-over conversation)', async () => {
+      const s = await makeStudent()
+      const taken = await ask(s, compare)
+      await C.takeOverConversation(pool(), reviewer, taken.conversationId)
+      const a = sequence(long, concise)
+      expect(await run(taken, a.provider, { loadEvidence: async () => [] })).toEqual({ state: 'taken_over' })
+      expect(a.requests).toHaveLength(0)
+      await S.updateSupportSettings(pool(), owner, { autoReplyEnabled: false })
+      const paused = await ask(s, compare)
+      const b = sequence(long, concise)
+      expect(await run(paused, b.provider, { loadEvidence: async () => [] })).toMatchObject({ state: 'review' })
+      expect(b.requests).toHaveLength(1) // no extra call when automatic replies are paused
+    })
+
+    it('still needs verified evidence for a university’s own fees, rankings or requirements', async () => {
+      const q = await ask(await makeStudent(), 'What are the fees and entry requirements at Synthetic Thames University?')
+      expect(await run(q, sequence('LockIn has not verified these yet; the official course page lists them.').provider, { loadEvidence: async () => [] })).toMatchObject({
+        state: 'review',
+        risk: 'uncertain',
+      })
+    })
+  })
+
+  it('answers ordinary questions straight away with no review task, including general questions about requirements', async () => {
+    const s = await makeStudent()
+    const q = await ask(s, 'What are entry requirements usually like for a master’s?')
+    const provider = fixed('Entry requirements depend on the university and course: usually a relevant previous degree, transcripts and an English test. Each official course page lists its exact requirements.')
+    expect(await run(q, provider, { loadEvidence: async () => [] })).toMatchObject({ state: 'auto_sent' })
+    expect(provider.requests[0].guidance).toMatchObject({ kind: 'general', topics: ['entry or language requirements'] })
+    expect(await rows("SELECT id FROM notifications WHERE conversation_id = ? AND kind IN ('draft_ready', 'high_risk', 'ai_failure')", [q.conversationId])).toHaveLength(0)
+    expect((await C.getStudentMessages(pool(), s, q.conversationId)).conversation).toMatchObject({ acknowledgement: null, replyPending: false, statusLabel: 'The team has replied' })
+  })
+
+  it('holds unverified facts about a named university for a person', async () => {
+    const q = await ask(await makeStudent(), 'What are the tuition fees at Synthetic Thames University?')
+    const out = await run(q, fixed('LockIn has not verified the fees for this course yet; the official course page lists them.', true), { loadEvidence: async () => [] })
+    expect(out).toMatchObject({ state: 'review', risk: 'uncertain' })
+    expect(await derekMessages(q.conversationId)).toHaveLength(0)
+  })
+
+  describe('small talk never drops an unanswered question (regression)', () => {
+    const say = (s: StudentActor, conversationId: number, body: string) => C.sendStudentMessage(pool(), s, conversationId, { body, clientRequestId: rid() })
+    const at = (conversationId: number, m: { triggerMessageId: number | null }) => ({ conversationId, triggerMessageId: m.triggerMessageId })
+    const statusOf = async (id: number) => (await rows<{ status: string }>('SELECT status FROM conversations WHERE id = ?', [id]))[0].status
+    const bodies = async (s: StudentActor, id: number) => (await C.getStudentMessages(pool(), s, id)).messages.map((m) => `${m.authorKind}: ${m.body}`)
+    const answerText = 'Admissions in Germany usually ask for a recognised previous degree, transcripts and proof of English or German; each course page lists its own requirements.'
+
+    it('1. a question followed immediately by "thanks": the question is answered, the thanks waits', async () => {
+      const s = await makeStudent()
+      const q = await ask(s, 'Tell me about Germany admissions')
+      const t = await say(s, q.conversationId, 'thanks')
+      // The thanks worker may run first; the order must not matter.
+      expect(await run(at(q.conversationId, t), fixed('unused'))).toEqual({ state: 'deferred' })
+      expect((await C.getStudentMessages(pool(), s, q.conversationId)).conversation).toMatchObject({ acknowledgement: 'Derek is writing a reply…', replyPending: true })
+      expect(await run(q, fixed(answerText), { loadEvidence: async () => [] })).toMatchObject({ state: 'auto_sent' })
+      expect(await bodies(s, q.conversationId)).toEqual(['student: Tell me about Germany admissions', 'student: thanks', `derek: ${D.handoffNoticeText(null)}\n\n${answerText}`])
+      expect((await C.getStudentMessages(pool(), s, q.conversationId)).conversation).toMatchObject({ acknowledgement: null, replyPending: false })
+      // A late retry of the thanks worker finds it already answered.
+      expect((await run(at(q.conversationId, t), fixed('unused'))).state).toMatch(/^(stale|deferred)$/)
+      expect(await derekMessages(q.conversationId)).toHaveLength(1)
+    })
+
+    it('2. a visa question followed by "hi": the visa question stays in the review queue, unchanged', async () => {
+      const s = await makeStudent()
+      const visa = await ask(s, 'My student visa was refused, what should I do?')
+      const held = await run(visa, fixed('A LockIn team member will follow up.'))
+      expect(held).toMatchObject({ state: 'review', risk: 'high' })
+      const hi = await say(s, visa.conversationId, 'hi')
+      expect(await run(at(visa.conversationId, hi), fixed('unused'))).toEqual({ state: 'deferred' })
+      expect(await derekMessages(visa.conversationId)).toHaveLength(0)
+      expect(await statusOf(visa.conversationId)).toBe('awaiting_human_review')
+      // The held draft was not superseded by the greeting: a reviewer can still approve it.
+      expect((await rows<{ status: string }>('SELECT status FROM ai_drafts WHERE id = ?', [(held as { draftId: number }).draftId]))[0].status).toBe('ready')
+      expect((await C.getStudentMessages(pool(), s, visa.conversationId)).conversation).toMatchObject({
+        acknowledgement: 'Your question has been received. A member of the LockIn team will follow up.',
+        replyPending: false,
+      })
+    })
+
+    it('3. a greeting while the answer is being drafted does not supersede it', async () => {
+      const s = await makeStudent()
+      const q = await ask(s, 'What is a statement of purpose?')
+      let greeting: unknown = null
+      const out = await run(
+        q,
+        during(async () => {
+          const hello = await say(s, q.conversationId, 'hello')
+          greeting = await run(at(q.conversationId, hello), fixed('unused'))
+        }),
+      )
+      expect(greeting).toEqual({ state: 'deferred' })
+      expect(out).toMatchObject({ state: 'auto_sent' })
+      expect(await derekMessages(q.conversationId)).toHaveLength(1)
+      expect(await statusOf(q.conversationId)).toBe('awaiting_student_reply')
+    })
+
+    it('4. concurrent workers and retries: the later small talk never supersedes the question', async () => {
+      const s = await makeStudent()
+      const q = await ask(s, 'What is a statement of purpose?')
+      const thanks = await say(s, q.conversationId, 'ok thanks')
+      const reply = 'A statement of purpose explains your goals and why you chose the course.'
+      const results = await Promise.all([run(q, fixed(reply)), run(at(q.conversationId, thanks), fixed('unused')), run(q, fixed(reply))])
+      expect(results.filter((r) => r.state === 'auto_sent')).toHaveLength(1)
+      expect(results.map((r) => r.state)).toContain('deferred')
+      for (const retry of [await run(q, fixed(reply)), await run(at(q.conversationId, thanks), fixed('unused'))]) expect(retry.state).toMatch(/^(duplicate|stale|deferred)$/)
+      expect((await bodies(s, q.conversationId)).filter((m) => m.startsWith('derek:'))).toEqual([`derek: ${D.handoffNoticeText(null)}\n\n${reply}`])
+    })
+
+    it('5. a greeting after the question was actually answered gets its own short reply', async () => {
+      const s = await makeStudent()
+      const q = await ask(s, 'What is a statement of purpose?')
+      expect(await run(q, fixed('A statement of purpose explains your goals and why you chose the course.'))).toMatchObject({ state: 'auto_sent' })
+      const hi = await say(s, q.conversationId, 'hi')
+      expect(await run(at(q.conversationId, hi), fixed('unused'))).toMatchObject({ state: 'auto_sent' })
+      expect((await bodies(s, q.conversationId)).at(-1)).toBe(`derek: ${GREETING_REPLY}`)
+    })
+
+    it('a second real question is answered together with the first, never instead of it', async () => {
+      const s = await makeStudent()
+      const q1 = await ask(s, 'What is a statement of purpose?')
+      const q2 = await say(s, q1.conversationId, 'Also, what is a letter of recommendation?')
+      const provider = fixed('A statement of purpose explains your goals; a letter of recommendation comes from a teacher who knows your work.')
+      expect(await run(at(q1.conversationId, q2), provider)).toMatchObject({ state: 'auto_sent' })
+      expect(provider.requests[0].question).toMatch(/statement of purpose[\s\S]*letter of recommendation/)
+      expect((await run(q1, fixed('unused'))).state).toMatch(/^(stale|superseded)$/)
+      expect(await derekMessages(q1.conversationId)).toHaveLength(1)
+    })
+
+    it('a team member asking Derek for a draft after "thanks" gets a draft for the real question', async () => {
+      const s = await makeStudent()
+      const q = await ask(s, 'What are the tuition fees at Synthetic Thames University?')
+      await run(q, fixed('LockIn has not verified these fees yet.', true), { loadEvidence: async () => [] })
+      await say(s, q.conversationId, 'thank you')
+      const provider = fixed('LockIn has not verified these fees yet; the official course page lists them.', true)
+      await D.requestDraftForConversation(pool(), reviewer, q.conversationId, { provider, loadEvidence: async () => [] })
+      expect(provider.requests[0].question).toBe('What are the tuition fees at Synthetic Thames University?')
+    })
+  })
+
+  it('uses the destination and course from the first-question form, never the Instagram handle', async () => {
+    const s = await makeStudent()
+    const q = await C.createConversation(pool(), s, { subject: 'Germany · MSc Computer Science · Instagram @secret.handle', body: 'What are the intakes?', clientRequestId: rid() })
+    const provider = fixed('LockIn has not verified intakes for this course yet; the official course page lists them.', true)
+    await run(q, provider, { loadEvidence: async () => [] })
+    const sent = JSON.stringify(provider.requests[0])
+    expect(sent).not.toMatch(/secret\.handle|instagram/i)
+    expect(provider.requests[0].guidance).toMatchObject({ destinations: ['Germany'], topics: ['intakes or deadlines'], followUp: 'Which university and course are you interested in?' })
+    expect(provider.requests[0].guidance?.note).toMatch(/I plan to study MSc Computer Science in Germany\.".*do not ask for it again/)
+  })
+
+  it('answers a follow-up in the context of the earlier, answered question', async () => {
+    const s = await makeStudent()
+    const first = await ask(s, 'Tell me about computer science courses in Germany')
+    expect(await run(first, fixed('Computer science courses in Germany differ in language of teaching, structure and entry requirements; compare each official course page.'))).toMatchObject({ state: 'auto_sent' })
+    const followUp = await C.sendStudentMessage(pool(), s, first.conversationId, { body: 'what about the fees?', clientRequestId: rid() })
+    const looked: string[] = []
+    const provider = fixed('LockIn has not verified these fees yet.', true)
+    await run({ conversationId: first.conversationId, triggerMessageId: followUp.triggerMessageId }, provider, {
+      loadEvidence: async (_db, text) => (looked.push(text), []),
+    })
+    expect(looked[0]).toMatch(/computer science courses in Germany[\s\S]*what about the fees/)
+    expect(provider.requests[0].guidance).toMatchObject({ isFollowUp: true, topics: ['fees or costs'], destinations: ['Germany'], kind: 'specific_fact' })
+    expect(provider.requests[0].history.map((h) => h.text)).toContain('Tell me about computer science courses in Germany')
+    // Derek does not ask again for what the student already said (subject: computer science).
+    expect(provider.requests[0].guidance?.note).toMatch(/do not ask again for what they already told you/)
+  })
+
+  it('tells the student Derek is writing while an automatic answer is possible, and why not when he failed', async () => {
+    const s = await makeStudent()
+    const q = await ask(s, general)
+    expect((await C.getStudentMessages(pool(), s, q.conversationId)).conversation).toMatchObject({ acknowledgement: 'Derek is writing a reply…', replyPending: true })
+    await run(q, new MockProvider({ kind: 'fail', code: 'unavailable', retryable: false }))
+    expect((await C.getStudentMessages(pool(), s, q.conversationId)).conversation).toMatchObject({
+      acknowledgement: 'Derek couldn’t generate an answer this time, so a member of the LockIn team will follow up.',
+      replyPending: false,
+    })
+    // With automatic replies paused, nothing is promised.
+    await S.updateSupportSettings(pool(), owner, { autoReplyEnabled: false })
+    const later = await ask(s, general)
+    expect((await C.getStudentMessages(pool(), s, later.conversationId)).conversation).toMatchObject({
+      acknowledgement: 'Your question has been received. A member of the LockIn team will follow up.',
+      replyPending: false,
+    })
+  })
+
+  it('never answers a greeting in a taken-over conversation, and answers a racing greeting once', async () => {
+    const s = await makeStudent()
+    const q = await ask(s, 'hi')
+    await C.takeOverConversation(pool(), reviewer, q.conversationId)
+    expect(await run(q, fixed('unused'))).toEqual({ state: 'taken_over' })
+    expect(await derekMessages(q.conversationId)).toHaveLength(0)
+
+    const again = await ask(s, 'hello')
+    const results = await Promise.all([run(again, fixed('unused')), run(again, fixed('unused'))])
+    // The loser either hits the UNIQUE claim or finds the question already answered.
+    expect(results.filter((r) => r.state === 'auto_sent')).toHaveLength(1)
+    expect(results.map((r) => r.state)).toEqual(expect.arrayContaining([expect.stringMatching(/^(duplicate|stale)$/)]))
+    expect(await derekMessages(again.conversationId)).toHaveLength(1)
   })
 
   it('drafts Hindi and Hinglish questions for review and escalates high-risk ones', async () => {
@@ -954,7 +1367,9 @@ describe('human takeover, held replies and the student acknowledgement', () => {
     expect(draft).toMatchObject({ status: 'ready', holdReason: 'a team member has taken over this conversation' })
     expect(await derekMessages(q.conversationId)).toHaveLength(0)
 
-    // Handing back explicitly: Derek answers the next question automatically again.
+    // A person answers what is pending, then hands back: Derek answers the next question automatically again.
+    // (With a question still pending, Derek would hold instead, so it cannot drop out of the queue.)
+    await C.staffReply(pool(), reviewer, q.conversationId, { body: 'A letter of recommendation comes from a teacher or employer who knows your work.', clientRequestId: rid() })
     await C.returnToDerek(pool(), reviewer, q.conversationId)
     const later = await C.sendStudentMessage(pool(), s, q.conversationId, { body: 'How long should a statement of purpose be?', clientRequestId: rid() })
     expect((await D.prepareDerekDraft(pool(), q.conversationId, later.triggerMessageId!, { provider: fixed() })).state).toBe('auto_sent')
@@ -1130,7 +1545,7 @@ describe('Derek answer quality with real directory data (mock provider)', () => 
   })
 
   it('never treats pending research records as verified evidence', async () => {
-    const research = JSON.parse(readFileSync(path.join(__dirname, '..', '..', 'db', 'intake', 'destinations', 'uk.json'), 'utf8')) as { status: string; records: { officialName: string }[] }
+    const research = JSON.parse(readFileSync(path.join(__dirname, '..', 'fixtures', 'pending-research.json'), 'utf8')) as { status: string; records: { officialName: string }[] }
     expect(research.status).toBe('pending_admin_entry')
     const s = await makeStudent()
     for (const record of research.records.slice(0, 3)) {
@@ -1147,5 +1562,243 @@ describe('Derek answer quality with real directory data (mock provider)', () => 
       expect(draft.body).not.toContain(DIRECTORY_LABEL)
       expect(unsupportedFigures(draft.body!, [])).toEqual([])
     }
+  })
+})
+
+describe('Google sign-in onboarding (18+ and privacy confirmation)', () => {
+  const open = { STUDENT_ACCOUNTS_ENABLED: 'true', STUDENT_SELF_SIGNUP_ENABLED: 'true' }
+  afterEach(() => {
+    for (const k of Object.keys(open)) delete process.env[k]
+  })
+  let n = 0
+  /** A user exactly as Better Auth leaves it after a first Google sign-in: no student profile. */
+  async function googleUser({ provider = 'google' } = {}) {
+    n += 1
+    const id = `g-${n}-${randomUUID().slice(0, 8)}`
+    await db.query('INSERT INTO auth_user (id, name, email, emailVerified, updatedAt) VALUES (?, ?, ?, 1, UTC_TIMESTAMP(3))', [id, 'Synthetic Google User', `google${n}@test.example`])
+    await db.query('INSERT INTO auth_account (id, accountId, providerId, userId, updatedAt) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))', [randomUUID(), `sub-${n}`, provider, id])
+    await db.query('INSERT INTO auth_session (id, expiresAt, token, updatedAt, userId) VALUES (?, UTC_TIMESTAMP(3) + INTERVAL 1 HOUR, ?, UTC_TIMESTAMP(3), ?)', [randomUUID(), randomUUID(), id])
+    return id
+  }
+  const profile = (userId: string) => rows<{ age_confirmed_at: unknown; privacy_notice_version: string | null; status: string }>('SELECT age_confirmed_at, privacy_notice_version, status FROM student_profiles WHERE user_id = ?', [userId])
+
+  it('creates a profile only after both confirmations, recording them, and only once', async () => {
+    Object.assign(process.env, open)
+    const id = await googleUser()
+    expect(await O.canStartStudentProfile(id)).toBe(true)
+    expect(await O.createStudentProfile(id, { ageConfirmed: true })).toMatchObject({ ok: false, status: 400 })
+    expect(await O.createStudentProfile(id, { ageConfirmed: 'yes', privacyAccepted: true })).toMatchObject({ ok: false, status: 400 })
+    expect(await profile(id)).toHaveLength(0)
+    expect(await O.createStudentProfile(id, { ageConfirmed: true, privacyAccepted: true })).toEqual({ ok: true })
+    const [p] = await profile(id)
+    expect(p).toMatchObject({ status: 'active', privacy_notice_version: O.PRIVACY_NOTICE_VERSION })
+    expect(p.age_confirmed_at).not.toBeNull()
+    // A second submit changes nothing.
+    expect(await O.createStudentProfile(id, { ageConfirmed: true, privacyAccepted: true })).toMatchObject({ ok: false, status: 403 })
+    expect(await profile(id)).toHaveLength(1)
+  })
+
+  it('never creates a profile while sign-up is closed, for a team account, or for a password account', async () => {
+    const id = await googleUser()
+    expect(await O.canStartStudentProfile(id)).toBe(false) // nothing set
+    process.env.STUDENT_ACCOUNTS_ENABLED = 'true'
+    expect(await O.canStartStudentProfile(id)).toBe(false) // self sign-up still off
+    Object.assign(process.env, open)
+    const staff = await googleUser()
+    await db.query("INSERT INTO admin_members (user_id, role, status, granted_by) VALUES (?, 'editor', 'active', 'u-owner')", [staff])
+    expect(await O.createStudentProfile(staff, { ageConfirmed: true, privacyAccepted: true })).toMatchObject({ ok: false, status: 403 })
+    const password = await googleUser({ provider: 'credential' })
+    expect(await O.canStartStudentProfile(password)).toBe(false)
+    expect(await profile(staff)).toHaveLength(0)
+  })
+
+  it('removes an unfinished sign-in completely when the person is under 18, and nothing else', async () => {
+    Object.assign(process.env, open)
+    const id = await googleUser()
+    expect(await O.discardUnfinishedAccount(id)).toEqual({ ok: true })
+    for (const table of ['auth_user WHERE id', 'auth_account WHERE userId', 'auth_session WHERE userId']) expect(await rows(`SELECT 1 FROM ${table} = ?`, [id])).toHaveLength(0)
+    const student = await makeStudent()
+    expect(await O.discardUnfinishedAccount(student.userId)).toMatchObject({ ok: false, status: 403 })
+    expect(await rows('SELECT 1 FROM auth_user WHERE id = ?', [student.userId])).toHaveLength(1)
+  })
+})
+
+describe('team presence and the human-to-Derek handoff', () => {
+  const env = { DEREK_AI_ENABLED: 'true', DEREK_PROVIDER: 'mock', DEREK_AUTO_REPLY_CLEARED: 'mock' }
+  const dev: AdminActor = { userId: 'u-presence-dev', name: 'Dev Presence', email: 'dev-presence@test.example', role: 'reviewer' }
+  const revoked: AdminActor = { userId: 'u-presence-revoked', name: 'Gone Member', email: 'gone@test.example', role: 'reviewer' }
+  const plainEditor: AdminActor = { userId: 'u-presence-editor', name: 'Plain Editor', email: 'plain-editor@test.example', role: 'editor' }
+  const answer = 'A statement of purpose explains your goals and why you chose the course.'
+  const fixed = (text = answer, uncertain?: boolean) => new MockProvider({ kind: 'fixed', text, uncertain })
+  const run = (q: { conversationId: number; triggerMessageId: number | null }, provider: AiProvider) => D.prepareDerekDraft(pool(), q.conversationId, q.triggerMessageId!, { provider })
+  const seen = (actor: AdminActor, secondsAgo: number) =>
+    db.query('INSERT INTO staff_presence (user_id, last_seen_at) VALUES (?, UTC_TIMESTAMP(3) - INTERVAL ? SECOND) ON DUPLICATE KEY UPDATE last_seen_at = VALUES(last_seen_at)', [actor.userId, secondsAgo])
+  const derekBodies = async (id: number) => (await rows<{ body: string }>("SELECT body FROM messages WHERE conversation_id = ? AND author_kind = 'derek' ORDER BY id", [id])).map((r) => r.body)
+  const P = () => import('@/lib/support/presence')
+
+  beforeAll(async () => {
+    for (const a of [dev, revoked, plainEditor])
+      await db.query('INSERT INTO auth_user (id, name, email, emailVerified, updatedAt) VALUES (?, ?, ?, 0, UTC_TIMESTAMP(3))', [a.userId, a.name, a.email])
+    await db.query("INSERT INTO admin_members (user_id, role, status, granted_by) VALUES (?, 'reviewer', 'active', 'cli:test')", [dev.userId])
+    await db.query("INSERT INTO admin_members (user_id, role, status, granted_by, revoked_at) VALUES (?, 'reviewer', 'revoked', 'cli:test', UTC_TIMESTAMP(3))", [revoked.userId])
+    await db.query("INSERT INTO admin_members (user_id, role, status, granted_by) VALUES (?, 'editor', 'active', 'cli:test')", [plainEditor.userId])
+  })
+  beforeEach(async () => {
+    Object.assign(process.env, env)
+    await S.updateSupportSettings(pool(), owner, { autoReplyEnabled: true })
+  })
+  afterEach(async () => {
+    for (const k of Object.keys(env)) delete process.env[k]
+    await db.query('DELETE FROM staff_presence')
+    await db.query("UPDATE support_settings SET support_mode = 'online', auto_reply_enabled = FALSE WHERE id = 1")
+  })
+  afterAll(async () => {
+    await db.query('DELETE FROM admin_members WHERE user_id IN (?, ?, ?)', [dev.userId, revoked.userId, plainEditor.userId])
+  })
+
+  it('derives online, reconnecting and offline from a server-side lease, counting only active support staff', async () => {
+    const { getTeamPresence, touchPresence, PRESENCE } = await P()
+    expect(await getTeamPresence(pool())).toEqual({ state: 'offline', name: null })
+    // Revoked members and editors without support access never count as "the team is online".
+    await seen(revoked, 0)
+    await seen(plainEditor, 0)
+    expect((await getTeamPresence(pool())).state).toBe('offline')
+    await touchPresence(pool(), dev.userId)
+    expect(await getTeamPresence(pool())).toEqual({ state: 'online', name: 'Dev' })
+    // A closed browser / lost network: the lease runs out, then the grace period.
+    await seen(dev, PRESENCE.leaseSeconds + 5)
+    expect(await getTeamPresence(pool())).toEqual({ state: 'reconnecting', name: 'Dev' })
+    await seen(dev, PRESENCE.handoffAfterSeconds + 5)
+    expect(await getTeamPresence(pool())).toEqual({ state: 'offline', name: 'Dev' })
+    // Reconnecting: the next heartbeat brings Dev straight back.
+    await touchPresence(pool(), dev.userId)
+    expect((await getTeamPresence(pool())).state).toBe('online')
+    // Several tabs: repeated heartbeats within 20 s do not write again.
+    const [[before]] = await db.query<RowDataPacket[]>('SELECT last_seen_at FROM staff_presence WHERE user_id = ?', [dev.userId])
+    await touchPresence(pool(), dev.userId)
+    const [[after]] = await db.query<RowDataPacket[]>('SELECT last_seen_at FROM staff_presence WHERE user_id = ?', [dev.userId])
+    expect(String(after.last_seen_at)).toBe(String(before.last_seen_at))
+  })
+
+  it('while the team is online a person answers: Derek drafts but never sends, and promises nothing', async () => {
+    await seen(dev, 0)
+    const s = await makeStudent()
+    const q = await ask(s, 'What is a statement of purpose?')
+    expect((await C.getStudentMessages(pool(), s, q.conversationId)).conversation).toMatchObject({
+      acknowledgement: 'Your question has been received. A member of the LockIn team will follow up.',
+      replyPending: false,
+    })
+    expect(await run(q, fixed())).toMatchObject({ state: 'review' })
+    expect((await rows<{ hold_reason: string }>('SELECT hold_reason FROM ai_drafts WHERE trigger_message_id = ?', [q.triggerMessageId]))[0].hold_reason).toBe(
+      'the LockIn team is online, so a person will answer',
+    )
+    expect(await derekBodies(q.conversationId)).toEqual([])
+    // Still online (or only reconnecting): no handoff.
+    expect(await D.handOffToDerek(pool(), q.conversationId)).toEqual({ state: 'none' })
+    await seen(dev, 150)
+    expect(await D.handOffToDerek(pool(), q.conversationId)).toEqual({ state: 'none' })
+  })
+
+  it('hands over after Dev disconnects: one notice first, then Derek’s labelled answer, exactly once', async () => {
+    await seen(dev, 0)
+    const s = await makeStudent()
+    const first = await ask(s, 'Hello, is anyone there?')
+    await C.staffReply(pool(), dev, first.conversationId, { body: 'Hi, Dev here. What would you like to know?', clientRequestId: rid() })
+    const q = await C.sendStudentMessage(pool(), s, first.conversationId, { body: 'What is a statement of purpose?', clientRequestId: rid() })
+    expect(await run({ conversationId: first.conversationId, triggerMessageId: q.triggerMessageId }, fixed())).toMatchObject({ state: 'review' })
+
+    await seen(dev, 600) // Dev's browser closed ten minutes ago
+    const results = await Promise.all([D.handOffToDerek(pool(), first.conversationId), D.handOffToDerek(pool(), first.conversationId), D.handOffToDerek(pool(), first.conversationId)])
+    expect(results.filter((r) => r.state === 'sent')).toHaveLength(1)
+    expect(await D.handOffToDerek(pool(), first.conversationId)).toEqual({ state: 'none' })
+    const [body] = await derekBodies(first.conversationId)
+    expect(body.startsWith(`${D.handoffNoticeText('Dev')}\n\n`)).toBe(true)
+    expect(body.endsWith(answer)).toBe(true)
+    const view = await C.getStudentMessages(pool(), s, first.conversationId)
+    expect(view.messages.at(-1)?.label).toMatch(/^Replied by Derek · AI assistant · automatic reply/)
+    expect(view.messages.map((m) => m.authorKind)).toEqual(['student', 'staff', 'student', 'derek']) // history kept for the team
+
+    // The next answer in the same stretch carries no second notice.
+    const next = await C.sendStudentMessage(pool(), s, first.conversationId, { body: 'And what is a letter of recommendation?', clientRequestId: rid() })
+    expect(await run({ conversationId: first.conversationId, triggerMessageId: next.triggerMessageId }, fixed('A letter of recommendation comes from a teacher who knows your work.'))).toMatchObject({
+      state: 'auto_sent',
+    })
+    expect((await derekBodies(first.conversationId))[1]).toBe('A letter of recommendation comes from a teacher who knows your work.')
+  })
+
+  it('with nobody online from the start, the first automatic answer says the team is offline', async () => {
+    const s = await makeStudent()
+    const q = await ask(s, 'What is a statement of purpose?')
+    expect(await run(q, fixed())).toMatchObject({ state: 'auto_sent' })
+    expect((await derekBodies(q.conversationId))[0]).toBe(`${D.handoffNoticeText(null)}\n\n${answer}`)
+  })
+
+  it('a human taking over, or replying first, always wins over the handoff', async () => {
+    await seen(dev, 0)
+    const s = await makeStudent()
+    const taken = await ask(s, 'What is a statement of purpose?')
+    await run(taken, fixed())
+    await C.takeOverConversation(pool(), dev, taken.conversationId)
+    await seen(dev, 600)
+    expect(await D.handOffToDerek(pool(), taken.conversationId)).toEqual({ state: 'none' })
+    await C.sendStudentMessage(pool(), s, taken.conversationId, { body: 'hello?', clientRequestId: rid() })
+    expect(await derekBodies(taken.conversationId)).toEqual([])
+
+    await seen(dev, 0)
+    const raced = await ask(s, 'What is a statement of purpose?')
+    await run(raced, fixed())
+    await seen(dev, 600)
+    // Dev answers at the same moment the student's chat triggers the handoff. Dev's reply carries the
+    // last message Dev saw, so whichever lands second is refused: one answer only, in either order.
+    const seenUpToId = raced.messageId
+    const [handoff, human] = await Promise.allSettled([
+      D.handOffToDerek(pool(), raced.conversationId),
+      C.staffReply(pool(), dev, raced.conversationId, { body: 'Answered by Dev.', clientRequestId: rid(), seenUpToId }),
+    ])
+    const replies = await rows<{ author_kind: string }>("SELECT author_kind FROM messages WHERE conversation_id = ? AND author_kind <> 'student'", [raced.conversationId])
+    expect(replies).toHaveLength(1)
+    if (replies[0].author_kind === 'derek') expect(human).toMatchObject({ status: 'rejected', reason: { status: 409 } })
+    else expect(handoff).toMatchObject({ status: 'fulfilled', value: { state: 'none' } })
+    // Without that information (an older form), a person can still always reply.
+    await C.staffReply(pool(), dev, raced.conversationId, { body: 'Follow-up from Dev.', clientRequestId: rid() })
+  })
+
+  it('refuses a team reply written before Derek’s automatic answer, until the team member has seen it', async () => {
+    const s = await makeStudent()
+    const q = await ask(s, 'What is a statement of purpose?')
+    expect(await run(q, fixed())).toMatchObject({ state: 'auto_sent' }) // nobody online
+    const [derekMsg] = await rows<{ id: number }>("SELECT id FROM messages WHERE conversation_id = ? AND author_kind = 'derek'", [q.conversationId])
+    await expect(C.staffReply(pool(), dev, q.conversationId, { body: 'Late answer.', clientRequestId: rid(), seenUpToId: q.messageId })).rejects.toMatchObject({ status: 409 })
+    await expect(C.staffReply(pool(), dev, q.conversationId, { body: 'Adding to Derek’s answer.', clientRequestId: rid(), seenUpToId: String(derekMsg.id) })).resolves.toMatchObject({
+      duplicate: false,
+    })
+  })
+
+  it('never hands high-risk or unverified questions to Derek', async () => {
+    await seen(dev, 0)
+    const s = await makeStudent()
+    const visa = await ask(s, 'My student visa was refused, what should I do?')
+    expect(await run(visa, fixed('A LockIn team member will follow up.'))).toMatchObject({ state: 'review', risk: 'high' })
+    const fees = await ask(s, 'What are the tuition fees at Synthetic Thames University?')
+    expect(await D.prepareDerekDraft(pool(), fees.conversationId, fees.triggerMessageId!, { provider: fixed('Not verified yet.', true), loadEvidence: async () => [] })).toMatchObject({
+      state: 'review',
+      risk: 'uncertain',
+    })
+    await seen(dev, 600)
+    for (const c of [visa, fees]) {
+      expect(await D.handOffToDerek(pool(), c.conversationId)).toEqual({ state: 'none' })
+      expect(await derekBodies(c.conversationId)).toEqual([])
+    }
+  })
+
+  it('never pretends to hand over when Derek is not cleared, and hands over once he is', async () => {
+    await seen(dev, 0)
+    const s = await makeStudent()
+    const q = await ask(s, 'What is a statement of purpose?')
+    await run(q, fixed())
+    await seen(dev, 600)
+    expect(await D.handOffToDerek(pool(), q.conversationId, { status: { ...READY, autoReply: { permitted: false, blockers: ['x'] } } })).toEqual({ state: 'none' })
+    expect(await derekBodies(q.conversationId)).toEqual([]) // not cleared → nothing pretends to hand over
+    expect(await D.handOffToDerek(pool(), q.conversationId)).toMatchObject({ state: 'sent' })
   })
 })

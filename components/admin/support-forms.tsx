@@ -30,7 +30,7 @@ const newRequestId = () => (typeof crypto !== 'undefined' && 'randomUUID' in cry
  * Human reply composer. The idempotency key is fixed per draft of the reply, so a double click or
  * a retried request is stored once; it changes only after the server confirms the save.
  */
-export function ReplyForm({ conversationId, disabled }: { conversationId: number; disabled?: boolean }) {
+export function ReplyForm({ conversationId, disabled, seenUpToId }: { conversationId: number; disabled?: boolean; seenUpToId?: number }) {
   const { state, pending, onSubmit } = useFormAction(replyAction)
   const [requestId, setRequestId] = useState(newRequestId)
   const formRef = useRef<HTMLFormElement>(null)
@@ -45,6 +45,7 @@ export function ReplyForm({ conversationId, disabled }: { conversationId: number
     <form ref={formRef} onSubmit={onSubmit} className="flex flex-col gap-3" noValidate>
       <input type="hidden" name="conversationId" value={conversationId} />
       <input type="hidden" name="clientRequestId" value={requestId} />
+      {seenUpToId != null ? <input type="hidden" name="seenUpToId" value={seenUpToId} /> : null}
       <Field id="reply-body" label="Reply as yourself" help="Sent under your name with the label “LockIn team”. Plain text only." errors={errors}>
         <textarea
           id="reply-body"
@@ -194,26 +195,16 @@ export function MarkReadForm({ ids, label = 'Mark as read' }: { ids: number[] | 
   )
 }
 
-export function SupportSettingsForm({ mode, autoReplyEnabled, autoReplyPermitted }: { mode: string; autoReplyEnabled: boolean; autoReplyPermitted: boolean }) {
+export function SupportSettingsForm({ autoReplyEnabled, autoReplyPermitted }: { autoReplyEnabled: boolean; autoReplyPermitted: boolean }) {
   const { state, pending, onSubmit } = useFormAction(updateSupportSettingsAction)
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1 text-sm font-medium text-foreground">Support mode</legend>
-        <label className="flex items-start gap-2 text-sm text-foreground">
-          <input type="radio" name="mode" value="online" defaultChecked={mode === 'online'} className="mt-1" />
-          <span>Online — the team answers. Derek may only prepare drafts for review (when live AI is enabled).</span>
-        </label>
-        <label className="flex items-start gap-2 text-sm text-foreground">
-          <input type="radio" name="mode" value="offline" defaultChecked={mode === 'offline'} className="mt-1" />
-          <span>Offline — questions wait for the team, unless automatic replies below are enabled and permitted.</span>
-        </label>
-      </fieldset>
       <label className="flex items-start gap-2 text-sm text-foreground">
-        <input type="checkbox" name="autoReplyEnabled" value="1" defaultChecked={autoReplyEnabled} disabled={!autoReplyPermitted && !autoReplyEnabled} className="mt-1" />
+        <input type="checkbox" name="autoReplyEnabled" value="1" defaultChecked={autoReplyEnabled} className="mt-1" />
         <span>
-          Send Derek’s low-risk answers automatically while offline, without a person reviewing them.
-          {autoReplyPermitted ? '' : ' Not available: see the blockers listed above.'}
+          Let Derek answer routine questions himself. Greetings, thanks and ordinary low-risk questions get a reply straight away; visa, legal, payment,
+          distress, unverified facts and anything uncertain still wait for a person. Untick to pause every automatic reply.
+          {autoReplyPermitted ? '' : ' Until the AI provider is cleared (see above), only LockIn’s fixed greeting, thanks and scope replies are sent automatically.'}
         </span>
       </label>
       <FormMessage state={state} />

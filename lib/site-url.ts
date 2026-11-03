@@ -7,7 +7,8 @@ export function getSiteUrl(env: Record<string, string | undefined> = process.env
   if (!raw) return null
   try {
     const url = new URL(raw)
-    return url.protocol === 'https:' || url.hostname === 'localhost' ? url : null
+    // Plain-http localhost is for local previews only; a production build never publishes it.
+    return url.protocol === 'https:' || (url.hostname === 'localhost' && env.NODE_ENV !== 'production') ? url : null
   } catch {
     return null
   }

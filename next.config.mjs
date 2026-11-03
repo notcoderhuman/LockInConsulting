@@ -12,6 +12,16 @@ const securityHeaders = [
 const nextConfig = {
   output: 'standalone',
   poweredByHeader: false,
+  // Loaded from disk at boot (instrumentation.ts), so the file tracer cannot see them.
+  outputFileTracingIncludes: {
+    '/*': [
+      './db/migrations/**/*',
+      './lib/db/boot-migrate.mjs',
+      './lib/db/session.mjs',
+      './scripts/migrate.mjs',
+      './scripts/db-capabilities.mjs',
+    ],
+  },
   images: {
     unoptimized: true,
   },

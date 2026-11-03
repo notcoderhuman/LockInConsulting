@@ -14,7 +14,7 @@ export default async function SignInPage() {
   if (ctx.state === 'not_configured' || ctx.state === 'error') redirect('/admin/unavailable')
 
   return (
-    <GateCard title="Dev Admin sign in">
+    <GateCard title="LockIn Consulting staff sign in">
       <p className="text-sm leading-relaxed text-muted-foreground">
         For LockIn staff only. Accounts are created by the owner; there is no public sign-up.
       </p>

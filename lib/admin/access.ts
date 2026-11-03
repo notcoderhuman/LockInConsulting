@@ -34,14 +34,17 @@ export async function resolveAdminContext(requestHeaders: Headers): Promise<Admi
     const session = await auth.api.getSession({ headers: requestHeaders })
     if (!session?.user) return { state: 'signed_out' }
     // An account is either staff or a student, never both: a user who also has a student
-    // profile is refused admin access (see lib/identity/policy.ts).
+    // profile is refused admin access (see lib/identity/policy.ts). Staff sign in only with a
+    // password: an account that also has a Google (or any other) login is refused, so student
+    // sign-in methods can never become a way into /admin.
     const [rows] = await getAdminPool().query<RowDataPacket[]>(
-      `SELECT m.role, m.support_enabled, (SELECT COUNT(*) FROM student_profiles s WHERE s.user_id = m.user_id) AS student_profiles
+      `SELECT m.role, m.support_enabled, (SELECT COUNT(*) FROM student_profiles s WHERE s.user_id = m.user_id) AS student_profiles,
+              (SELECT COUNT(*) FROM auth_account a WHERE a.userId = m.user_id AND a.providerId <> 'credential') AS other_logins
          FROM admin_members m WHERE m.user_id = ? AND m.status = 'active'`,
       [session.user.id],
     )
     const role = rows[0]?.role as AdminRole | undefined
-    if (!role || !ADMIN_ROLES.includes(role) || Number(rows[0].student_profiles) > 0)
+    if (!role || !ADMIN_ROLES.includes(role) || Number(rows[0].student_profiles) > 0 || Number(rows[0].other_logins) > 0)
       return { state: 'forbidden', email: session.user.email }
     return {
       state: 'ok',

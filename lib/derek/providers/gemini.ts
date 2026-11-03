@@ -1,7 +1,7 @@
 import { ProviderError, UNCERTAIN_MARKER, type AiProvider, type AutoReplyCapability, type DraftRequest, type DraftResult, type ProviderPolicy } from '../provider'
 
-// Google Gemini API adapter (REST `models.generateContent`), checked 21 Oct 2026 against
-// https://ai.google.dev/gemini-api/docs/models (gemini-3.5-flash-lite: Stable),
+// Google Gemini API adapter (REST `models.generateContent`), checked 21 Oct 2026 and again 26 Oct 2026
+// against https://ai.google.dev/gemini-api/docs/models (gemini-3.5-flash-lite: Stable, no shutdown date),
 // https://ai.google.dev/api/generate-content and https://ai.google.dev/gemini-api/docs/api-key.
 //
 // Server-only. The key is read from GEMINI_API_KEY by lib/derek/config.ts, held in a private
@@ -10,12 +10,14 @@ import { ProviderError, UNCERTAIN_MARKER, type AiProvider, type AutoReplyCapabil
 //
 // Terms (https://ai.google.dev/gemini-api/terms, effective 23 Mar 2026; RISKS.md R-027):
 //   - The API may not be used in a client directed towards, or likely to be accessed by, people
-//     under 18 → `requiresAdultStudent`: the worker only drafts for students with a recorded 18+
-//     confirmation, which no flow sets yet, so no real student reaches Gemini today.
+//     under 18 → `requiresAdultStudent`: the worker only calls Gemini for students with a recorded 18+
+//     confirmation (set by the Google sign-up step or the provisioning CLI).
 //   - Unpaid tier: inputs/outputs may be read by human reviewers and used to improve products, and
 //     Google says not to submit personal information → production requires GEMINI_PAID_TIER=true;
 //     outside production the free tier is for synthetic data only.
-//   - Automatic (unreviewed) replies are never permitted with this provider (lib/derek/config.ts).
+//   - Use for this student-facing service: Google confirmed it is permitted under the standard terms,
+//     subject to its conditions (D-041). Production still needs DEREK_PROVIDER_APPROVED=gemini, and
+//     unreviewed replies also DEREK_AUTO_REPLY_CLEARED=gemini plus every gate in lib/derek/auto-reply.ts.
 
 export const GEMINI_MODEL = 'gemini-3.5-flash-lite'
 export const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models'
@@ -110,12 +112,10 @@ export function parseGeminiResponse(body: unknown, fallbackModel: string): Draft
 }
 
 export class GeminiProvider implements AiProvider {
-  // Drafts only (D-035, R-027): whether Google's terms allow unreviewed replies to LockIn's
-  // students is unresolved, so this adapter never permits them, whatever the configuration says.
-  static readonly autoReply: AutoReplyCapability = {
-    permitted: false,
-    reason: 'Automatic replies are not approved for Gemini: Derek only prepares drafts for human review.',
-  }
+  // Google confirmed the intended use (D-041). This declaration is necessary but never enough: the
+  // owner must also clear it (DEREK_AUTO_REPLY_CLEARED=gemini; in production DEREK_PROVIDER_APPROVED and
+  // GEMINI_PAID_TIER too), and every send-time gate still applies (risk, team offline, caps, takeover).
+  static readonly autoReply: AutoReplyCapability = { permitted: true }
   readonly id = 'gemini'
   readonly model: string
   readonly policy: ProviderPolicy

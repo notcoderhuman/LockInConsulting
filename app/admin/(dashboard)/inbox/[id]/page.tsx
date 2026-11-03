@@ -119,7 +119,7 @@ export default async function ConversationPage({ params, searchParams }: { param
 
           {canReply ? (
             <Panel title="Reply">
-              <ReplyForm conversationId={id} disabled={!c.studentActive} />
+              <ReplyForm conversationId={id} disabled={!c.studentActive} seenUpToId={last?.id ?? 0} />
             </Panel>
           ) : null}
         </div>
@@ -129,7 +129,7 @@ export default async function ConversationPage({ params, searchParams }: { param
             title="Derek"
             description={
               derek.state === 'ready'
-                ? [`Derek is enabled (provider: ${derek.providerId}). Drafts need review before they reach the student unless the owner has turned on automatic replies.`, ...derek.notes].join(' ')
+                ? [`Derek is enabled (provider: ${derek.providerId}). Routine low-risk answers are sent automatically when automatic replies are on and the provider is cleared; this draft is here because it needs a person.`, ...derek.notes].join(' ')
                 : derek.reasons.join(' ')
             }
           >

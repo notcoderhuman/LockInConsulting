@@ -13,7 +13,7 @@ export type Permission =
   | 'support.review_ai' // edit, approve, reject or request Derek drafts
   | 'students.read' // student profile list and detail (contact details)
   | 'members.manage' // revoke membership and grant/revoke editor support access
-  | 'support.settings' // online/offline mode and automatic replies
+  | 'support.settings' // automatic replies (kill switch)
   | 'students.erase' // erase a student's account and conversations
 
 const RANK: Record<AdminRole, number> = { editor: 1, reviewer: 2, owner: 3 }

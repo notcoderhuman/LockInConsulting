@@ -5,6 +5,7 @@ import { getAuth } from '@/lib/auth'
 import { getAdminPool } from '@/lib/db/pool'
 import { REQUIRED_MIGRATIONS } from '@/lib/db/schema-version'
 import { getStudentAreaStatus } from '@/lib/identity/policy'
+import { canStartStudentProfile } from '@/lib/student/onboarding'
 
 // Server-side identity for the student chat. Every student route handler calls requireStudentApi,
 // which derives the student from the session cookie. A student id, conversation owner or role
@@ -21,6 +22,8 @@ export type StudentContext =
   | { state: 'error' }
   | { state: 'signed_out' }
   | { state: 'forbidden' }
+  /** Signed in with Google, no student profile yet: must confirm 18+ and the privacy notice first. */
+  | { state: 'needs_profile'; userId: string; name: string }
   | { state: 'ok'; student: StudentActor }
 
 export async function resolveStudentContext(requestHeaders: Headers): Promise<StudentContext> {
@@ -38,6 +41,7 @@ export async function resolveStudentContext(requestHeaders: Headers): Promise<St
       [session.user.id],
     )
     const row = rows[0]
+    if (!row && (await canStartStudentProfile(session.user.id))) return { state: 'needs_profile', userId: session.user.id, name: session.user.name ?? '' }
     // Staff accounts (even revoked ones) are never students.
     if (!row || Number(row.memberships) > 0) return { state: 'forbidden' }
     return { state: 'ok', student: { userId: session.user.id, profileId: Number(row.id), displayName: String(row.display_name) } }
@@ -86,6 +90,8 @@ export async function requireStudentApi(request: Request, { mutation = false } =
       return jsonError(503, 'Support is temporarily unavailable.', { state: 'unavailable' })
     case 'signed_out':
       return jsonError(401, 'Sign in to continue.', { state: 'signed_out' })
+    case 'needs_profile':
+      return jsonError(403, 'Finish setting up your student account first.', { state: 'needs_profile' })
     case 'forbidden':
       return jsonError(403, 'This account cannot use the student area.', { state: 'forbidden' })
     case 'ok':

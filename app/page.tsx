@@ -1,4 +1,4 @@
-import { DerekStatus } from '@/components/home/derek-status'
+import { ChatCta } from '@/components/home/chat-cta'
 import { HeroExplorer } from '@/components/home/hero-explorer'
 import { HowItWorks } from '@/components/home/how-it-works'
 import { TeamSection } from '@/components/home/team-section'
@@ -11,10 +11,11 @@ export default function HomePage() {
     <>
       <SkipLink />
       <SiteHeader />
-      <main id="main">
+      {/* Page body not yet translated (Phase D covers the interface shell): marked English for screen readers and browser translation. */}
+      <main id="main" lang="en">
         <HeroExplorer />
+        <ChatCta />
         <HowItWorks />
-        <DerekStatus />
         <TeamSection />
       </main>
       <SiteFooter />

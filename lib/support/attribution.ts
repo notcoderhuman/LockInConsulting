@@ -10,6 +10,8 @@ export interface AttributionInput {
   reviewedByName: string | null
   /** For Derek messages: whether a team member edited the final text before approving it. */
   editedByHuman: boolean
+  /** Written by the offline mock provider (local development only; refused in production). */
+  testOnly?: boolean
 }
 
 export function attributionLabel(m: AttributionInput, viewer: 'student' | 'staff'): string {
@@ -18,10 +20,16 @@ export function attributionLabel(m: AttributionInput, viewer: 'student' | 'staff
       return viewer === 'student' ? 'You' : (m.authorName ?? 'Student')
     case 'staff':
       return `Replied by ${m.authorName ?? 'a LockIn team member'} · LockIn team`
-    case 'derek':
-      if (!m.reviewedByName) return 'Replied by Derek · AI assistant · automatic reply, not reviewed by a person'
-      return m.editedByHuman
-        ? `Drafted by Derek · AI assistant · edited and approved by ${m.reviewedByName}`
-        : `Replied by Derek · AI assistant · reviewed by ${m.reviewedByName}`
+    case 'derek': {
+      const label = derekLabel(m)
+      return m.testOnly ? `${label} · test reply from the offline mock, not a real AI answer` : label
+    }
   }
+}
+
+function derekLabel(m: AttributionInput): string {
+  if (!m.reviewedByName) return 'Replied by Derek · AI assistant · automatic reply, not reviewed by a person'
+  return m.editedByHuman
+    ? `Drafted by Derek · AI assistant · edited and approved by ${m.reviewedByName}`
+    : `Replied by Derek · AI assistant · reviewed by ${m.reviewedByName}`
 }

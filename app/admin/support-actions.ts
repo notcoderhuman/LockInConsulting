@@ -56,6 +56,7 @@ export async function replyAction(_prev: ActionState, form: FormData): Promise<A
     const { duplicate } = await staffReply(getAdminPool(), actor, conversationId(form), {
       body: form.get('body'),
       clientRequestId: formText(form, 'clientRequestId'),
+      seenUpToId: formText(form, 'seenUpToId'),
     })
     return { message: duplicate ? 'This reply was already sent.' : 'Reply sent and saved.' }
   })
@@ -122,7 +123,7 @@ export async function markNotificationsReadAction(_prev: ActionState, form: Form
 
 export async function updateSupportSettingsAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   return run('support.settings', async (actor) => {
-    await updateSupportSettings(getAdminPool(), actor, { mode: formText(form, 'mode'), autoReplyEnabled: formText(form, 'autoReplyEnabled') === '1' })
+    await updateSupportSettings(getAdminPool(), actor, { autoReplyEnabled: formText(form, 'autoReplyEnabled') === '1' })
     return { message: 'Support settings saved.' }
   })
 }

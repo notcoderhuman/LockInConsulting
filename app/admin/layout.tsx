@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
+import { LocaleProvider } from '@/lib/i18n/client'
 
 export const metadata: Metadata = {
   title: { default: 'Admin', template: '%s · LockIn Admin' },
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 }
 
 export default function AdminRootLayout({ children }: { children: ReactNode }) {
-  return <div className="min-h-dvh bg-background font-sans text-foreground">{children}</div>
+  return (
+    <div lang="en-IN" className="min-h-dvh bg-background font-sans text-foreground">
+      <LocaleProvider locale="en">{children}</LocaleProvider>
+    </div>
+  )
 }

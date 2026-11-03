@@ -2,12 +2,14 @@ import type { Pool, PoolConnection } from 'mysql2/promise'
 import { z } from 'zod'
 import { appendChangeLog } from '@/lib/admin/audit'
 import type { AdminActor } from '@/lib/admin/roles'
-import { getDerekStatus, type DerekStatus } from '@/lib/derek/config'
+import type { DerekStatus } from '@/lib/derek/config'
 import { assertActor, inTransaction, selectRows, SupportError } from './db'
 
-// Owner-controlled support mode. "online" = humans answer (Derek may only prepare drafts for
-// review); "offline" = Derek MAY auto-reply, but only when automatic replies are switched on
-// here AND fully permitted by lib/derek/config.ts at the moment of sending.
+// Owner-controlled automatic replies: a kill switch that is ON by default (0005). While it is on,
+// Derek sends routine low-risk answers himself, but only when lib/derek/config.ts permits the
+// provider at the moment of sending; LockIn's own fixed replies (greeting, thanks, scope) need no
+// provider clearance. `mode` (online/offline) is kept for the record but no longer gates anything:
+// ordinary questions are answered at any hour, and risky ones wait for a person either way.
 
 export type SupportMode = 'online' | 'offline'
 
@@ -34,23 +36,24 @@ export async function getSupportSettings(db: Db, { forUpdate = false } = {}): Pr
 
 /** True only when every gate allows sending an unreviewed Derek reply right now. */
 export function autoReplyActive(settings: SupportSettings, derek: DerekStatus): boolean {
-  return settings.mode === 'offline' && settings.autoReplyEnabled && derek.state === 'ready' && derek.autoReply.permitted
+  return settings.autoReplyEnabled && derek.state === 'ready' && derek.autoReply.permitted
 }
 
 const settingsInput = z.object({
-  mode: z.enum(['online', 'offline']),
+  mode: z.enum(['online', 'offline']).optional(),
   autoReplyEnabled: z.boolean(),
 })
 
-export async function updateSupportSettings(pool: Pool, actor: AdminActor, input: unknown, derek: DerekStatus = getDerekStatus()): Promise<SupportSettings> {
+export async function updateSupportSettings(pool: Pool, actor: AdminActor, input: unknown): Promise<SupportSettings> {
   assertActor(actor, 'support.settings')
   const parsed = settingsInput.safeParse(input)
-  if (!parsed.success) throw new SupportError(400, 'Choose a support mode.')
-  const { mode, autoReplyEnabled } = parsed.data
-  if (autoReplyEnabled && !derek.autoReply.permitted)
-    throw new SupportError(409, `Automatic replies cannot be enabled: ${derek.autoReply.blockers.join(' ')}`)
+  if (!parsed.success) throw new SupportError(400, 'Choose whether automatic replies are on.')
+  // Turning the switch on never sends model-written text by itself: autoReplyActive() still needs
+  // a cleared provider at the moment of sending.
+  const { autoReplyEnabled } = parsed.data
   return inTransaction(pool, async (conn) => {
     const before = await getSupportSettings(conn, { forUpdate: true })
+    const mode = parsed.data.mode ?? before.mode
     await conn.query('UPDATE support_settings SET support_mode = ?, auto_reply_enabled = ?, updated_by = ?, updated_at = UTC_TIMESTAMP(3) WHERE id = 1', [
       mode,
       autoReplyEnabled,

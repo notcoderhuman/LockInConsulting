@@ -47,6 +47,19 @@ export function deriveSubject(subject: string | undefined, body: string): string
   return s.length > SUBJECT_MAX ? `${s.slice(0, SUBJECT_MAX - 1)}…` : s
 }
 
+export const COURSE_MAX = 80
+export const INSTAGRAM_HANDLE = /^@?[A-Za-z0-9._]{1,30}$/
+
+/**
+ * Subject for a student's first question: destination and course, plus Instagram only if given.
+ * shortcut: the context lives in the existing subject (staff-only, never sent to the AI provider);
+ * give it its own columns if Derek or reporting ever needs it.
+ */
+export function contextSubject(destination: string, course: string, instagram = ''): string {
+  const handle = instagram.trim().replace(/^@/, '')
+  return [destination.trim(), course.trim().slice(0, COURSE_MAX), handle && `Instagram @${handle}`].filter(Boolean).join(' · ')
+}
+
 export const PAGE_SIZE_MAX = 50
 
 export function parsePageParams(url: URL): { before: number | null; limit: number } {

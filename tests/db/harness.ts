@@ -11,6 +11,8 @@
 import { randomBytes } from 'node:crypto'
 import mysql, { type Connection, type RowDataPacket } from 'mysql2/promise'
 import { createDB } from 'mysql-memory-server'
+import { SESSION_SETUP } from '../../lib/db/session.mjs'
+import { keepAlive } from './heartbeat'
 
 export interface TestDatabase {
   url: string
@@ -82,6 +84,6 @@ export async function startTestDatabase(): Promise<TestDatabase> {
 
 export async function connect(url: string): Promise<Connection> {
   const conn = await mysql.createConnection({ uri: url, multipleStatements: true, dateStrings: true, timezone: 'Z' })
-  await conn.query("SET time_zone = '+00:00'")
-  return conn
+  await conn.query(SESSION_SETUP)
+  return process.env.DB_TEST_URL ? keepAlive(conn) : conn
 }

@@ -67,6 +67,9 @@ describe('question analysis', () => {
     expect(detectDestinations('Can you tell us about the UK?').map((d) => d.iso2)).toEqual(['GB'])
     expect(detectDestinations('I like studying in America or NZ').map((d) => d.iso2).sort()).toEqual(['NZ', 'US'])
     expect(detectDestinations('What is a personal statement?')).toEqual([])
+    // Regression: a country at the end of a sentence was missed because of the full stop.
+    expect(detectDestinations('I plan to study nursing in Germany.').map((d) => d.iso2)).toEqual(['DE'])
+    expect(detectDestinations('Is the U.K. or the U.S.A. better?').map((d) => d.iso2).sort()).toEqual(['GB', 'US'])
   })
 
   it('matches plural and stemmed factual topics (regression: "requirements" was missed)', () => {

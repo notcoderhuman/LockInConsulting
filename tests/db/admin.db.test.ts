@@ -557,3 +557,11 @@ describe('audit log integrity', () => {
     expect(await verifyAuditChain(db)).toMatchObject({ ok: false, reason: expect.stringMatching(/changed or deleted/) })
   })
 })
+
+describe('backups', () => {
+  it('stores no trigger that mysqldump would write in a form the server refuses on restore', async () => {
+    // A body ending in ; dumps as '...; */;;' (ERROR 1064 on restore). See migration 0012.
+    const [stray] = await db.query<RowDataPacket[]>("SELECT TRIGGER_NAME FROM information_schema.triggers WHERE TRIGGER_SCHEMA = DATABASE() AND ACTION_STATEMENT LIKE '%;'")
+    expect(stray).toEqual([])
+  })
+})

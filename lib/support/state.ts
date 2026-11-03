@@ -66,6 +66,15 @@ export const STATUS_LABEL: Record<ConversationStatus, string> = {
 /** Shown under a student's latest message until someone replies. Team notifications are in-site only, so a person follows up when they next sign in. */
 export const STUDENT_ACKNOWLEDGEMENT = 'Your question has been received. A member of the LockIn team will follow up.'
 
+/** Shown while Derek is preparing an answer that may be sent automatically. */
+export const DEREK_WRITING = 'Derek is writing a reply…'
+
+/** Shown when the AI provider failed for this question; a person takes it from here. */
+export const DEREK_FAILED = 'Derek couldn’t generate an answer this time, so a member of the LockIn team will follow up.'
+
+/** How long after a student's message Derek counts as "about to start" before his draft row exists. */
+export const DEREK_PENDING_SECONDS = 20
+
 /** What the student sees. Internal review and failure states are never exposed as such. */
 export const STUDENT_STATUS_LABEL: Record<ConversationStatus, string> = {
   open: 'Waiting for the LockIn team',

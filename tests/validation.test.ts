@@ -125,6 +125,15 @@ describe('rankingInput and rights', () => {
     ).toBe(true)
     expect(rankingRightsInput.safeParse({ rightsStatus: 'not_required' }).success).toBe(false)
   })
+
+  it('allows ordering and AI use only on top of a licence, and both default to off (D-042)', () => {
+    const licensed = { rightsStatus: 'licensed', licenceReference: 'QS-2026-001', licenceScope: 'Web display', rightsCheckedAt: '2026-10-15' }
+    expect(rankingRightsInput.parse(licensed)).toMatchObject({ allowOrdering: false, allowAiUse: false })
+    expect(rankingRightsInput.safeParse({ ...licensed, allowOrdering: true, allowAiUse: true }).success).toBe(true)
+    for (const rightsStatus of ['not_confirmed', 'requested', 'denied'])
+      for (const flag of ['allowOrdering', 'allowAiUse'])
+        expect(rankingRightsInput.safeParse({ rightsStatus, [flag]: true }).success, `${rightsStatus} ${flag}`).toBe(false)
+  })
 })
 
 describe('verificationInput', () => {

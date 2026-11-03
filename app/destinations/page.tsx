@@ -19,7 +19,8 @@ export default function DestinationsPage() {
     <>
       <SkipLink />
       <SiteHeader />
-      <main id="main" className="mx-auto max-w-7xl px-5 pb-20 pt-10 md:px-8 md:pt-14">
+      {/* Page body not yet translated (Phase D covers the interface shell): marked English for screen readers and browser translation. */}
+      <main id="main" lang="en" className="mx-auto max-w-7xl px-5 pb-20 pt-10 md:px-8 md:pt-14">
         <div className="flex max-w-2xl flex-col gap-4">
           <p className="text-xs font-medium uppercase tracking-[0.28em] text-primary">11 destinations</p>
           <h1 className="font-serif text-4xl font-medium leading-[1.05] text-balance text-foreground md:text-6xl">

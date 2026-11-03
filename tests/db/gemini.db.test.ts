@@ -95,12 +95,12 @@ describe('Gemini drafts through the worker (fake fetch)', () => {
     await expect(D.requestDraftForConversation(pool(), reviewer, q.conversationId, { status: status(), provider })).rejects.toMatchObject({ status: 409, message: expect.stringMatching(/18\+ confirmation/) })
   })
 
-  it('drafts for review with usage metadata, sends only redacted text, and never auto-sends', async () => {
+  it('drafts for review with usage metadata and sends only redacted text while automatic replies are not cleared for Gemini', async () => {
     const s = await student({ adult: true })
     const q = await C.createConversation(pool(), s, { body: 'What is a conditional offer? Reach me on asha@example.com or +91 98765 43210.', clientRequestId: rid() })
-    // Force every automatic-reply gate open in the database and environment: Gemini must still only draft.
+    // The owner's switch is on, but DEREK_AUTO_REPLY_CLEARED does not name gemini: Gemini only drafts.
     await db.query("UPDATE support_settings SET support_mode = 'offline', auto_reply_enabled = TRUE WHERE id = 1")
-    Object.assign(process.env, ENV, { DEREK_AUTO_REPLY_CLEARED: 'gemini' })
+    Object.assign(process.env, ENV)
     try {
       const { provider, calls } = gemini(() => geminiReply('A conditional offer means a place is held for you once you meet the remaining conditions, such as final results. Conditions vary by university.'))
       const out = await D.prepareDerekDraft(pool(), q.conversationId, q.triggerMessageId!, { status: status(), provider })
@@ -119,6 +119,38 @@ describe('Gemini drafts through the worker (fake fetch)', () => {
       expect(msgs.at(-1)).toMatchObject({ authorKind: 'derek', label: 'Replied by Derek · AI assistant · reviewed by Gem Reviewer' })
     } finally {
       for (const k of [...Object.keys(ENV), 'DEREK_AUTO_REPLY_CLEARED']) delete process.env[k]
+      await db.query("UPDATE support_settings SET support_mode = 'online', auto_reply_enabled = FALSE WHERE id = 1")
+    }
+  })
+
+  it('auto-sends a low-risk answer once the owner clears Gemini (D-041), attributed and audited, but not while the team is online', async () => {
+    const s = await student({ adult: true })
+    const cleared = { ...ENV, DEREK_AUTO_REPLY_CLEARED: 'gemini' }
+    await db.query("UPDATE support_settings SET auto_reply_enabled = TRUE WHERE id = 1")
+    Object.assign(process.env, cleared)
+    try {
+      const answer = 'A conditional offer means a place is held for you once you meet the remaining conditions, such as final results. Conditions vary by university.'
+      const q = await C.createConversation(pool(), s, { body: 'What is a conditional offer?', clientRequestId: rid() })
+      const { provider } = gemini(() => geminiReply(answer))
+      const out = await D.prepareDerekDraft(pool(), q.conversationId, q.triggerMessageId!, { status: getDerekStatus(cleared), provider })
+      expect(out).toMatchObject({ state: 'auto_sent' })
+      const last = (await C.getStudentMessages(pool(), s, q.conversationId)).messages.at(-1)
+      expect(last).toMatchObject({ authorKind: 'derek', label: 'Replied by Derek · AI assistant · automatic reply, not reviewed by a person' })
+      expect(last?.body.endsWith(answer)).toBe(true)
+      const [audit] = await rows<{ after_data: unknown }>("SELECT after_data FROM data_change_log WHERE entity_type = 'ai_draft' AND action = 'draft_send' ORDER BY id DESC LIMIT 1")
+      expect(JSON.stringify(audit.after_data)).toMatch(/"provider":"gemini"/)
+
+      // A team member online: the same kind of question waits for a person.
+      await db.query("INSERT INTO auth_user (id, name, email, emailVerified, updatedAt) VALUES ('u-gem-dev', 'Dev Gem', 'gem-dev@test.example', 1, UTC_TIMESTAMP(3))")
+      await db.query("INSERT INTO admin_members (user_id, role, status, granted_by) VALUES ('u-gem-dev', 'reviewer', 'active', 'cli:test')")
+      await db.query("INSERT INTO staff_presence (user_id, last_seen_at) VALUES ('u-gem-dev', UTC_TIMESTAMP(3))")
+      const q2 = await C.createConversation(pool(), s, { body: 'What is an unconditional offer?', clientRequestId: rid() })
+      const held = await D.prepareDerekDraft(pool(), q2.conversationId, q2.triggerMessageId!, { status: getDerekStatus(cleared), provider: gemini(() => geminiReply(answer)).provider })
+      expect(held).toMatchObject({ state: 'review' })
+    } finally {
+      for (const k of Object.keys(cleared)) delete process.env[k]
+      await db.query('DELETE FROM staff_presence')
+      await db.query("DELETE FROM admin_members WHERE user_id = 'u-gem-dev'")
       await db.query("UPDATE support_settings SET support_mode = 'online', auto_reply_enabled = FALSE WHERE id = 1")
     }
   })

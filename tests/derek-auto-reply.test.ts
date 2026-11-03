@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { AUTO_REPLY_LIMITS, autoReplyContentBlockers } from '@/lib/derek/auto-reply'
+import { AUTO_REPLY_LIMITS, autoReplyContentBlockers, keepsQualifiers } from '@/lib/derek/auto-reply'
 import { DEFAULT_DAILY_TOKEN_LIMIT, derekDailyTokenLimit, getDerekStatus } from '@/lib/derek/config'
 import { GeminiProvider } from '@/lib/derek/providers/gemini'
 import { MockProvider } from '@/lib/derek/providers/mock'
@@ -13,16 +13,32 @@ describe('automatic replies need a provider-specific review AND the adapter’s 
       expect(getDerekStatus({ ...mock, DEREK_AUTO_REPLY_CLEARED: value }).autoReply, String(value)).toMatchObject({ permitted: false, blockers: [expect.stringContaining('"mock"')] })
   })
 
-  it('never permits Gemini, even with its review recorded and the paid tier attested', () => {
-    expect(GeminiProvider.autoReply.permitted).toBe(false)
-    expect(new GeminiProvider({ apiKey: 'FAKE-test-key', dailyDraftLimit: 1 }).autoReply.permitted).toBe(false)
-    const status = getDerekStatus({ DEREK_AI_ENABLED: 'true', DEREK_PROVIDER: 'gemini', GEMINI_API_KEY: 'FAKE-test-key', GEMINI_PAID_TIER: 'true', DEREK_AUTO_REPLY_CLEARED: 'gemini' })
-    expect(status).toMatchObject({ state: 'ready', autoReply: { permitted: false, blockers: [expect.stringMatching(/not approved for Gemini/)] } })
+  it('permits Gemini only with every clearance recorded (D-041), and in production also its approval and the paid tier', () => {
+    expect(GeminiProvider.autoReply.permitted).toBe(true) // the adapter's declaration is necessary, never enough
+    const gemini = { DEREK_AI_ENABLED: 'true', DEREK_PROVIDER: 'gemini', GEMINI_API_KEY: 'FAKE-test-key' }
+    expect(getDerekStatus(gemini).autoReply).toMatchObject({ permitted: false, blockers: [expect.stringContaining('"gemini"')] })
+    expect(getDerekStatus({ ...gemini, DEREK_AUTO_REPLY_CLEARED: 'mock' }).autoReply.permitted).toBe(false)
+    expect(getDerekStatus({ ...gemini, DEREK_AUTO_REPLY_CLEARED: 'gemini' }).autoReply).toEqual({ permitted: true })
+    const prod = { ...gemini, NODE_ENV: 'production', DEREK_AUTO_REPLY_CLEARED: 'gemini' }
+    expect(getDerekStatus(prod)).toMatchObject({ state: 'blocked', autoReply: { permitted: false } }) // no recorded approval
+    expect(getDerekStatus({ ...prod, DEREK_PROVIDER_APPROVED: 'gemini' })).toMatchObject({ state: 'blocked', autoReply: { permitted: false } }) // unpaid tier
+    expect(getDerekStatus({ ...prod, DEREK_PROVIDER_APPROVED: 'gemini', GEMINI_PAID_TIER: 'true' })).toMatchObject({ state: 'ready', autoReply: { permitted: true } })
   })
 
   it('refuses the mock in production, so no provider can auto-send there today', () => {
     expect(MockProvider.autoReply.permitted).toBe(true)
     expect(getDerekStatus({ ...mock, NODE_ENV: 'production', DEREK_AUTO_REPLY_CLEARED: 'mock' })).toMatchObject({ state: 'blocked', autoReply: { permitted: false } })
+  })
+})
+
+describe('shortening never drops a caveat', () => {
+  it('requires every qualifier of the original to survive in the shorter text', () => {
+    const original = 'LockIn has not verified these fees. Costs vary by university; see the official course page.'
+    expect(keepsQualifiers(original, 'Not verified yet: costs vary by university, see each official course page.')).toBe(true)
+    expect(keepsQualifiers(original, 'Costs vary by university; see the official course page.')).toBe(false) // "not verified" dropped
+    expect(keepsQualifiers(original, 'LockIn has not verified these fees.')).toBe(false) // "vary" and "official" dropped
+    expect(keepsQualifiers('[UNCERTAIN] Not known yet.', 'Not known yet.')).toBe(false)
+    expect(keepsQualifiers('Germany has many public universities.', 'Germany has public universities.')).toBe(true) // nothing to keep
   })
 })
 

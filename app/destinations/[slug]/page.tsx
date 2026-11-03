@@ -36,16 +36,17 @@ export default async function DestinationPage({ params }: Props) {
 
   const directory = await getDestinationDirectory(destination.iso2)
   const resources = getOfficialResources(destination.iso2)
-  const universities = directory.state === 'ready' ? directory.universities : []
 
   return (
     <>
       <SkipLink />
       <SiteHeader />
-      <main id="main">
+      {/* Page body not yet translated (Phase D covers the interface shell): marked English for screen readers and browser translation. */}
+      <main id="main" lang="en">
         <DestinationHero
           destination={destination}
-          verifiedListings={directory.state === 'ready' ? universities.length : null}
+          verifiedListings={directory.state === 'ready' ? directory.verifiedTotal : null}
+          provisionalListings={directory.state === 'ready' ? directory.total - Math.min(directory.verifiedTotal, directory.total) : 0}
           resourceCount={resources.length}
         />
         <UniversityDirectory destination={destination} directory={directory} />

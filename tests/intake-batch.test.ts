@@ -13,8 +13,9 @@ type Record = {
   facts: Fact[]
 }
 
-const root = path.resolve(__dirname, '..')
-const batch = JSON.parse(readFileSync(path.join(root, 'db/intake/2026-10-17-initial-batch.json'), 'utf8')) as {
+// The research lives outside the public repository; these checks run only when it is supplied.
+const researchDir = process.env.LOCKIN_RESEARCH_DIR
+const batch = (researchDir ? JSON.parse(readFileSync(path.join(researchDir, '2026-10-17-initial-batch.json'), 'utf8')) : { status: '', records: [] }) as {
   status: string
   records: Record[]
 }
@@ -22,7 +23,7 @@ const batch = JSON.parse(readFileSync(path.join(root, 'db/intake/2026-10-17-init
 const RESULTS = ['captured', 'blocked_automated_check', 'source_not_located', 'stale', 'not_yet_researched']
 const RANKING = /rank|qs|times higher|\bthe_/i
 
-describe('initial directory batch (db/intake)', () => {
+describe.skipIf(!researchDir)('initial directory batch (private research, LOCKIN_RESEARCH_DIR)', () => {
   it('is a private research file, not yet entered or published', () => {
     expect(batch.status).toBe('pending_admin_entry')
     expect(JSON.stringify(batch)).not.toMatch(/"(verified|published)"/)

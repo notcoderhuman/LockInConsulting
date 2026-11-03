@@ -1,0 +1,9 @@
+{
+  "_comment": "Synthetic stand-in for the private research files (kept outside this repository). Same shape, no real data.",
+  "status": "pending_admin_entry",
+  "records": [
+    { "officialName": "Synthetic Research University Alpha", "slug": "synthetic-research-university-alpha", "identity": { "url": "https://alpha.example.edu" } },
+    { "officialName": "Synthetic Research University Beta", "slug": "synthetic-research-university-beta", "identity": { "url": "https://beta.example.edu" } },
+    { "officialName": "Synthetic Research University Gamma", "slug": "synthetic-research-university-gamma", "identity": { "url": "https://gamma.example.edu" } }
+  ]
+}

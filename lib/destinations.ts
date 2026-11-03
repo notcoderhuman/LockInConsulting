@@ -156,6 +156,10 @@ export function destinationHref(destination: Pick<Destination, 'slug'>): string 
   return `/destinations/${destination.slug}`
 }
 
+export function universityHref(destination: Pick<Destination, 'slug'>, universitySlug: string): string {
+  return `${destinationHref(destination)}/universities/${universitySlug}`
+}
+
 /** Previous and next destinations in list order, wrapping around. */
 export function getAdjacentDestinations(iso2: string): { previous: Destination; next: Destination } {
   const index = DESTINATIONS.findIndex((d) => d.iso2 === iso2)

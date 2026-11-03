@@ -281,14 +281,27 @@ describe('Gemini configuration', () => {
     expect(getDerekStatus({ ...base, GEMINI_API_KEY: '' })).toMatchObject({ state: 'blocked', reasons: ['GEMINI_API_KEY is not set.'] })
   })
 
-  it('never permits automatic replies with Gemini, even with every other gate open', () => {
-    const status = getDerekStatus({ ...base, DEREK_AUTO_REPLY_CLEARED: 'gemini', GEMINI_PAID_TIER: 'true' })
-    expect(status.autoReply).toEqual({ permitted: false, blockers: [expect.stringMatching(/not approved for Gemini/)] })
+  it('permits automatic replies with Gemini only once the owner clears it for Gemini', () => {
+    expect(getDerekStatus({ ...base, GEMINI_PAID_TIER: 'true' }).autoReply.permitted).toBe(false)
+    expect(getDerekStatus({ ...base, DEREK_AUTO_REPLY_CLEARED: 'gemini', GEMINI_PAID_TIER: 'true' }).autoReply).toEqual({ permitted: true })
+  })
+
+  it('blocks real student messages in production until the provider terms are approved, whatever else is set', () => {
+    const prod = { ...base, NODE_ENV: 'production', GEMINI_PAID_TIER: 'true' }
+    // Neither the auto-reply clearance nor anything about the students counts as approving Gemini's terms.
+    for (const env of [prod, { ...prod, DEREK_AUTO_REPLY_CLEARED: 'gemini' }, { ...prod, DEREK_PROVIDER_APPROVED: 'true' }, { ...prod, DEREK_PROVIDER_APPROVED: 'mock' }])
+      expect(getDerekStatus(env)).toMatchObject({ state: 'blocked', reasons: [expect.stringMatching(/DEREK_PROVIDER_APPROVED/)] })
+    expect(createProvider(getDerekStatus(prod), prod)).toBeNull()
+    const approved = getDerekStatus({ ...prod, DEREK_PROVIDER_APPROVED: 'gemini' })
+    expect(approved).toMatchObject({ state: 'ready', autoReply: { permitted: false } }) // drafts only until DEREK_AUTO_REPLY_CLEARED=gemini
+    const dev = getDerekStatus(base)
+    expect(dev.state === 'ready' && dev.notes.join(' ')).toMatch(/synthetic local testing only/)
+    expect(getDerekStatus({ ...base, DEREK_GEMINI_MODEL: 'gemini-3.5-flash' })).toMatchObject({ state: 'blocked', reasons: [expect.stringMatching(/deprecated and routed by Google to gemini-3\.6-flash/)] })
   })
 
   it('requires the paid tier in production and flags the free tier as synthetic-data only elsewhere', () => {
-    expect(getDerekStatus({ ...base, NODE_ENV: 'production' })).toMatchObject({ state: 'blocked', reasons: [expect.stringMatching(/GEMINI_PAID_TIER/)] })
-    expect(getDerekStatus({ ...base, NODE_ENV: 'production', GEMINI_PAID_TIER: 'true' }).state).toBe('ready')
+    expect(getDerekStatus({ ...base, NODE_ENV: 'production', DEREK_PROVIDER_APPROVED: 'gemini' })).toMatchObject({ state: 'blocked', reasons: [expect.stringMatching(/GEMINI_PAID_TIER/)] })
+    expect(getDerekStatus({ ...base, NODE_ENV: 'production', GEMINI_PAID_TIER: 'true', DEREK_PROVIDER_APPROVED: 'gemini' }).state).toBe('ready')
     const dev = getDerekStatus(base)
     expect(dev.state === 'ready' && dev.notes.join(' ')).toMatch(/synthetic test data only/)
   })

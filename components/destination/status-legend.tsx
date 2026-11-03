@@ -6,7 +6,7 @@ const ORDER: DisplayState[] = ['verified', 'unavailable', 'unverified', 'expired
 
 export function StatusLegend() {
   return (
-    <section aria-labelledby="data-status-title" id="data-status" className="scroll-mt-20 border-t border-border/60">
+    <section lang="en" aria-labelledby="data-status-title" id="data-status" className="scroll-mt-20 border-t border-border/60">
       <div className="mx-auto flex max-w-7xl flex-col gap-10 px-5 py-16 md:px-8">
         <SectionHeading id="data-status-title" eyebrow="How we verify" title="What each status label means">
           <p>

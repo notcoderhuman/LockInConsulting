@@ -11,10 +11,12 @@ const SECTIONS = [
 interface DestinationHeroProps {
   destination: Destination
   verifiedListings: number | null
+  /** Identity-only entries labelled "Not yet verified" (D-043). */
+  provisionalListings?: number
   resourceCount: number
 }
 
-export function DestinationHero({ destination, verifiedListings, resourceCount }: DestinationHeroProps) {
+export function DestinationHero({ destination, verifiedListings, provisionalListings = 0, resourceCount }: DestinationHeroProps) {
   const facts = [
     { term: 'Region', value: destination.region },
     { term: 'Globe marker', value: destination.marker.label },
@@ -23,6 +25,7 @@ export function DestinationHero({ destination, verifiedListings, resourceCount }
       ? [{ term: 'Includes', value: destination.subRegions.map((s) => s.name).join(', ') }]
       : []),
     { term: 'Verified university listings', value: verifiedListings === null ? 'Pending' : String(verifiedListings) },
+    ...(provisionalListings > 0 ? [{ term: 'Listed, not yet verified', value: String(provisionalListings) }] : []),
     { term: 'Official resources linked', value: String(resourceCount) },
   ]
 

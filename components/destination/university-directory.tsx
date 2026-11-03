@@ -2,7 +2,7 @@ import type { DirectoryResult } from '@/lib/data/types'
 import type { Destination } from '@/lib/destinations'
 import { DataStatusBadge } from './data-status-badge'
 import { SectionHeading } from './section-heading'
-import { UniversityCard } from './university-card'
+import { UniversityList } from './university-list'
 
 const LISTING_FIELDS = [
   { group: 'University', items: ['Official website', 'City, campus and emirate or region', 'Public or private status'] },
@@ -52,26 +52,49 @@ function EmptyDirectory({ destination, failed }: { destination: Destination; fai
   )
 }
 
+// Shown whenever any entry is provisional (D-043): what the label means, and what it does not claim.
+function ProvisionalNotice() {
+  return (
+    <div role="note" className="rounded-2xl border border-dashed border-border bg-card p-5 text-sm leading-relaxed text-muted-foreground">
+      <p className="font-medium text-foreground">Some universities are not yet verified</p>
+      <p className="mt-1">
+        Being listed is not the same as a verified profile. Only entries marked &ldquo;Verified&rdquo; have details our
+        team has checked and approved.
+      </p>
+      <p className="mt-1">
+        Entries marked <span className="font-medium text-foreground">Not yet verified</span> show only the
+        university&apos;s name, its official website once we have checked it and, where that website states it, its
+        city. <span className="font-medium text-foreground">Identity/source check pending</span> means we have not yet
+        confirmed the official website, so only the name is shown. Course availability, tuition, rankings, entry
+        requirements and other details are still being checked against official sources and are not shown.
+      </p>
+      <p className="mt-2">
+        A QS ranking is shown only where our licence covers it; every other entry says{' '}
+        <span className="font-medium text-foreground">QS eligibility pending verification</span>. Being listed here is
+        not a ranking or a recommendation.
+      </p>
+    </div>
+  )
+}
+
 export function UniversityDirectory({ destination, directory }: { destination: Destination; directory: DirectoryResult }) {
-  const universities = directory.state === 'ready' ? directory.universities : []
   return (
     <section aria-labelledby="universities-title" id="universities" className="scroll-mt-20 border-t border-border/60">
       <div className="mx-auto flex max-w-7xl flex-col gap-10 px-5 py-16 md:px-8">
         <SectionHeading id="universities-title" eyebrow="Directory" title={`Universities in ${destination.shortName}`}>
-          <p>
-            Courses and tuition sit under each university. Fees are shown in the currency the university uses, with
-            an approximate INR figure only when we hold an exchange rate from the last 7 days.
-          </p>
+          {directory.state === 'ready' && directory.verifiedTotal === 0 && directory.total > 0 ? (
+            <p>No university here has verified course or tuition details yet. The entries below are listings only.</p>
+          ) : (
+            <p>
+              Courses and tuition sit under each verified university. Fees are shown in the currency the university
+              uses, with an approximate INR figure only when we hold an exchange rate from the last 7 days.
+            </p>
+          )}
         </SectionHeading>
 
-        {universities.length > 0 ? (
-          <ul className="flex flex-col gap-6">
-            {universities.map((u) => (
-              <li key={u.id}>
-                <UniversityCard university={u} />
-              </li>
-            ))}
-          </ul>
+        {directory.state === 'ready' && directory.total > directory.verifiedTotal && <ProvisionalNotice />}
+        {directory.state === 'ready' && directory.entries.length > 0 ? (
+          <UniversityList iso2={destination.iso2} initial={directory.entries} total={directory.total} otherTotal={directory.otherTotal ?? 0} />
         ) : (
           <EmptyDirectory destination={destination} failed={directory.state === 'error'} />
         )}

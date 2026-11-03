@@ -39,6 +39,21 @@ export function RankingRightsForm({ providerId, values }: { providerId: number; 
         <Field id={`${p}-scope`} label="What the licence permits" errors={e.licenceScope} className="md:col-span-2">
           <textarea id={`${p}-scope`} name="licenceScope" rows={2} defaultValue={values.licenceScope} className={controlClass} />
         </Field>
+        <Field id={`${p}-attr`} label="Required attribution" errors={e.attributionText} className="md:col-span-2" help="Shown next to every rank, exactly as the licence requires.">
+          <input id={`${p}-attr`} name="attributionText" defaultValue={values.attributionText} maxLength={500} className={controlClass} />
+        </Field>
+        <fieldset className="flex flex-col gap-2 md:col-span-2">
+          <legend className="text-sm font-medium text-foreground">Extra uses the licence permits</legend>
+          <label className="flex items-start gap-2 text-sm">
+            <input type="checkbox" name="allowOrdering" defaultChecked={values.allowOrdering === '1'} className="mt-1" />
+            Sort and select the university directory by this ranking
+          </label>
+          <label className="flex items-start gap-2 text-sm">
+            <input type="checkbox" name="allowAiUse" defaultChecked={values.allowAiUse === '1'} className="mt-1" />
+            Let Derek mention ranks in replies (the text is sent to the AI provider)
+          </label>
+          {e.allowOrdering && <p className="text-xs leading-relaxed text-destructive" role="alert">{e.allowOrdering[0]}</p>}
+        </fieldset>
         <Field id={`${p}-notes`} label="Notes" errors={e.rightsNotes} className="md:col-span-2">
           <textarea id={`${p}-notes`} name="rightsNotes" rows={2} defaultValue={values.rightsNotes} className={controlClass} />
         </Field>

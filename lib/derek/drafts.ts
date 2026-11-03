@@ -4,17 +4,18 @@ import type { AdminActor } from '@/lib/admin/roles'
 import { applyEvent, lockConversation } from '@/lib/support/conversations'
 import { assertActor, inTransaction, isDuplicate, selectRows, sha256, SupportError, type Row } from '@/lib/support/db'
 import { createNotification } from '@/lib/support/notifications'
-import { getSupportSettings } from '@/lib/support/settings'
+import { getTeamPresence } from '@/lib/support/presence'
+import { autoReplyActive, getSupportSettings } from '@/lib/support/settings'
 import { TransitionError } from '@/lib/support/state'
 import { messageBody, reasonText } from '@/lib/support/validation'
-import { decideAutoReply } from './auto-reply'
+import { AUTO_REPLY_LIMITS, decideAutoReply, keepsQualifiers, TEAM_ONLINE_HOLD } from './auto-reply'
 import { createProvider, derekDailyTokenLimit, derekMaxAttempts, getDerekStatus, type DerekStatus } from './config'
 import { loadEvidence } from './evidence'
-import { analyseQuestion } from './guidance'
-import { DEREK_INSTRUCTIONS, type AiProvider, type EvidenceItem } from './provider'
-import { callProvider, type CallOutcome } from './runtime'
+import { analyseQuestion, COMPARISON_TARGET_CHARS, studentPlanFromSubject } from './guidance'
+import { DEREK_INSTRUCTIONS, type AiProvider, type DraftRequest, type EvidenceItem } from './provider'
+import { callProvider, MAX_ATTEMPTS, type CallOutcome } from './runtime'
 import { assessDraft, assessQuestion, combineRisk, redactPersonalData } from './safeguards'
-import { CLARIFY_REPLY, classifyMessage, OFF_TOPIC_REPLY, RULES_PROVIDER_ID, scopeRisk } from './scope'
+import { classifyMessage, GREETING_REPLY, isSmallTalk, OFF_TOPIC_REPLY, RULES_PROVIDER_ID, scopeRisk, THANKS_REPLY } from './scope'
 
 const RULES_MODEL = 'derek-rules-1'
 import { styleIssues, tidyDraft } from './style'
@@ -41,6 +42,7 @@ export type WorkerOutcome =
   | { state: 'ineligible' } // provider policy forbids this student (no recorded 18+ confirmation)
   | { state: 'quota' } // provider's daily draft cap reached
   | { state: 'taken_over' } // a team member is handling this conversation; Derek stays out
+  | { state: 'deferred' } // small talk after an unanswered message: that message is answered instead
   | { state: 'superseded'; draftId: number }
   | { state: 'failed'; draftId: number; code: string }
   | { state: 'review'; draftId: number; risk: string }
@@ -71,15 +73,26 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     if (answered) return null
     if (conv.ai_paused_by != null && !deps.manual) return 'taken_over' as const
 
+    // Every student message since the last reply. Derek answers all of them, never only the latest,
+    // so an earlier question cannot be dropped by a later, easier one.
+    const pending = await selectRows(
+      conn,
+      `SELECT id, body FROM messages WHERE conversation_id = ? AND author_kind = 'student' AND id <= ?
+          AND id > COALESCE((SELECT MAX(r.id) FROM messages r WHERE r.conversation_id = ? AND r.author_kind <> 'student' AND r.id < ?), 0)
+        ORDER BY id`,
+      [conversationId, triggerMessageId, conversationId, triggerMessageId],
+    )
+    const own = classifyMessage(String(trigger.body))
+    // "thanks" or "hi" while an earlier message is still unanswered: no reply of its own. The
+    // earlier message's draft (or a person) answers; a quick reply here would hide that question.
+    if (isSmallTalk(own) && pending.length > 1 && !deps.manual) return 'deferred' as const
+    const asks = pending.map((m) => classifyMessage(String(m.body))).filter((c) => !isSmallTalk(c))
+    const classification = asks.length > 1 ? classifyMessage(asks.map((c) => c.question).join('\n\n')) : (asks[0] ?? own)
+    const firstPendingId = Number(pending[0]?.id ?? triggerMessageId)
+
     // Scope guard, before any provider is contacted (lib/derek/scope.ts).
-    let classification = classifyMessage(String(trigger.body))
-    let fixed: string | null = classification.scope === 'off_topic' ? OFF_TOPIC_REPLY : null
-    if (classification.scope === 'greeting') {
-      const [lastTeam] = await selectRows(conn, "SELECT body FROM messages WHERE conversation_id = ? AND id < ? AND author_kind <> 'student' ORDER BY id DESC LIMIT 1", [conversationId, triggerMessageId])
-      // At most one clarifying question; after that a person decides.
-      if (String(lastTeam?.body ?? '') !== CLARIFY_REPLY) fixed = CLARIFY_REPLY
-      else classification = { ...classification, scope: 'unclear' }
-    }
+    // A greeting or thanks gets a short reply of LockIn's own, never a model-written essay.
+    const fixed = { off_topic: OFF_TOPIC_REPLY, greeting: GREETING_REPLY, thanks: THANKS_REPLY, in_scope: null, unclear: null }[classification.scope]
     if (fixed) {
       const [res] = await conn.query("INSERT INTO ai_drafts (conversation_id, trigger_message_id, status, provider, model) VALUES (?, ?, 'generating', ?, ?)", [
         conversationId,
@@ -91,7 +104,7 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
         throw e
       })
       if (res === 'duplicate') return 'duplicate' as const
-      return { draftId: Number((res as { insertId: number }).insertId), question: String(trigger.body), classification, fixed }
+      return { draftId: Number((res as { insertId: number }).insertId), question: classification.question, classification, fixed, firstPendingId, plan: studentPlanFromSubject(String(conv.subject ?? '')) }
     }
 
     // External-provider policy, checked before anything leaves this server. The question stays in
@@ -115,7 +128,7 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
         provider.id,
         provider.model,
       ])
-      return { draftId: Number((res as { insertId: number }).insertId), question: String(trigger.body), classification, fixed: null }
+      return { draftId: Number((res as { insertId: number }).insertId), question: classification.question, classification, fixed: null, firstPendingId, plan: studentPlanFromSubject(String(conv.subject ?? '')) }
     } catch (e) {
       if (isDuplicate(e)) return 'duplicate' as const
       throw e
@@ -125,32 +138,40 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
   if (claim === 'ineligible') return { state: 'ineligible' }
   if (claim === 'quota') return { state: 'quota' }
   if (claim === 'taken_over') return { state: 'taken_over' }
+  if (claim === 'deferred') return { state: 'deferred' }
   if (!claim) return { state: 'stale' }
 
   // 2. Build the request from redacted text and verified evidence only. No lock is held during
   //    the provider call. A fixed reply needs neither evidence nor a provider.
   let evidence: EvidenceItem[] = []
   let outcome: CallOutcome
+  let general = false
   if (claim.fixed) outcome = { ok: true, result: { text: claim.fixed, model: RULES_MODEL }, attempts: 0, latencyMs: 0 }
   else {
     const historyRows = await selectRows(
       pool,
       'SELECT author_kind, body FROM messages WHERE conversation_id = ? AND id < ? ORDER BY id DESC LIMIT ?',
-      [conversationId, triggerMessageId, HISTORY_TURNS],
+      [conversationId, claim.firstPendingId, HISTORY_TURNS],
     )
     const question = redactPersonalData(claim.question)
-    evidence = await (deps.loadEvidence ?? loadEvidence)(pool, claim.question)
     const history = historyRows.reverse().map((r) => ({ role: r.author_kind === 'student' ? ('student' as const) : ('team' as const), text: redactPersonalData(String(r.body)) }))
-    const guidance = analyseQuestion(
-      question,
-      evidence,
-      history.filter((h) => h.role === 'student').map((h) => h.text).join('\n'),
-    )
-    outcome = await callProvider(
-      provider,
-      { question, history, evidence, instructions: DEREK_INSTRUCTIONS, guidance },
-      deps.callOptions ?? { maxAttempts: derekMaxAttempts() },
-    )
+    // The plan from the first-question form (destination and course only, never the Instagram
+    // handle) counts as something the student already told Derek.
+    const earlier = [claim.plan ?? '', ...history.filter((h) => h.role === 'student').map((h) => h.text)].join('\n')
+    // "What about Italy?" looks up evidence with the earlier question's context too.
+    const lookup = analyseQuestion(question, [], earlier).isFollowUp ? `${earlier}\n${claim.question}` : claim.question
+    evidence = await (deps.loadEvidence ?? loadEvidence)(pool, lookup)
+    const analysed = analyseQuestion(question, evidence, earlier, history.filter((h) => h.role === 'team').at(-1)?.text)
+    const guidance = claim.plan
+      ? { ...analysed, note: `${analysed.note} The student told LockIn before asking: "${redactPersonalData(claim.plan)}" Use this and do not ask for it again.` }
+      : analysed
+    general = guidance.kind !== 'specific_fact'
+    const request = { question, history, evidence, instructions: DEREK_INSTRUCTIONS, guidance }
+    const options = deps.callOptions ?? { maxAttempts: derekMaxAttempts() }
+    outcome = await callProvider(provider, request, options)
+    // Only spend the rewrite request when an automatic reply could really be sent (switch, clearance, team offline).
+    const autoReplyPossible = async () => autoReplyActive(await getSupportSettings(pool), status) && (await getTeamPresence(pool)).state === 'offline'
+    outcome = await shortenIfTooLong(provider, request, options, outcome, autoReplyPossible)
   }
 
   // 3. Record the result under the conversation lock.
@@ -159,7 +180,9 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     const [draft] = await selectRows(conn, 'SELECT * FROM ai_drafts WHERE id = ? FOR UPDATE', [claim.draftId])
     if (!draft || draft.status !== 'generating') return { state: 'superseded', draftId: claim.draftId }
     const [answered] = await selectRows(conn, "SELECT id FROM messages WHERE conversation_id = ? AND id > ? AND author_kind <> 'student' LIMIT 1", [conversationId, triggerMessageId])
-    if (answered || Number(conv.last_student_message_id) !== triggerMessageId) {
+    // A newer question overtakes this draft (its own draft answers both); small talk does not.
+    const newer = await selectRows(conn, "SELECT body FROM messages WHERE conversation_id = ? AND id > ? AND author_kind = 'student'", [conversationId, triggerMessageId])
+    if (answered || newer.some((m) => !isSmallTalk(classifyMessage(String(m.body))))) {
       await conn.query("UPDATE ai_drafts SET status = 'superseded' WHERE id = ?", [claim.draftId])
       return { state: 'superseded', draftId: claim.draftId }
     }
@@ -186,7 +209,8 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
       return { state: 'failed', draftId: claim.draftId, code: outcome.code }
     }
 
-    const text = messageBody.safeParse(tidyDraft(outcome.result.text))
+    // LockIn's fixed wording is sent exactly as written; only model text is tidied.
+    const text = messageBody.safeParse(claim.fixed ?? tidyDraft(outcome.result.text))
     if (!text.success) {
       await conn.query("UPDATE ai_drafts SET status = 'failed', error_code = 'invalid_response', attempts = ? WHERE id = ?", [outcome.attempts, claim.draftId])
       await applyEvent(conn, { id: conversationId, status: conv.status }, { type: 'ai_failed' }, { kind: 'system', id: null }, 'Derek invalid_response').catch((e) => {
@@ -195,7 +219,7 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
       return { state: 'failed', draftId: claim.draftId, code: 'invalid_response' }
     }
     // A fixed reply states no facts, so only the question's high-risk topics carry over to it.
-    const asked = assessQuestion(claim.question, evidence)
+    const asked = assessQuestion(claim.question, evidence, { general })
     const questionRisk = claim.fixed && asked.level !== 'high' ? { level: 'low' as const, reasons: [] } : asked
     const risk = combineRisk(assessDraft(text.data, questionRisk, evidence, { modelUncertain: outcome.result.uncertain }), scopeRisk(claim.classification))
     // Editorial findings are for the reviewer (and stop automatic sending); they do not raise the risk level.
@@ -268,6 +292,121 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
   })
 }
 
+/**
+ * One shortening attempt for a model answer that is too long to send automatically (the 900-character
+ * limit stays as it is). It is the draft's last provider attempt, so it never exceeds the attempt
+ * budget (DEREK_MAX_ATTEMPTS), and it is only made when an automatic reply could actually be sent.
+ * The shorter text replaces the original only if it fits and keeps every caveat the original had;
+ * either way the result then goes through every usual check, and a long answer stays held.
+ */
+/** The one rewrite request for an answer over the automatic-send limit. */
+export function shorteningInstruction(original: string): string {
+  const { min, max } = COMPARISON_TARGET_CHARS
+  return [
+    `REWRITE SHORTER: your previous answer (below) is ${original.length} characters; automatic replies are limited to ${AUTO_REPLY_LIMITS.maxChars}.`,
+    `Rewrite it in ${min} to ${max} characters: at most four short bullets, each starting with a label, then one short line that details vary by university and are on each official course page.`,
+    'No introduction and no other conclusion or summary.',
+    'Keep every statement of uncertainty and of what LockIn has not verified.',
+    'Do not add any fact, figure, name, fee, ranking, deadline or admission requirement that is not in the previous answer or in EVIDENCE; drop a general claim you cannot support instead of keeping it.',
+    `Previous answer: """${original}"""`,
+  ].join(' ')
+}
+
+async function shortenIfTooLong(
+  provider: AiProvider,
+  request: DraftRequest,
+  options: NonNullable<WorkerDeps['callOptions']>,
+  outcome: CallOutcome,
+  autoReplyPossible: () => Promise<boolean>,
+): Promise<CallOutcome> {
+  if (!outcome.ok) return outcome
+  const original = tidyDraft(outcome.result.text)
+  const budget = options.maxAttempts ?? MAX_ATTEMPTS
+  if (!request.guidance || original.length <= AUTO_REPLY_LIMITS.maxChars || outcome.attempts >= budget || !(await autoReplyPossible())) return outcome
+  const guidance = { ...request.guidance, note: `${request.guidance.note} ${shorteningInstruction(original)}` }
+  const shorter = await callProvider(provider, { ...request, guidance }, { ...options, maxAttempts: 1 })
+  const spent = { attempts: outcome.attempts + shorter.attempts, latencyMs: outcome.latencyMs + shorter.latencyMs }
+  const usage = {
+    inputTokens: (outcome.result.usage?.inputTokens ?? 0) + (shorter.ok ? (shorter.result.usage?.inputTokens ?? 0) : 0),
+    outputTokens: (outcome.result.usage?.outputTokens ?? 0) + (shorter.ok ? (shorter.result.usage?.outputTokens ?? 0) : 0),
+  }
+  const text = shorter.ok ? tidyDraft(shorter.result.text) : ''
+  if (shorter.ok && text.length <= AUTO_REPLY_LIMITS.maxChars && keepsQualifiers(original, text))
+    return { ok: true, result: { ...shorter.result, uncertain: outcome.result.uncertain || shorter.result.uncertain, usage }, ...spent }
+  return { ...outcome, result: { ...outcome.result, usage }, ...spent } // keep the original: it stays held for its length
+}
+
+/** Shown once, at the start of Derek's first automatic answer since a person (or nobody) last replied. */
+export function handoffNoticeText(staffFirstName: string | null): string {
+  return staffFirstName
+    ? `${staffFirstName} has disconnected, so Derek is taking over for now. I'll help with questions I can answer reliably, and the LockIn team can follow up when available.`
+    : 'The LockIn team is offline right now, so Derek, LockIn’s AI assistant, is answering. I’ll help with questions I can answer reliably, and the team can follow up when available.'
+}
+
+async function handoffNotice(conn: PoolConnection, conversationId: number): Promise<string | null> {
+  const [last] = await selectRows(conn, "SELECT author_kind, reviewed_by FROM messages WHERE conversation_id = ? AND author_kind <> 'student' ORDER BY id DESC LIMIT 1", [conversationId])
+  if (last && last.author_kind === 'derek' && last.reviewed_by == null) return null // Derek is already answering
+  const [staff] = await selectRows(
+    conn,
+    "SELECT u.name FROM messages m JOIN auth_user u ON u.id = m.author_user_id WHERE m.conversation_id = ? AND m.author_kind = 'staff' ORDER BY m.id DESC LIMIT 1",
+    [conversationId],
+  )
+  return handoffNoticeText(staff ? String(staff.name).trim().split(/\s+/)[0] || null : null)
+}
+
+export type HandoffOutcome = { state: 'none' } | { state: 'sent'; draftId: number; messageId: number }
+
+/**
+ * The team went offline while a question was waiting for them: send Derek's prepared answer now,
+ * if it is still safe. Called when the student's chat checks in (no background job needed), so it
+ * runs again and again; the conversation lock, the draft's status and messages.draft_id UNIQUE make
+ * it send at most once. Everything is re-checked inside the lock: takeover, newer replies or
+ * questions, risk, provider clearance, the kill switch, caps and the team still being offline.
+ */
+export async function handOffToDerek(pool: Pool, conversationId: number, deps: { status?: DerekStatus } = {}): Promise<HandoffOutcome> {
+  const status = deps.status ?? getDerekStatus()
+  const none = { state: 'none' } as const
+  if (status.state !== 'ready') return none
+  return inTransaction(pool, async (conn) => {
+    const conv = await lockConversation(conn, conversationId)
+    // Only a conversation waiting for the team, that no person has taken over.
+    if (conv.status !== 'awaiting_human_review' || conv.ai_paused_by != null) return none
+    const [draft] = await selectRows(conn, "SELECT * FROM ai_drafts WHERE conversation_id = ? AND status = 'ready' ORDER BY id DESC LIMIT 1 FOR UPDATE", [conversationId])
+    // Held only because the team was online, low risk, and not edited by a person.
+    if (!draft || draft.hold_reason !== TEAM_ONLINE_HOLD || draft.risk_level !== 'low' || Number(draft.current_revision) !== 1) return none
+    const trigger = Number(draft.trigger_message_id)
+    const later = await selectRows(conn, 'SELECT author_kind, body FROM messages WHERE conversation_id = ? AND id > ?', [conversationId, trigger])
+    if (later.some((m) => m.author_kind !== 'student' || !isSmallTalk(classifyMessage(String(m.body))))) return none
+    // Another question still waiting for a person (held for risk, or failed) keeps the conversation with the team.
+    const [other] = await selectRows(
+      conn,
+      `SELECT d.id FROM ai_drafts d WHERE d.conversation_id = ? AND d.id <> ? AND d.status IN ('ready', 'failed')
+          AND d.trigger_message_id > COALESCE((SELECT MAX(m.id) FROM messages m WHERE m.conversation_id = ? AND m.author_kind <> 'student'), 0)`,
+      [conversationId, Number(draft.id), conversationId],
+    )
+    if (other) return none
+    const [revision] = await selectRows(conn, 'SELECT body FROM ai_draft_revisions WHERE draft_id = ? AND revision = 1', [Number(draft.id)])
+    if (!revision) return none
+    const builtIn = draft.provider === RULES_PROVIDER_ID
+    const provider = builtIn ? null : createProvider(status)
+    if (!builtIn && (!provider || provider.id !== draft.provider)) return none
+    const decision = await decideAutoReply(conn, {
+      settings: await getSupportSettings(conn),
+      status,
+      provider: provider ?? ({ id: RULES_PROVIDER_ID, model: RULES_MODEL } as AiProvider),
+      builtIn,
+      conv,
+      risk: 'low',
+      text: String(revision.body),
+      evidence: [],
+      handoff: true,
+    })
+    if (!decision.send) return none
+    const messageId = await deliverDraft(conn, conv, Number(draft.id), String(revision.body), null, { provider: String(draft.provider), model: String(draft.model) })
+    return { state: 'sent', draftId: Number(draft.id), messageId }
+  })
+}
+
 /** Inserts the Derek message for a draft. Caller holds the conversation lock. */
 async function deliverDraft(
   conn: PoolConnection,
@@ -278,6 +417,11 @@ async function deliverDraft(
   automatic?: { provider: string; model: string },
 ): Promise<number> {
   const conversationId = Number(conv.id)
+  // Derek's first unreviewed answer after a person (or nobody) last replied says that he is taking over.
+  if (!reviewer) {
+    const notice = await handoffNotice(conn, conversationId)
+    if (notice) body = `${notice}\n\n${body}`
+  }
   let messageId: number
   try {
     const [res] = await conn.query("INSERT INTO messages (conversation_id, author_kind, author_user_id, reviewed_by, draft_id, body) VALUES (?, 'derek', NULL, ?, ?, ?)", [
@@ -302,7 +446,7 @@ async function deliverDraft(
     action: 'draft_send',
     actorId: reviewer?.userId ?? 'derek',
     actorRole: reviewer?.role ?? 'derek',
-    reason: reviewer ? null : 'Automatic reply (offline mode)',
+    reason: reviewer ? null : 'Automatic reply (not reviewed by a person)',
     before: { conversationStatus: conv.status },
     after: { conversationId, conversationStatus: to, messageId, bodySha256: sha256(body), reviewedBy: reviewer?.userId ?? null, ...(automatic ?? {}) },
   })
@@ -312,7 +456,7 @@ async function deliverDraft(
     kind: 'staff_reply',
     conversationId,
     title: 'Derek replied to your question',
-    targetPath: `/support?c=${conversationId}`,
+    targetPath: `/chat?c=${conversationId}`,
   })
   return messageId
 }

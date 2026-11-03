@@ -3,37 +3,42 @@
 import { useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui/button'
+import { PasswordInput } from '@/components/ui/password-input'
 import { authClient } from '@/lib/auth-client'
-import { controlClass, Field } from './form-controls'
+import { SIGN_IN_REJECTED, SIGN_IN_THROTTLED, SIGN_IN_UNAVAILABLE, signInFieldErrors, type SignInFieldErrors } from '@/lib/identity/sign-in-validation'
+import { controlClass, describedBy, Field } from './form-controls'
 
 export function SignInForm() {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<SignInFieldErrors>({})
   const [pending, setPending] = useState(false)
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const data = new FormData(event.currentTarget)
-    setPending(true)
+    const form = event.currentTarget
+    const data = new FormData(form)
+    const email = String(data.get('email') ?? '')
+    const password = String(data.get('password') ?? '')
+    const invalid = signInFieldErrors(email, password, 12)
+    setFieldErrors(invalid)
     setError(null)
+    if (invalid.email || invalid.password) {
+      form.querySelector<HTMLInputElement>(invalid.email ? '#email' : '#password')?.focus()
+      return
+    }
+    setPending(true)
     try {
-      const { error: signInError } = await authClient.signIn.email({
-        email: String(data.get('email') ?? ''),
-        password: String(data.get('password') ?? ''),
-      })
+      const { error: signInError } = await authClient.signIn.email({ email: email.trim(), password })
       if (signInError) {
         // Generic on purpose: never reveal whether an email has an account.
-        setError(
-          signInError.status === 429
-            ? 'Too many attempts. Wait a few minutes and try again.'
-            : 'That email and password combination was not accepted.',
-        )
+        setError(signInError.status === 429 ? SIGN_IN_THROTTLED : SIGN_IN_REJECTED)
         return
       }
       router.replace('/admin')
       router.refresh()
     } catch {
-      setError('Sign-in is unavailable right now. Try again shortly.')
+      setError(SIGN_IN_UNAVAILABLE)
     } finally {
       setPending(false)
     }
@@ -41,17 +46,27 @@ export function SignInForm() {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
-      <Field id="email" label="Email">
-        <input id="email" name="email" type="email" autoComplete="username" required className={controlClass} />
-      </Field>
-      <Field id="password" label="Password">
+      <Field id="email" label="Email" errors={fieldErrors.email}>
         <input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="username"
+          required
+          aria-invalid={fieldErrors.email ? true : undefined}
+          aria-describedby={describedBy('email', undefined, fieldErrors.email)}
+          className={controlClass}
+        />
+      </Field>
+      <Field id="password" label="Password" errors={fieldErrors.password}>
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           autoComplete="current-password"
           required
           minLength={12}
+          aria-invalid={fieldErrors.password ? true : undefined}
+          aria-describedby={describedBy('password', undefined, fieldErrors.password)}
           className={controlClass}
         />
       </Field>

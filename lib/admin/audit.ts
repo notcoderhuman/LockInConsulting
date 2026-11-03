@@ -48,6 +48,7 @@ export type LogAction =
   | 'student_erase'
   | 'ai_takeover'
   | 'ai_return'
+  | 'provisional_change'
 
 export interface ChangeLogEntry {
   entityType: LogEntityType

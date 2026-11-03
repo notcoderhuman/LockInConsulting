@@ -41,8 +41,9 @@ interface IntakeRecord {
   facts: Fact[]
 }
 
-const root = path.resolve(__dirname, '..')
-const batch = JSON.parse(readFileSync(path.join(root, 'db/intake/2026-10-18-research-batch.json'), 'utf8')) as {
+// The research lives outside the public repository; these checks run only when it is supplied.
+const researchDir = process.env.LOCKIN_RESEARCH_DIR
+const batch = (researchDir ? JSON.parse(readFileSync(path.join(researchDir, '2026-10-18-research-batch.json'), 'utf8')) : { records: [] }) as {
   batch: string
   preparedAt: string
   status: string
@@ -53,7 +54,7 @@ const RESULTS = ['captured', 'blocked_automated_check', 'source_not_located', 's
 const RANKING = /rank|qs|times higher|\bthe_/i
 const PLACEHOLDER = /#\s*\d+\s*$|^(University of|.+ State University)\s+(United States|United Kingdom|Canada|Germany|Australia|Italy|Poland|Finland|New Zealand|Saudi Arabia|United Arab Emirates)\b/i
 
-describe('Stage 6 directory research batch (db/intake/2026-10-18-research-batch.json)', () => {
+describe.skipIf(!researchDir)('Stage 6 directory research batch (private research, LOCKIN_RESEARCH_DIR)', () => {
   it('is a private research file awaiting admin entry, not published', () => {
     expect(batch.status).toBe('pending_admin_entry')
     expect(batch.records.length).toBe(33)
@@ -139,9 +140,9 @@ describe('Stage 6 directory research batch (db/intake/2026-10-18-research-batch.
     }
   })
 
-  it('provides respective destination research files under db/intake/destinations/', () => {
+  it('provides respective destination research files under destinations/', () => {
     for (const d of DESTINATIONS) {
-      const destFile = path.join(root, `db/intake/destinations/${d.slug}.json`)
+      const destFile = path.join(researchDir!, `destinations/${d.slug}.json`)
       const destData = JSON.parse(readFileSync(destFile, 'utf8')) as {
         destinationSlug: string
         destinationIso2: string

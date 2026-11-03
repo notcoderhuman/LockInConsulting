@@ -1,7 +1,7 @@
 # University research checklist
 
-Use this for every university and every fact. The intake JSON files in this folder are the private
-review file: they hold evidence and research status only and are never read by the public site.
+Use this for every university and every fact. The research files themselves (evidence and research
+status only) are private and kept outside this public repository; the public site never reads them.
 
 ## Status vocabulary (intake files)
 

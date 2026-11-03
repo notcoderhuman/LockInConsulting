@@ -1,17 +1,22 @@
 import mysql, { type Pool, type PoolOptions } from 'mysql2/promise'
+import { enforceSession } from './session.mjs'
 
 let pool: Pool | undefined
 let adminPool: Pool | undefined
 let authPool: Pool | undefined
 
-// Every connection runs in UTC so CURDATE() in the public_* views agrees with todayIso() and
-// Better Auth's TIMESTAMP columns round-trip without a server-timezone shift. An offset is used
-// instead of a named zone because shared hosts often lack the MySQL time-zone tables.
-function createUtcPool(options: PoolOptions): Pool {
-  const created = mysql.createPool({ ...options, multipleStatements: false, timezone: 'Z' })
-  created.pool.on('connection', (connection) => {
-    connection.query("SET time_zone = '+00:00'")
+// Hostinger closes a connection after 20 s idle (wait_timeout), so idle ones are retired first and
+// a request never picks one the server is closing. mysql2 ignores idleTimeout unless maxIdle is
+// below connectionLimit.
+function createUtcPool(options: PoolOptions & { connectionLimit: number }): Pool {
+  const created = mysql.createPool({
+    ...options,
+    multipleStatements: false,
+    timezone: 'Z',
+    idleTimeout: 15_000,
+    maxIdle: options.connectionLimit - 1,
   })
+  enforceSession(created)
   return created
 }
 

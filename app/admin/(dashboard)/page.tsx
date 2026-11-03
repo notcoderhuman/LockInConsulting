@@ -76,13 +76,14 @@ export default async function OverviewPage() {
       </section>
 
       <p className="text-sm leading-relaxed text-muted-foreground">
-        {`Support mode: ${support.mode === 'online' ? 'online (human replies)' : 'offline'}. Automatic replies: ${support.autoReplyEnabled ? 'on' : 'off'}. Derek: ${
+        {`Automatic replies: ${support.autoReplyEnabled ? (derek.autoReply.permitted ? 'on' : 'on for fixed replies only (provider not cleared)') : 'paused'}. Derek: ${
           derek.state === 'ready' ? `drafting enabled (${derek.providerId})` : derek.state === 'blocked' ? 'blocked' : 'disabled'
         }.`}
       </p>
 
+      {/* min-w-0: grid items default to their content's width, so the wide table would push the page past a phone screen. */}
       <div className="grid gap-6 lg:grid-cols-5">
-        <div className="lg:col-span-3">
+        <div className="min-w-0 lg:col-span-3">
           <Panel title="Records by status" description="Across all 11 destinations.">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -111,7 +112,7 @@ export default async function OverviewPage() {
           </Panel>
         </div>
 
-        <div className="flex flex-col gap-6 lg:col-span-2">
+        <div className="flex min-w-0 flex-col gap-6 lg:col-span-2">
           <Panel title="Change log integrity">
             <div className="flex items-start gap-3">
               {chain.ok ? (
@@ -130,7 +131,7 @@ export default async function OverviewPage() {
             </Link>
           </Panel>
 
-          <Panel title="Next up" description={`Overdue and due within ${REVIEW_HORIZON_DAYS} days.`}>
+          <Panel title="Next up" description={`Overdue first, then records awaiting review, then those due within ${REVIEW_HORIZON_DAYS} days.`}>
             {queue.length ? (
               <ul className="flex flex-col divide-y divide-border">
                 {queue.slice(0, 5).map((item) => (

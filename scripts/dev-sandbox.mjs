@@ -7,11 +7,16 @@
 // writes `.env.sandbox.local` (git-ignored) with the connection string, a random auth secret and
 // the generated passwords. Then, in another terminal:
 //
-//   set -a; . ./.env.sandbox.local; set +a; npx next dev
+//   set -a; . ./.env.sandbox.local; set +a; pnpm exec next dev
 //
 // Everything is deleted when this process stops (Ctrl-C). It refuses to run with
 // NODE_ENV=production and never touches any other database. No real student data, no AI key.
+//
+// With --persist (pnpm dev:local:persist) it uses the persistent local MySQL instead
+// (scripts/local-mysql.mjs): data, the auth secret and the synthetic sign-ins are kept outside this
+// repository and reused on the next start; only .env.sandbox.local is removed on stop.
 import { randomBytes } from 'node:crypto'
+import { existsSync, readFileSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -20,6 +25,7 @@ import mysql from 'mysql2/promise'
 import { createDB } from 'mysql-memory-server'
 import { AUTH_MODELS, PASSWORD_POLICY } from '../lib/auth-options.mjs'
 import { runAdminCli } from './admin-user.mjs'
+import { localDbDir, startLocalMysql } from './local-mysql.mjs'
 import { loadMigrations, migrate } from './migrate.mjs'
 
 if (process.env.NODE_ENV === 'production') {
@@ -29,20 +35,26 @@ if (process.env.NODE_ENV === 'production') {
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const password = () => `sandbox-${randomBytes(12).toString('base64url')}`
-const secret = randomBytes(32).toString('base64url')
+const persist = process.argv.includes('--persist')
+// Persistent mode keeps the secret and sign-ins beside the data (outside the repository).
+const credentialsFile = path.join(localDbDir(), 'sandbox-credentials.json')
+const saved = persist && existsSync(credentialsFile) ? JSON.parse(readFileSync(credentialsFile, 'utf8')) : null
+const secret = saved?.secret ?? randomBytes(32).toString('base64url')
 
-const server = await createDB({ version: '8.4.x', logLevel: 'ERROR' })
+const server = persist ? await startLocalMysql() : await createDB({ version: '8.4.x', logLevel: 'ERROR' })
 const url = `mysql://${server.username}@127.0.0.1:${server.port}/${server.dbName}`
 const conn = await mysql.createConnection({ uri: url, multipleStatements: true })
 await migrate(conn, await loadMigrations())
 
 const env = { ...process.env, DATABASE_URL: url, BETTER_AUTH_SECRET: secret, BETTER_AUTH_URL: 'http://localhost:3000' }
-const accounts = {}
+const accounts = { ...saved?.accounts }
+const exists = async (email) => ((await conn.query('SELECT id FROM auth_user WHERE email = ?', [email]))[0]).length > 0
 for (const [email, name, role] of [
   ['owner@sandbox.test', 'Sandbox Owner', 'owner'],
   ['reviewer@sandbox.test', 'Sandbox Reviewer', 'reviewer'],
   ['editor@sandbox.test', 'Sandbox Editor', 'editor'],
 ]) {
+  if (await exists(email)) continue
   const pw = password()
   await runAdminCli(['create', '--email', email, '--name', name, '--role', role], { env, readPassword: async () => pw, log: () => {}, actor: 'cli:sandbox' })
   accounts[email] = pw
@@ -52,13 +64,16 @@ for (const [email, name, role] of [
 const authPool = mysql.createPool({ uri: url, timezone: 'Z' })
 const auth = betterAuth({ database: authPool, secret, baseURL: env.BETTER_AUTH_URL, ...AUTH_MODELS, emailAndPassword: { enabled: true, ...PASSWORD_POLICY }, telemetry: { enabled: false } })
 const ctx = await auth.$context
-const studentPw = password()
-const student = await ctx.internalAdapter.createUser({ email: 'student@sandbox.test', name: 'Sandbox Student', emailVerified: false })
-await ctx.internalAdapter.linkAccount({ userId: student.id, providerId: 'credential', accountId: student.id, password: await ctx.password.hash(studentPw) })
-// Marked as a confirmed adult so a supervised Gemini smoke test can run against this SYNTHETIC
-// account (Gemini only drafts for students with a recorded 18+ confirmation). Mock mode ignores it.
-await conn.query("INSERT INTO student_profiles (user_id, display_name, age_confirmed_at) VALUES (?, 'Sandbox Student', UTC_TIMESTAMP(3))", [student.id])
-accounts['student@sandbox.test'] = studentPw
+if (!(await exists('student@sandbox.test'))) {
+  const studentPw = password()
+  const student = await ctx.internalAdapter.createUser({ email: 'student@sandbox.test', name: 'Sandbox Student', emailVerified: false })
+  await ctx.internalAdapter.linkAccount({ userId: student.id, providerId: 'credential', accountId: student.id, password: await ctx.password.hash(studentPw) })
+  // Marked as a confirmed adult so a supervised Gemini smoke test can run against this SYNTHETIC
+  // account (Gemini only drafts for students with a recorded 18+ confirmation). Mock mode ignores it.
+  await conn.query("INSERT INTO student_profiles (user_id, display_name, age_confirmed_at) VALUES (?, 'Sandbox Student', UTC_TIMESTAMP(3))", [student.id])
+  accounts['student@sandbox.test'] = studentPw
+}
+if (persist) await writeFile(credentialsFile, JSON.stringify({ secret, accounts }, null, 1), { mode: 0o600 })
 await authPool.end()
 await conn.end()
 
@@ -72,11 +87,17 @@ const lines = [
   '# For the supervised Gemini smoke test only, see docs/ENVIRONMENT.md: never put GEMINI_API_KEY in this file.',
   'DEREK_AI_ENABLED=true',
   'DEREK_PROVIDER=mock',
+  '# Shows the draft Hindi switch so the strings can be reviewed in place. Off by default everywhere else.',
+  'HINDI_UI_ENABLED=true',
   ...Object.entries(accounts).map(([email, pw]) => `# ${email}  ${pw}`),
   '',
 ]
 await writeFile(path.join(root, '.env.sandbox.local'), lines.join('\n'), { mode: 0o600 })
-console.log('Sandbox database ready. Settings and synthetic sign-ins are in .env.sandbox.local. Press Ctrl-C to stop and delete it.')
+console.log(
+  persist
+    ? `Persistent local database ready (${server.dataDir}). Settings and synthetic sign-ins are in .env.sandbox.local. Ctrl-C stops it; the data is kept.`
+    : 'Sandbox database ready. Settings and synthetic sign-ins are in .env.sandbox.local. Press Ctrl-C to stop and delete it.',
+)
 
 const stop = async () => {
   await server.stop().catch(() => {})

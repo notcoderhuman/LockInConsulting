@@ -1,0 +1,76 @@
+'use client'
+
+import { useRouter } from 'next/navigation'
+import { useState, type FormEvent } from 'react'
+import { Button } from '@/components/ui/button'
+
+// Shown once, after a first Google sign-in. The server records the confirmation on the student
+// profile (lib/student/onboarding.ts); nothing here is trusted beyond "the person ticked both".
+export function StudentOnboarding({ name, privacyUrl = null, ageAttested = false }: { name: string; privacyUrl?: string | null; ageAttested?: boolean }) {
+  const router = useRouter()
+  const [error, setError] = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
+
+  async function post(body: Record<string, unknown>) {
+    setPending(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/student/profile', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+      const data = (await res.json().catch(() => ({}))) as { error?: string }
+      if (!res.ok) return setError(data.error ?? 'Something went wrong. Please try again.')
+      router.refresh()
+    } catch {
+      setError('Check your connection and try again.')
+    } finally {
+      setPending(false)
+    }
+  }
+
+  function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const form = new FormData(event.currentTarget)
+    void post({ action: 'create', ageConfirmed: form.get('age') === 'on', privacyAccepted: form.get('privacy') === 'on' })
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+      <p>{name ? `Welcome, ${name}. ` : 'Welcome. '}One step before you can ask questions.</p>
+      {/* Already confirmed on /age-confirm before this account was created (D-045). */}
+      {ageAttested ? null : (
+        <label className="flex items-start gap-3 text-foreground">
+          <input type="checkbox" name="age" required className="mt-1 size-4 accent-[var(--primary)]" />
+          <span>I am 18 or older.</span>
+        </label>
+      )}
+      <label className="flex items-start gap-3 text-foreground">
+        <input type="checkbox" name="privacy" required className="mt-1 size-4 accent-[var(--primary)]" />
+        <span>
+          I understand that LockIn keeps my name, email address and the messages I send so the team and Derek, LockIn’s AI assistant, can answer my questions, and that I can ask for my
+          data to be erased.
+          {privacyUrl ? (
+            <>
+              {' '}
+              <a href={privacyUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline-offset-2 hover:underline">
+                Read the full privacy notice<span className="sr-only"> (opens in a new tab)</span>
+              </a>
+              .
+            </>
+          ) : null}
+        </span>
+      </label>
+      {error ? (
+        <p role="alert" className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-foreground">
+          {error}
+        </p>
+      ) : null}
+      <div className="flex flex-wrap gap-3">
+        <Button type="submit" disabled={pending}>
+          {pending ? 'Saving…' : 'Continue'}
+        </Button>
+        <Button type="button" variant="outline" disabled={pending} onClick={() => post({ action: 'discard' })}>
+          I’m under 18 — remove my sign-in
+        </Button>
+      </div>
+    </form>
+  )
+}

@@ -22,6 +22,7 @@ import { betterAuth } from 'better-auth'
 import mysql from 'mysql2/promise'
 import { appendChangeLogRow, verifyAuditChain } from '../lib/admin/audit-core.mjs'
 import { AUTH_MODELS, PASSWORD_POLICY } from '../lib/auth-options.mjs'
+import { enforceSession } from '../lib/db/session.mjs'
 
 const ROLES = ['editor', 'reviewer', 'owner']
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -30,7 +31,7 @@ export class CliError extends Error {}
 
 function utcPool(uri, dateStrings) {
   const pool = mysql.createPool({ uri, dateStrings, timezone: 'Z', connectionLimit: 2, multipleStatements: false })
-  pool.pool.on('connection', (c) => c.query("SET time_zone = '+00:00'"))
+  enforceSession(pool)
   return pool
 }
 
@@ -178,6 +179,14 @@ export async function runAdminCli(argv, io = {}) {
         // Staff and student accounts are kept separate (lib/identity/policy.ts).
         const [[student]] = await dataPool.query('SELECT COUNT(*) AS n FROM student_profiles WHERE user_id = ?', [user.id])
         if (Number(student.n) > 0) throw new CliError(`${email} is a student account and cannot be given admin access. Use a separate staff account.`)
+        // Staff identities are provisioned here with a password, never adopted from a student sign-in
+        // such as Google: an account with any other login, or without a password, is refused.
+        const [[logins]] = await dataPool.query(
+          "SELECT COALESCE(SUM(providerId = 'credential'), 0) AS password, COALESCE(SUM(providerId <> 'credential'), 0) AS other FROM auth_account WHERE userId = ?",
+          [user.id],
+        )
+        if (Number(logins.other) > 0 || Number(logins.password) === 0)
+          throw new CliError(`${email} signs in with Google (or has no password), so it cannot be given admin access. Create a separate staff account with "create".`)
         await memberChange(user.id, 'role_grant', `grant ${role}`, (conn) =>
           conn.query(
             `INSERT INTO admin_members (user_id, role, status, granted_by) VALUES (?, ?, 'active', ?)

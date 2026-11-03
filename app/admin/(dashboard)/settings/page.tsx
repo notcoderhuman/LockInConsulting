@@ -39,6 +39,9 @@ function rankingValues(p: Row) {
     licenceExpiresAt: str(p.licence_expires_at),
     rightsCheckedAt: str(p.rights_checked_at),
     rightsNotes: str(p.rights_notes),
+    attributionText: str(p.attribution_text),
+    allowOrdering: str(p.allow_ordering),
+    allowAiUse: str(p.allow_ai_use),
   }
 }
 
@@ -76,8 +79,14 @@ export default async function SettingsPage() {
           items={[
             ['Student accounts', studentAccounts ? 'Enabled by STUDENT_ACCOUNTS_ENABLED' : 'Closed (sign-up disabled; legal and privacy review pending)'],
             ['Derek (live AI)', derek.state === 'ready' ? `Drafting enabled with provider "${derek.providerId}"` : derek.state === 'blocked' ? 'Blocked' : 'Disabled (default)'],
-            ['Support mode', support.mode === 'online' ? 'Online: humans answer' : 'Offline'],
-            ['Automatic replies', support.autoReplyEnabled ? (derek.autoReply.permitted ? 'On' : 'On, but not currently permitted, so nothing is auto-sent') : 'Off'],
+            [
+              'Automatic replies',
+              !support.autoReplyEnabled
+                ? 'Paused: every Derek reply waits for a person'
+                : derek.autoReply.permitted
+                  ? 'On: routine low-risk answers are sent automatically'
+                  : 'On for fixed greeting, thanks and scope replies; AI-written answers wait for review until the provider is cleared',
+            ],
           ]}
         />
         {blockers.length ? (
@@ -88,15 +97,15 @@ export default async function SettingsPage() {
           </ul>
         ) : null}
         {can(actor.role, 'support.settings') ? (
-          <SupportSettingsForm mode={support.mode} autoReplyEnabled={support.autoReplyEnabled} autoReplyPermitted={derek.autoReply.permitted} />
+          <SupportSettingsForm autoReplyEnabled={support.autoReplyEnabled} autoReplyPermitted={derek.autoReply.permitted} />
         ) : null}
       </Panel>
 
-      <Panel title="Sign-in providers" description="Only staff email-and-password sign-in exists. No social sign-in provider is operational.">
+      <Panel title="Sign-in providers" description="Staff sign in only with email and password. Google sign-in, when configured, is for students only and never grants a team role.">
         <ul className="flex flex-col divide-y divide-border">
           {getIdentityProviderStatus().map((p) => (
             <li key={p.id} className="flex flex-col gap-0.5 py-2.5 first:pt-0 last:pb-0">
-              <span className="text-sm text-foreground">{`${p.label} · ${p.state === 'deferred' ? 'Deferred' : 'Unavailable'}`}</span>
+              <span className="text-sm text-foreground">{`${p.label} · ${p.state === 'available' ? 'Available to students' : p.state === 'closed' ? 'Configured, off while student accounts are closed' : p.state === 'deferred' ? 'Deferred' : 'Unavailable'}`}</span>
               <span className="text-xs text-muted-foreground">{p.detail}</span>
             </li>
           ))}
@@ -120,6 +129,9 @@ export default async function SettingsPage() {
                       ['Licence reference', str(p.licence_reference)],
                       ['Licence expires', formatDate(p.licence_expires_at)],
                       ['Confirmed on', formatDate(p.rights_checked_at)],
+                      ['Attribution', str(p.attribution_text)],
+                      ['Used for ordering', Number(p.allow_ordering) === 1 ? 'Yes' : 'No'],
+                      ['Used by Derek', Number(p.allow_ai_use) === 1 ? 'Yes' : 'No'],
                       ['Notes', str(p.rights_notes)],
                     ]}
                   />

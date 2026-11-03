@@ -12,6 +12,7 @@ import {
   createRecord,
   createSource,
   PermissionError,
+  setProvisionalListing,
   transitionRecord,
   updateFxProviderTerms,
   updateRankingRights,
@@ -96,6 +97,14 @@ export async function transitionAction(_prev: ActionState, form: FormData): Prom
       unpublish: 'Unpublished. It no longer appears on the public site.',
     }
     return { message: labels[action], revalidatePublic: action === 'publish' || action === 'unpublish' || action === 'verify' }
+  })
+}
+
+export async function provisionalListingAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  return run('data.review', async (actor) => {
+    const show = formText(form, 'show') === '1'
+    await setProvisionalListing(getAdminPool(), actor, idFrom(form), show, form)
+    return { message: show ? 'Listed as “Not yet verified” (name, website and confirmed city only).' : 'Removed from the public list.', revalidatePublic: true }
   })
 }
 

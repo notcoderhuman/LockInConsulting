@@ -50,7 +50,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Search
     <>
       <PageHeader
         title="Live Inbox"
-        description="Student questions, newest activity first. Replies you send are labelled with your name. Derek drafts are never sent without review unless the owner has enabled automatic replies. Notifications are in-site only: held and escalated questions wait here until someone signs in."
+        description="Student questions, newest activity first. Replies you send are labelled with your name. Routine questions Derek can answer safely are replied to automatically and labelled as unreviewed; only risky, uncertain or failed ones wait here for a person. Notifications are in-site only: held and escalated questions wait here until someone signs in."
       />
 
       <nav aria-label="Filter conversations">

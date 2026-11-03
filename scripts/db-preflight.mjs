@@ -25,7 +25,7 @@ export async function runPreflight(conn, { probe = false } = {}) {
   if (!version.supported) blockers.push(`${version.label} is not supported (need MySQL >= 8.0.19 or MariaDB >= 10.5).`)
   else if (!version.tested) warnings.push(`${version.label} is supported in principle but untested: run "pnpm test:db" with DB_TEST_URL against this exact version.`)
   if (!/STRICT_(TRANS|ALL)_TABLES/.test(server.sqlMode))
-    warnings.push('sql_mode is not strict. The CHECK constraints still apply, but non-strict mode can silently truncate over-long text.')
+    warnings.push('The server default sql_mode is not strict. The app and its tools set strict mode on each connection (lib/db/session.mjs); anything else connecting here would silently truncate over-long text.')
   if (server.logBin && !server.trustFunctionCreators)
     warnings.push('Binary logging is on and log_bin_trust_function_creators is off: CREATE TRIGGER will need SUPER. Run with --probe to confirm.')
   if (server.storageEngine.toUpperCase() !== 'INNODB') warnings.push(`Default storage engine is ${server.storageEngine}; migrations request InnoDB explicitly.`)

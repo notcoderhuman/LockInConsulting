@@ -6,6 +6,7 @@ import { buttonVariants } from '@/components/ui/button'
 import { HistoryList } from '@/components/admin/history-list'
 import { EmptyState, PageHeader, Panel } from '@/components/admin/page-header'
 import { LiveBadge, PublicationBadge, VerificationBadge } from '@/components/admin/status-badge'
+import { ProvisionalForm } from '@/components/admin/provisional-form'
 import { WorkflowPanel } from '@/components/admin/workflow-panel'
 import { requireAdminPage } from '@/lib/admin/access'
 import { recordTitle } from '@/lib/admin/describe'
@@ -170,6 +171,38 @@ export default async function RecordPage({ params }: { params: Promise<{ entity:
               defaultReviewDue={addDaysIso(today, DEFAULT_REVIEW_INTERVAL_DAYS)}
             />
           </Panel>
+
+          {entity === 'university' ? (
+            <Panel
+              title="Provisional public listing"
+              description="Until it is verified and published, a record in review is listed by name only (“Identity/source check pending”); once its official website is checked, the website and (if the website states it) the city are shown too, labelled “Not yet verified”."
+            >
+              <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                <Meta label="Listed">
+                  {Number(row.listing_hidden) === 1
+                    ? 'No — removed by a reviewer'
+                    : status !== 'draft' && status !== 'in_review'
+                      ? 'No — has its full listing or is unpublished'
+                      : Number(row.provisional_listing) === 1
+                        ? 'Yes, as “Not yet verified” with its official website'
+                        : status === 'in_review'
+                          ? 'Yes, name only (“Identity/source check pending”)'
+                          : 'No (draft)'}
+                </Meta>
+                <Meta label="Website checked">{formatDate(row.identity_checked_at)}</Meta>
+                <Meta label="City shown">{Number(row.identity_city_confirmed) === 1 ? String(row.city) : 'No'}</Meta>
+                {row.identity_evidence ? <Meta label="Evidence">{String(row.identity_evidence)}</Meta> : null}
+              </dl>
+              {can(actor.role, 'data.review') && (status === 'draft' || status === 'in_review') ? (
+                <>
+                  {Number(row.provisional_listing) !== 1 && <ProvisionalForm id={id} listed={false} hasCity={Boolean(row.city)} />}
+                  {Number(row.listing_hidden) !== 1 && (Number(row.provisional_listing) === 1 || status === 'in_review') && (
+                    <ProvisionalForm id={id} listed hasCity={Boolean(row.city)} />
+                  )}
+                </>
+              ) : null}
+            </Panel>
+          ) : null}
 
           <Panel title="Verification">
             <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">

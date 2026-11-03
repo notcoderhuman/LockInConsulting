@@ -1,8 +1,10 @@
 import { getAdminPool } from '@/lib/db/pool'
+import { handOffToDerek } from '@/lib/derek/drafts'
 import { scheduleDerekDraft } from '@/lib/derek/schedule'
 import { requireStudentApi } from '@/lib/student/access'
 import { handleError, json, jsonError, readJson, routeId } from '@/lib/student/http'
 import { getStudentMessages, sendStudentMessage } from '@/lib/support/conversations'
+import { getTeamPresence } from '@/lib/support/presence'
 import { parsePageParams } from '@/lib/support/validation'
 
 type Ctx = { params: Promise<{ id: string }> }
@@ -13,7 +15,18 @@ export async function GET(request: Request, { params }: Ctx) {
   const id = routeId((await params).id)
   if (id == null) return jsonError(404, 'Conversation not found.')
   try {
-    return json(await getStudentMessages(getAdminPool(), student, id, parsePageParams(new URL(request.url))))
+    const pool = getAdminPool()
+    const page = parsePageParams(new URL(request.url))
+    const view = await getStudentMessages(pool, student, id, page) // also proves the conversation is this student's
+    // The team went offline while this student was waiting: Derek may take over now (lib/derek/drafts.ts).
+    if (view.conversation.acknowledgement && page.before == null && (await getTeamPresence(pool)).state === 'offline') {
+      const handoff = await handOffToDerek(pool, id).catch((error) => {
+        console.error('[derek] handoff failed', error instanceof Error ? error.name : 'unknown error')
+        return { state: 'none' as const }
+      })
+      if (handoff.state === 'sent') return json(await getStudentMessages(pool, student, id, page))
+    }
+    return json(view)
   } catch (error) {
     return handleError(error, 'Messages could not be loaded.')
   }

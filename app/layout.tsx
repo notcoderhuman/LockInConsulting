@@ -1,7 +1,12 @@
 import type { Metadata, Viewport } from 'next'
-import { Cormorant_Garamond, Manrope } from 'next/font/google'
+import { Cormorant_Garamond, Manrope, Noto_Sans_Devanagari, Noto_Serif_Devanagari } from 'next/font/google'
+import { headers } from 'next/headers'
 import { connection } from 'next/server'
+import { HTML_LANG } from '@/lib/i18n'
+import { LocaleProvider } from '@/lib/i18n/client'
+import { getLocale, hindiEnabled } from '@/lib/i18n/server'
 import { getSiteUrl } from '@/lib/site-url'
+import { TEXT_SIZE_BOOT } from '@/lib/text-size'
 import './globals.css'
 
 const cormorant = Cormorant_Garamond({
@@ -17,6 +22,24 @@ const manrope = Manrope({
   display: 'swap',
 })
 
+// Devanagari for the Hindi interface. The Latin fonts have no Devanagari, so these sit next in the
+// font stacks; not preloaded, and the browser fetches them only for a page that shows Devanagari.
+const notoSans = Noto_Sans_Devanagari({
+  subsets: ['devanagari'],
+  weight: ['400', '500', '600'],
+  variable: '--font-noto-devanagari',
+  display: 'swap',
+  preload: false,
+})
+
+const notoSerif = Noto_Serif_Devanagari({
+  subsets: ['devanagari'],
+  weight: ['400', '500'],
+  variable: '--font-noto-serif-devanagari',
+  display: 'swap',
+  preload: false,
+})
+
 const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
@@ -29,7 +52,9 @@ export const metadata: Metadata = {
     type: 'website',
     siteName: 'LockIn Consulting',
     locale: 'en_IN',
-    images: [{ url: '/images/logo-full.webp', alt: 'LockIn Consulting' }],
+    // Without a verified site URL, Next.js resolves relative share images against localhost (or a
+    // Vercel deployment URL), so they are published only once NEXT_PUBLIC_SITE_URL is set.
+    ...(siteUrl ? { images: [{ url: '/images/logo-full.webp', alt: 'LockIn Consulting' }] } : {}),
   },
   robots: siteUrl ? undefined : { index: false, follow: false },
   icons: {
@@ -54,9 +79,23 @@ export default async function RootLayout({
 }>) {
   // CSP nonces are per request, so every page must render dynamically (see proxy.ts).
   await connection()
+  const nonce = (await headers()).get('x-nonce') ?? undefined
+  const locale = await getLocale()
   return (
-    <html lang="en-IN" className={`${cormorant.variable} ${manrope.variable} bg-background`}>
-      <body className="antialiased">{children}</body>
+    // suppressHydrationWarning: the boot script may set data-text-size before React hydrates.
+    <html
+      lang={HTML_LANG[locale]}
+      className={`${cormorant.variable} ${manrope.variable} ${notoSans.variable} ${notoSerif.variable} bg-background`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: TEXT_SIZE_BOOT }} />
+      </head>
+      <body className="antialiased">
+        <LocaleProvider locale={locale} languageSwitch={hindiEnabled()}>
+          {children}
+        </LocaleProvider>
+      </body>
     </html>
   )
 }

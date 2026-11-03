@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
 import { APPLICANT_SCOPE_LABEL, QUALIFICATION_LABEL, STUDY_MODE_LABEL, formatDuration, monthLabel } from '@/lib/data/labels'
 import type { PublicCourse, PublicUniversity } from '@/lib/data/types'
@@ -92,15 +93,16 @@ function CourseRow({ course }: { course: PublicCourse }) {
   )
 }
 
-export function UniversityCard({ university }: { university: PublicUniversity }) {
+export function UniversityCard({ university, href, titleAs: Title = 'h3' }: { university: PublicUniversity; href?: string; titleAs?: 'h1' | 'h3' }) {
   const location = [university.city, university.subRegion].filter(Boolean).join(', ')
   return (
-    <article aria-labelledby={`uni-${university.id}`} className="rounded-2xl border border-border bg-card p-6">
+    <article lang="en" translate="no" aria-labelledby={`uni-${university.id}`} className="rounded-2xl border border-border bg-card p-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex flex-col gap-1">
-          <h3 id={`uni-${university.id}`} className="font-serif text-2xl leading-snug text-foreground">
-            {university.name}
-          </h3>
+          <DataStatusBadge state="verified" className="self-start" />
+          <Title id={`uni-${university.id}`} className={`font-serif ${Title === 'h1' ? 'text-3xl md:text-5xl' : 'text-2xl'} leading-snug text-foreground`}>
+            {href ? <Link href={href} className="hover:text-primary">{university.name}</Link> : university.name}
+          </Title>
           <p className="text-sm text-muted-foreground">
             {location || 'Location not verified'}
             {university.institutionType !== 'unknown' ? ` · ${university.institutionType === 'public' ? 'Public' : 'Private'}` : ''}
@@ -159,12 +161,16 @@ export function UniversityCard({ university }: { university: PublicUniversity })
                       {r.subject ? ` · ${r.subject}` : ''}
                     </span>
                   </p>
+                  {r.attribution && <p className="text-xs text-muted-foreground">{r.attribution}</p>}
                   <SourceCitation source={r.source} />
                 </li>
               ))}
             </ul>
           ) : (
             <DataStatusBadge state="unpublished" className="self-start" />
+          )}
+          {!university.rankings.some((r) => r.providerName.startsWith('QS')) && (
+            <p className="text-xs text-muted-foreground">QS eligibility pending verification</p>
           )}
         </div>
       </div>

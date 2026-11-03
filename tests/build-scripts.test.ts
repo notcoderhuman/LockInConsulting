@@ -14,8 +14,8 @@ describe('package scripts', () => {
     for (const [name, cmd] of Object.entries(scripts)) expect(cmd, name).not.toMatch(/(^|&&\s*|;\s*)[A-Z_][A-Z0-9_]*=\S*\s/)
   })
 
-  it('builds with Next defaults and completes the standalone bundle', () => {
-    expect(scripts.build).toBe('next build && node scripts/prepare-standalone.mjs')
+  it('builds with Webpack, which Hostinger can run, and completes the standalone bundle', () => {
+    expect(scripts.build).toBe('next build --webpack && node scripts/prepare-standalone.mjs')
     expect(existsSync(path.join(root, 'scripts', 'prepare-standalone.mjs'))).toBe(true)
     expect(nextConfig.output).toBe('standalone')
     expect(scripts['start:standalone']).toBe('node .next/standalone/server.js')

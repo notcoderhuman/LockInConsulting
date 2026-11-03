@@ -4,16 +4,24 @@ import { Menu, X } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useId, useState } from 'react'
+import type { MessageKey } from '@/lib/i18n'
+import { useLanguageSwitch, useT } from '@/lib/i18n/client'
+import { LanguageSwitch } from './language-switch'
+import { TextSizeControl } from './text-size-control'
 
-const NAV = [
-  { href: '/destinations', label: 'Destinations' },
-  { href: '/#how-it-works', label: 'How it works' },
-  { href: '/#team', label: 'Our team' },
-] as const
+const NAV: { href: string; label: MessageKey }[] = [
+  { href: '/destinations', label: 'nav.destinations' },
+  { href: '/universities', label: 'nav.universities' },
+  { href: '/#how-it-works', label: 'nav.howItWorks' },
+  { href: '/#team', label: 'nav.team' },
+]
 
-const DEREK = { href: '/#derek', label: 'Ask Derek' } as const
+// Signed-out students sign in first (/auth); signed-in ones are sent straight on to /chat.
+const CHAT: { href: string; label: MessageKey } = { href: '/auth?next=%2Fchat', label: 'nav.chat' }
 
 export function SiteHeader() {
+  const { t } = useT()
+  const languageSwitch = useLanguageSwitch()
   const [open, setOpen] = useState(false)
   const menuId = useId()
 
@@ -26,67 +34,73 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-5 md:px-8">
-        <Link href="/" className="flex min-h-11 items-center gap-3" aria-label="LockIn Consulting home">
-          <Image src="/images/logo-mark.webp" alt="" width={44} height={36} priority className="h-8 w-auto" />
-          <span className="flex flex-col leading-none">
-            <span className="font-serif text-xl tracking-[0.22em] text-foreground">LOCKIN</span>
-            <span className="mt-1 text-[0.6rem] font-medium uppercase tracking-[0.42em] text-muted-foreground">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-[20px] md:px-8">
+        <Link href="/" className="flex min-h-11 items-center gap-3" aria-label={t('header.home')}>
+          <Image src="/images/logo-mark.webp" alt="" width={44} height={36} priority className="h-[32px] w-auto" />
+          {/* The brand is a name: never translated. */}
+          <span className="flex flex-col leading-none" lang="en" translate="no">
+            <span className="font-serif text-[20px] tracking-[0.22em] text-foreground">LOCKIN</span>
+            <span className="mt-1 text-[9.6px] font-medium uppercase tracking-[0.42em] text-muted-foreground">
               Consulting
             </span>
           </span>
         </Link>
 
-        <nav aria-label="Primary" className="hidden md:block">
-          <ul className="flex items-center gap-1">
-            {NAV.map((item) => (
-              <li key={item.href}>
+        <div className="flex items-center shrink-0 gap-[6px] sm:gap-2">
+          <nav aria-label={t('nav.primary')} className="hidden lg:block">
+            <ul className="flex items-center gap-1">
+              {NAV.map((item) => (
+                <li key={item.href}>
+                  <a
+                    href={item.href}
+                    className="inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-3 text-sm text-muted-foreground transition-colors hover:text-foreground xl:px-4"
+                  >
+                    {t(item.label)}
+                  </a>
+                </li>
+              ))}
+              <li>
                 <a
-                  href={item.href}
-                  className="inline-flex min-h-11 items-center rounded-full px-4 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  href={CHAT.href}
+                  className="ml-2 inline-flex min-h-11 items-center rounded-full border border-primary/50 px-5 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
                 >
-                  {item.label}
+                  {t(CHAT.label)}
                 </a>
               </li>
-            ))}
-            <li>
-              <a
-                href={DEREK.href}
-                className="ml-2 inline-flex min-h-11 items-center rounded-full border border-primary/50 px-5 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
-              >
-                {DEREK.label}
-              </a>
-            </li>
-          </ul>
-        </nav>
+            </ul>
+          </nav>
 
-        <button
-          type="button"
-          className="inline-flex size-11 items-center justify-center rounded-full border border-border text-foreground md:hidden"
-          aria-expanded={open}
-          aria-controls={menuId}
-          aria-label={open ? 'Close menu' : 'Open menu'}
-          onClick={() => setOpen((v) => !v)}
-        >
-          {open ? <X className="size-5" aria-hidden /> : <Menu className="size-5" aria-hidden />}
-        </button>
+          {languageSwitch ? <LanguageSwitch /> : null}
+          <TextSizeControl />
+
+          <button
+            type="button"
+            className="inline-flex size-[44px] items-center justify-center rounded-full border border-border text-foreground lg:hidden"
+            aria-expanded={open}
+            aria-controls={menuId}
+            aria-label={open ? t('nav.closeMenu') : t('nav.openMenu')}
+            onClick={() => setOpen((v) => !v)}
+          >
+            {open ? <X className="size-5" aria-hidden /> : <Menu className="size-5" aria-hidden />}
+          </button>
+        </div>
       </div>
 
       <nav
         id={menuId}
-        aria-label="Primary mobile"
+        aria-label={t('nav.primaryMobile')}
         hidden={!open}
-        className="border-t border-border/60 bg-background px-5 pb-6 pt-2 md:hidden"
+        className="border-t border-border/60 bg-background px-5 pb-6 pt-2 lg:hidden"
       >
         <ul className="flex flex-col">
-          {[...NAV, DEREK].map((item) => (
+          {[...NAV, CHAT].map((item) => (
             <li key={item.href}>
               <a
                 href={item.href}
                 onClick={() => setOpen(false)}
                 className="flex min-h-12 items-center border-b border-border/50 text-base text-foreground"
               >
-                {item.label}
+                {t(item.label)}
               </a>
             </li>
           ))}

@@ -1,0 +1,24 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "lockin-local",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:local"],
+      "port": 3000
+    },
+    {
+      "name": "lockin-local-persist",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:local:persist"],
+      "port": 3000
+    },
+    {
+      "name": "lockin-prod-local-3100",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "set PORT=3100&& set HOSTNAME=localhost&& set NODE_ENV=production&& set DATABASE_URL=mysql://root@127.0.0.1:33307/lockin_local&& set STUDENT_ACCOUNTS_ENABLED=false&& set DEREK_AI_ENABLED=false&& set ADMIN_DISABLED=true&& node .next/standalone/server.js"],
+      "port": 3100,
+      "autoPort": false
+    }
+  ]
+}

@@ -25,7 +25,7 @@ export function AdminShell({ actor, children }: { actor: AdminActor; children: R
           </div>
         </div>
         <AdminNav
-          access={{ support: actorCan(actor, 'support.read'), students: actorCan(actor, 'students.read'), team: actorCan(actor, 'members.read') }}
+          access={{ support: actorCan(actor, 'support.read'), reply: actorCan(actor, 'support.reply'), students: actorCan(actor, 'students.read'), team: actorCan(actor, 'members.read') }}
         />
         <div className="mt-auto hidden flex-col gap-3 border-t border-border px-5 py-5 md:flex">
           <div className="flex flex-col gap-0.5">

@@ -5,11 +5,12 @@ import type { EvidenceItem } from '@/lib/derek/provider'
 import { MockProvider } from '@/lib/derek/providers/mock'
 import { callProvider } from '@/lib/derek/runtime'
 import { assessDraft, assessQuestion, redactPersonalData, unsupportedFigures } from '@/lib/derek/safeguards'
-import { ACCOUNT_POLICIES, getIdentityProviderStatus, getStudentAreaStatus } from '@/lib/identity/policy'
+import { oauthErrorMessage } from '@/lib/identity/oauth-errors'
+import { ACCOUNT_POLICIES, getIdentityProviderStatus, getStudentAreaStatus, studentSignUpOpen } from '@/lib/identity/policy'
 import { attributionLabel } from '@/lib/support/attribution'
 import { autoReplyActive } from '@/lib/support/settings'
 import { CONVERSATION_STATUSES, nextStatus, STUDENT_STATUS_LABEL, TransitionError } from '@/lib/support/state'
-import { deriveSubject, isSafeTargetPath, messageBody, newConversationInput, normaliseText, parsePageParams } from '@/lib/support/validation'
+import { contextSubject, deriveSubject, INSTAGRAM_HANDLE, isSafeTargetPath, messageBody, newConversationInput, normaliseText, parsePageParams } from '@/lib/support/validation'
 
 const evidence: EvidenceItem[] = [
   { ref: 'tuition_fee:7', text: 'MSc Data tuition fee (international): EUR 15000.00 per year, academic year 2026-2027', sourceUrl: 'https://uni.example/fees', checkedAt: '2026-10-01' },
@@ -58,6 +59,14 @@ describe('message validation', () => {
     expect(deriveSubject('', 'y'.repeat(300))).toHaveLength(160)
     expect(parsePageParams(new URL('https://x/?before=-3&limit=999'))).toEqual({ before: null, limit: 50 })
     expect(parsePageParams(new URL('https://x/?before=12'))).toEqual({ before: 12, limit: 30 })
+  })
+  it('builds the first-question subject from destination and course, Instagram optional', () => {
+    expect(contextSubject('Germany', ' MSc Data ')).toBe('Germany · MSc Data')
+    expect(contextSubject('Canada', 'Nursing', '@my.handle')).toBe('Canada · Nursing · Instagram @my.handle')
+    expect(contextSubject('United States of America', 'c'.repeat(200), 'h'.repeat(30)).length).toBeLessThanOrEqual(160)
+    expect(INSTAGRAM_HANDLE.test('@ok_name.1')).toBe(true)
+    expect(INSTAGRAM_HANDLE.test('bad handle')).toBe(false)
+    expect(INSTAGRAM_HANDLE.test('https://instagram.com/x')).toBe(false)
   })
   it('allows only same-site notification targets', () => {
     expect(isSafeTargetPath('/admin/inbox/3')).toBe(true)
@@ -138,7 +147,8 @@ describe('Derek configuration fails closed', () => {
     expect(cleared.autoReply.permitted).toBe(true)
     const on = { mode: 'offline' as const, autoReplyEnabled: true, updatedBy: null, updatedAt: '' }
     expect(autoReplyActive(on, cleared)).toBe(true)
-    expect(autoReplyActive({ ...on, mode: 'online' }, cleared)).toBe(false)
+    // Ordinary questions are answered at any hour: the online/offline mode no longer gates anything.
+    expect(autoReplyActive({ ...on, mode: 'online' }, cleared)).toBe(true)
     expect(autoReplyActive({ ...on, autoReplyEnabled: false }, cleared)).toBe(false)
     expect(autoReplyActive(on, drafting)).toBe(false)
   })
@@ -187,7 +197,7 @@ describe('identity policies', () => {
     expect(getStudentAreaStatus({ STUDENT_ACCOUNTS_ENABLED: 'true' }, true)).toEqual({ enabled: true })
     expect(getStudentAreaStatus({ STUDENT_ACCOUNTS_ENABLED: '1' }, true).enabled).toBe(false)
   })
-  it('never reports a social provider as operational', () => {
+  it('reports Google as available only with both credentials, and never the others', () => {
     const none = getIdentityProviderStatus({})
     expect(none.map((p) => [p.id, p.state])).toEqual([
       ['google', 'not_configured'],
@@ -195,8 +205,28 @@ describe('identity policies', () => {
       ['yahoo', 'not_configured'],
       ['apple', 'deferred'],
     ])
-    const supplied = getIdentityProviderStatus({ GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 'secret', APPLE_CLIENT_ID: 'x' })
-    expect(supplied.find((p) => p.id === 'google')?.state).toBe('credentials_supplied_untested')
+    const supplied = getIdentityProviderStatus({ GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 'secret', APPLE_CLIENT_ID: 'x', STUDENT_ACCOUNTS_ENABLED: 'true' })
+    expect(supplied.find((p) => p.id === 'google')?.state).toBe('available')
+    // Credentials alone do not offer Google while student accounts are closed.
+    for (const flag of [undefined, 'false', '1'])
+      expect(getIdentityProviderStatus({ GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 'secret', STUDENT_ACCOUNTS_ENABLED: flag }).find((p) => p.id === 'google')?.state).toBe('closed')
+    expect(getIdentityProviderStatus({ GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: ' ' }).find((p) => p.id === 'google')?.state).toBe('not_configured')
+    expect(getIdentityProviderStatus({ MICROSOFT_CLIENT_ID: 'id', MICROSOFT_CLIENT_SECRET: 's' }).find((p) => p.id === 'microsoft')?.state).toBe('credentials_supplied_untested')
+    // New accounts need both switches; neither alone opens registration.
+    expect(studentSignUpOpen({ STUDENT_ACCOUNTS_ENABLED: 'true' })).toBe(false)
+    expect(studentSignUpOpen({ STUDENT_SELF_SIGNUP_ENABLED: 'true' })).toBe(false)
+    expect(studentSignUpOpen({ STUDENT_ACCOUNTS_ENABLED: 'true', STUDENT_SELF_SIGNUP_ENABLED: 'true' })).toBe(true)
+    // Production: the two flags alone never open sign-up; a published privacy notice is required (R-026).
+    const prod = { NODE_ENV: 'production', STUDENT_ACCOUNTS_ENABLED: 'true', STUDENT_SELF_SIGNUP_ENABLED: 'true' }
+    expect(studentSignUpOpen(prod)).toBe(false)
+    for (const bad of ['', 'http://example.com/privacy', '//evil.example/p', 'javascript:alert(1)', 'not a url'])
+      expect(studentSignUpOpen({ ...prod, STUDENT_PRIVACY_NOTICE_URL: bad }), bad).toBe(false)
+    expect(studentSignUpOpen({ ...prod, STUDENT_PRIVACY_NOTICE_URL: 'https://lockin.example/privacy' })).toBe(true)
+    expect(studentSignUpOpen({ ...prod, STUDENT_PRIVACY_NOTICE_URL: '/privacy' })).toBe(true)
+    for (const code of ['access_denied', 'state_mismatch', 'signup_disabled', 'account_not_linked', 'email_not_verified', 'unavailable', 'something_new'])
+      expect(oauthErrorMessage(code), code).toMatch(/\.$/)
+    expect(oauthErrorMessage('<script>')).not.toContain('<script>')
+    expect(oauthErrorMessage(null)).toBeNull()
     expect(supplied.find((p) => p.id === 'apple')?.state).toBe('deferred')
     expect(JSON.stringify(supplied)).not.toContain('secret')
   })
@@ -207,7 +237,10 @@ describe('message attribution', () => {
     expect(attributionLabel({ authorKind: 'staff', authorName: 'Dev Gautam', reviewedByName: null, editedByHuman: false }, 'student')).toBe('Replied by Dev Gautam · LockIn team')
     expect(attributionLabel({ authorKind: 'derek', authorName: null, reviewedByName: 'Dev Gautam', editedByHuman: false }, 'student')).toBe('Replied by Derek · AI assistant · reviewed by Dev Gautam')
     expect(attributionLabel({ authorKind: 'derek', authorName: null, reviewedByName: 'Dev Gautam', editedByHuman: true }, 'student')).toMatch(/^Drafted by Derek .* edited and approved by Dev Gautam$/)
-    expect(attributionLabel({ authorKind: 'derek', authorName: null, reviewedByName: null, editedByHuman: false }, 'student')).toMatch(/automatic reply, not reviewed by a person/)
+    expect(attributionLabel({ authorKind: 'derek', authorName: null, reviewedByName: null, editedByHuman: false }, 'student')).toMatch(/automatic reply, not reviewed by a person$/)
+    // Local mock output can never pass for a real AI answer.
+    expect(attributionLabel({ authorKind: 'derek', authorName: null, reviewedByName: null, editedByHuman: false, testOnly: true }, 'student')).toMatch(/test reply from the offline mock, not a real AI answer$/)
+    expect(attributionLabel({ authorKind: 'staff', authorName: 'Dev Gautam', reviewedByName: null, editedByHuman: false, testOnly: true }, 'student')).toBe('Replied by Dev Gautam · LockIn team')
     expect(attributionLabel({ authorKind: 'student', authorName: 'Asha', reviewedByName: null, editedByHuman: false }, 'student')).toBe('You')
     expect(attributionLabel({ authorKind: 'student', authorName: 'Asha', reviewedByName: null, editedByHuman: false }, 'staff')).toBe('Asha')
   })

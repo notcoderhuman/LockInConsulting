@@ -237,6 +237,8 @@ export async function updateRecord(db: Pool, actor: AdminActor, entity: EntityKe
         verified_at: null,
         verified_by: null,
         publication_status: before.publication_status === 'in_review' ? 'draft' : before.publication_status,
+        // A changed name or website must be re-checked before it is listed provisionally again (D-043).
+        ...(entity === 'university' ? { provisional_listing: 0, identity_city_confirmed: 0 } : {}),
       },
       id,
     ])
@@ -355,6 +357,37 @@ export async function transitionRecord(
 }
 
 // ---------------------------------------------------------------------------------------------
+// Provisional listing (D-043): name, official website and (if the site states it) city only,
+// labelled "Not yet verified", while the record waits for review. Reviewers decide; audited.
+// ---------------------------------------------------------------------------------------------
+
+export async function setProvisionalListing(db: Pool, actor: AdminActor, id: number, show: boolean, form: FormData): Promise<void> {
+  assertCan(actor, 'data.review')
+  const r = reasonInput.safeParse(formText(form, 'reason'))
+  if (!r.success) throw new WorkflowError(show ? 'Say how the official website was checked.' : 'Give a reason.', { reason: r.error.issues.map((i) => i.message) })
+  const def = ENTITIES.university
+  await inTransaction(db, async (conn) => {
+    const before = await lockRow(conn, def, id)
+    let changes: Record<string, unknown>
+    if (show) {
+      if (before.publication_status !== 'draft' && before.publication_status !== 'in_review')
+        throw new WorkflowError('Only drafts and records in review can be listed provisionally. A published record already has its full listing.')
+      if (!before.official_website || before.source_id == null) throw new WorkflowError('Record the official website and its source before listing it.')
+      changes = {
+        provisional_listing: 1,
+        listing_hidden: 0,
+        identity_checked_at: todayIso(),
+        identity_city_confirmed: form.get('cityConfirmed') === 'on' && before.city ? 1 : 0,
+        identity_evidence: `Checked by ${actor.name}: ${r.data}`.slice(0, 1000),
+      }
+    } else changes = { provisional_listing: 0, listing_hidden: 1 } // D-044: off the public directory entirely
+    await conn.query(`UPDATE ${def.table} SET ? WHERE id = ?`, [changes, id])
+    const after = await readRow(conn, def.table, id)
+    await appendChangeLog(conn, { entityType: def.logType, entityId: id, action: 'provisional_change', actorId: actor.userId, actorRole: actor.role, reason: r.data, before, after })
+  })
+}
+
+// ---------------------------------------------------------------------------------------------
 // Sources, ranking rights, exchange rates
 // ---------------------------------------------------------------------------------------------
 
@@ -390,6 +423,9 @@ export async function updateRankingRights(db: Pool, actor: AdminActor, providerI
     licenceExpiresAt: formText(form, 'licenceExpiresAt') || undefined,
     rightsCheckedAt: formText(form, 'rightsCheckedAt') || undefined,
     rightsNotes: formText(form, 'rightsNotes') || undefined,
+    attributionText: formText(form, 'attributionText') || undefined,
+    allowOrdering: form.get('allowOrdering') === 'on',
+    allowAiUse: form.get('allowAiUse') === 'on',
   })
   if (!parsed.success) throw new WorkflowError('Check the highlighted fields.', zodFieldErrors(parsed.error))
   const r = parsed.data
@@ -399,8 +435,8 @@ export async function updateRankingRights(db: Pool, actor: AdminActor, providerI
     if (!before) throw new WorkflowError('Ranking provider not found.')
     await conn.query(
       `UPDATE ranking_providers SET rights_status = ?, licence_reference = ?, licence_scope = ?, licence_expires_at = ?,
-              rights_checked_at = ?, rights_notes = ? WHERE id = ?`,
-      [r.rightsStatus, r.licenceReference ?? null, r.licenceScope ?? null, r.licenceExpiresAt ?? null, r.rightsCheckedAt ?? null, r.rightsNotes ?? null, providerId],
+              rights_checked_at = ?, rights_notes = ?, attribution_text = ?, allow_ordering = ?, allow_ai_use = ? WHERE id = ?`,
+      [r.rightsStatus, r.licenceReference ?? null, r.licenceScope ?? null, r.licenceExpiresAt ?? null, r.rightsCheckedAt ?? null, r.rightsNotes ?? null, r.attributionText ?? null, r.allowOrdering ? 1 : 0, r.allowAiUse ? 1 : 0, providerId],
     )
     const after = await readRow(conn, 'ranking_providers', providerId)
     await appendChangeLog(conn, { entityType: 'ranking_provider', entityId: providerId, action: 'rights_change', actorId: actor.userId, actorRole: actor.role, reason, before, after })

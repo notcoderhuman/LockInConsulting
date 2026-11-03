@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import { controlClass } from '@/components/admin/form-controls'
+import { DESTINATIONS } from '@/lib/destinations'
+import { COURSE_MAX, contextSubject, INSTAGRAM_HANDLE } from '@/lib/support/validation'
 import { cn } from '@/lib/utils'
 
 // The student's view of their own conversations. All identity comes from the session cookie on
@@ -29,6 +31,8 @@ interface Message {
 interface Pending {
   key: string
   body: string
+  /** Set only for a first question, so a retry sends the same context. */
+  subject?: string
   state: 'sending' | 'failed'
   error?: string
 }
@@ -36,6 +40,8 @@ interface Pending {
 type Load = 'loading' | 'ready' | 'error' | 'unavailable' | 'signed_out'
 
 const POLL_MS = 15_000
+/** While Derek is writing a reply that may be sent automatically. */
+const FAST_POLL_MS = 2_000
 const MAX = 4000
 
 const newKey = () => (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`)
@@ -46,12 +52,18 @@ function formatTime(value: string) {
 }
 
 async function api(path: string, init?: { method?: string; body?: unknown }) {
-  const res = await fetch(path, {
-    method: init?.method ?? 'GET',
-    cache: 'no-store',
-    headers: init?.body !== undefined ? { 'content-type': 'application/json' } : undefined,
-    body: init?.body !== undefined ? JSON.stringify(init.body) : undefined,
-  })
+  let res: Response
+  try {
+    res = await fetch(path, {
+      method: init?.method ?? 'GET',
+      cache: 'no-store',
+      headers: init?.body !== undefined ? { 'content-type': 'application/json' } : undefined,
+      body: init?.body !== undefined ? JSON.stringify(init.body) : undefined,
+    })
+  } catch {
+    // Offline or connection dropped: report a failure so the message offers Retry instead of hanging on "Sending…".
+    return { status: 0, ok: false, data: {} as Record<string, unknown> }
+  }
   let data: Record<string, unknown> = {}
   try {
     data = await res.json()
@@ -77,10 +89,20 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
   const [subject, setSubject] = useState('')
   const [statusLabel, setStatusLabel] = useState('')
   const [acknowledgement, setAcknowledgement] = useState<string | null>(null)
+  const [replyPending, setReplyPending] = useState(false)
   const [pending, setPending] = useState<Pending[]>([])
   const [draft, setDraft] = useState('')
   const [loadingOlder, setLoadingOlder] = useState(false)
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const [destination, setDestination] = useState('')
+  const [course, setCourse] = useState('')
+  const [instagram, setInstagram] = useState('')
+  const [contextError, setContextError] = useState<string | null>(null)
+  const threadRef = useRef<HTMLDivElement>(null)
+
+  const open = (id: number | null) => {
+    window.history.replaceState(null, '', id == null ? '/chat' : `/chat?c=${id}`)
+    setSelected(id)
+  }
 
   const loadList = useCallback(async () => {
     const r = await api('/api/student/conversations')
@@ -96,10 +118,11 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
       if (!quiet) setThreadState(r.status === 404 ? 'error' : stateFor(r.status))
       return
     }
-    const conv = r.data.conversation as { subject: string; statusLabel: string; acknowledgement?: string | null }
+    const conv = r.data.conversation as { subject: string; statusLabel: string; acknowledgement?: string | null; replyPending?: boolean }
     setSubject(conv.subject)
     setStatusLabel(conv.statusLabel)
     setAcknowledgement(conv.acknowledgement ?? null)
+    setReplyPending(conv.replyPending === true)
     setMessages((prev) => {
       const latest = r.data.messages as Message[]
       // Keep older pages the student already loaded.
@@ -121,6 +144,7 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
     setMessages([])
     setPending([])
     setAcknowledgement(null)
+    setReplyPending(false)
     if (selected == null) return
     void loadThread(selected)
     const t = setInterval(() => document.visibilityState !== 'hidden' && loadThread(selected, { quiet: true }), POLL_MS)
@@ -128,7 +152,15 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
   }, [selected, loadThread])
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ block: 'end' })
+    if (selected == null || !replyPending) return
+    const t = setInterval(() => loadThread(selected, { quiet: true }), FAST_POLL_MS)
+    return () => clearInterval(t)
+  }, [selected, replyPending, loadThread])
+
+  // Scroll the thread itself, never the page: on the homepage the chat sits mid-page.
+  useEffect(() => {
+    const el = threadRef.current
+    if (el) el.scrollTop = el.scrollHeight
   }, [messages.length, pending.length])
 
   async function loadOlder() {
@@ -145,21 +177,18 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
     setPending((p) => p.map((x) => (x.key === item.key ? { ...x, state: 'sending', error: undefined } : x)))
     const r =
       selected == null
-        ? await api('/api/student/conversations', { method: 'POST', body: { body: item.body, clientRequestId: item.key } })
+        ? await api('/api/student/conversations', { method: 'POST', body: { subject: item.subject, body: item.body, clientRequestId: item.key } })
         : await api(`/api/student/conversations/${selected}/messages`, { method: 'POST', body: { body: item.body, clientRequestId: item.key } })
     if (r.ok && r.data.saved === true) {
       setPending((p) => p.filter((x) => x.key !== item.key))
-      if (selected == null) {
-        const id = Number(r.data.conversationId)
-        window.history.replaceState(null, '', `/support?c=${id}`)
-        setSelected(id)
-      } else await loadThread(selected, { quiet: true })
+      if (selected == null) open(Number(r.data.conversationId))
+      else await loadThread(selected, { quiet: true })
       void loadList()
       return
     }
     if (r.status === 401) setListState('signed_out')
     const fieldErrors = r.data.fieldErrors as Record<string, string[]> | undefined
-    const error = fieldErrors?.body?.join(' ') ?? (typeof r.data.error === 'string' ? r.data.error : 'Not sent. Check your connection and try again.')
+    const error = (fieldErrors?.body ?? fieldErrors?.subject)?.join(' ') ?? (typeof r.data.error === 'string' ? r.data.error : 'Check your connection and try again.')
     setPending((p) => p.map((x) => (x.key === item.key ? { ...x, state: 'failed', error } : x)))
   }
 
@@ -167,7 +196,15 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
     e.preventDefault()
     const body = draft.trim()
     if (!body || pending.some((p) => p.state === 'sending')) return
-    const item: Pending = { key: newKey(), body, state: 'sending' }
+    let subject: string | undefined
+    if (selected == null) {
+      // Destination and course come before a first question; Instagram stays optional.
+      if (!destination || !course.trim()) return setContextError('Choose a destination and enter your course first.')
+      if (instagram.trim() && !INSTAGRAM_HANDLE.test(instagram.trim())) return setContextError('That Instagram handle doesn’t look right. Leave it empty if you prefer.')
+      subject = contextSubject(destination, course, instagram)
+    }
+    setContextError(null)
+    const item: Pending = { key: newKey(), body, subject, state: 'sending' }
     setPending((p) => [...p, item])
     setDraft('')
     void deliver(item)
@@ -176,7 +213,7 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
   if (listState === 'signed_out')
     return (
       <Notice title="You have been signed out">
-        <a href="/support" className="text-primary hover:underline">
+        <a href="/auth?next=%2Fchat" className="text-primary hover:underline">
           Sign in again
         </a>
       </Notice>
@@ -186,7 +223,7 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
   return (
     <div className="grid gap-6 md:grid-cols-[16rem_minmax(0,1fr)]">
       <aside aria-label="Your conversations" className="flex flex-col gap-3">
-        <Button type="button" variant={selected == null ? 'default' : 'outline'} onClick={() => (window.history.replaceState(null, '', '/support'), setSelected(null))}>
+        <Button type="button" variant={selected == null ? 'default' : 'outline'} onClick={() => open(null)}>
           New question
         </Button>
         {listState === 'loading' ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
@@ -204,7 +241,7 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
             <li key={c.id}>
               <button
                 type="button"
-                onClick={() => (window.history.replaceState(null, '', `/support?c=${c.id}`), setSelected(c.id))}
+                onClick={() => open(c.id)}
                 aria-current={selected === c.id ? 'true' : undefined}
                 className={cn('flex w-full flex-col rounded-md px-3 py-2 text-left text-sm', selected === c.id ? 'bg-card text-primary' : 'text-foreground hover:bg-card/60')}
               >
@@ -222,9 +259,9 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
       <section aria-label={selected == null ? 'New question' : subject || 'Conversation'} className="flex min-h-[24rem] flex-col gap-4 rounded-2xl border border-border bg-card p-4 md:p-6">
         {selected == null ? (
           <div className="flex flex-col gap-1">
-            <h2 className="font-serif text-2xl text-foreground">Ask the LockIn team</h2>
+            <h2 className="font-serif text-2xl text-foreground">Hello. What would you like to know?</h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Ask about universities, courses, admissions or studying abroad. The LockIn team reads your questions; Derek, LockIn’s AI assistant, may answer some of them, and his replies are always labelled. Please don’t share passport numbers, bank details or other sensitive documents here.
+              Ask about universities, courses, tuition fees, entry requirements or applications. The LockIn team reads every question; Derek, LockIn’s AI assistant, may prepare a reply, and every reply says who wrote it. Please don’t share passport numbers, bank details or other sensitive documents here.
             </p>
           </div>
         ) : (
@@ -234,7 +271,7 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
           </div>
         )}
 
-        <div className="flex flex-1 flex-col gap-3" aria-live="polite">
+        <div ref={threadRef} tabIndex={0} aria-label="Messages" className="flex max-h-[28rem] flex-1 flex-col gap-3 overflow-y-auto rounded-md focus-visible:outline-2 focus-visible:outline-ring" aria-live="polite">
           {threadState === 'loading' ? <p className="text-sm text-muted-foreground">Loading messages…</p> : null}
           {threadState === 'error' ? (
             <p className="text-sm text-muted-foreground">
@@ -254,8 +291,16 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
           {selected != null && threadState === 'ready' && !messages.length && !pending.length ? <p className="text-sm text-muted-foreground">No messages yet.</p> : null}
           <ol className="flex flex-col gap-3">
             {messages.map((m) => (
-              <li key={m.id} className={cn('flex max-w-[85%] flex-col gap-1 rounded-xl px-4 py-3', m.authorKind === 'student' ? 'self-end bg-primary/10' : 'self-start border border-border bg-background')}>
-                <span className={cn('text-xs font-medium', m.authorKind === 'student' ? 'text-muted-foreground' : 'text-primary')}>{m.label}</span>
+              <li
+                key={m.id}
+                className={cn(
+                  'flex max-w-[85%] flex-col gap-1 rounded-xl px-4 py-3',
+                  m.authorKind === 'student' && 'self-end bg-primary/10',
+                  m.authorKind === 'derek' && 'self-start border border-dashed border-primary/40 bg-background',
+                  m.authorKind === 'staff' && 'self-start border border-border bg-background',
+                )}
+              >
+                <span className={cn('text-xs font-medium', m.authorKind === 'student' ? 'text-muted-foreground' : m.authorKind === 'derek' ? 'text-primary' : 'text-foreground')}>{m.label}</span>
                 <p className="text-sm leading-relaxed break-words whitespace-pre-wrap text-foreground">{m.body}</p>
                 <time className="text-[0.7rem] text-muted-foreground">{formatTime(m.createdAt)}</time>
               </li>
@@ -284,10 +329,38 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
               {acknowledgement}
             </p>
           ) : null}
-          <div ref={bottomRef} />
         </div>
 
         <form onSubmit={onSubmit} className="flex flex-col gap-2">
+          {selected == null ? (
+            <fieldset className="grid gap-3 sm:grid-cols-3">
+              <legend className="mb-2 text-xs text-muted-foreground">Before your first question, tell us where and what you want to study.</legend>
+              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                Destination
+                <select required value={destination} onChange={(e) => setDestination(e.target.value)} className={controlClass}>
+                  <option value="">Choose…</option>
+                  {DESTINATIONS.map((d) => (
+                    <option key={d.slug} value={d.name}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                Course
+                <input required value={course} onChange={(e) => setCourse(e.target.value)} maxLength={COURSE_MAX} placeholder="e.g. MSc Computer Science" className={controlClass} />
+              </label>
+              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                Instagram (optional)
+                <input value={instagram} onChange={(e) => setInstagram(e.target.value)} maxLength={31} placeholder="@yourhandle" autoComplete="off" className={controlClass} />
+              </label>
+            </fieldset>
+          ) : null}
+          {contextError ? (
+            <p role="alert" className="text-xs text-destructive">
+              {contextError}
+            </p>
+          ) : null}
           <label htmlFor="student-message" className="sr-only">
             Your message
           </label>
@@ -295,13 +368,21 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
             id="student-message"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              // Enter sends; Shift+Enter (or an IME composing) adds a line.
+              if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault()
+                e.currentTarget.form?.requestSubmit()
+              }
+            }}
             rows={3}
             maxLength={MAX}
-            placeholder={selected == null ? 'Type your question…' : 'Type a reply…'}
+            placeholder={selected == null ? 'Ask about universities, courses, fees or admissions...' : 'Type a reply…'}
+            aria-describedby="student-message-hint"
             className={controlClass}
           />
           <div className="flex items-center justify-between gap-3">
-            <span className="text-xs text-muted-foreground">{`${draft.length}/${MAX}`}</span>
+            <span id="student-message-hint" className="text-xs text-muted-foreground">{`Enter to send, Shift+Enter for a new line · ${draft.length}/${MAX}`}</span>
             <Button type="submit" disabled={!draft.trim() || pending.some((p) => p.state === 'sending')}>
               Send
             </Button>

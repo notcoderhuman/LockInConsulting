@@ -53,8 +53,8 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-manrope), 'Manrope', ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-cormorant), 'Cormorant Garamond', ui-serif, Georgia, serif;
+  --font-sans: var(--font-manrope), 'Manrope', var(--font-noto-devanagari), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-cormorant), 'Cormorant Garamond', var(--font-noto-serif-devanagari), ui-serif, Georgia, serif;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -105,6 +105,13 @@
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
   }
+  /* Reader's text-size choice (components/site/text-size-control.tsx). Spacing is in rem, so the layout scales with the text. */
+  html[data-text-size='large'] {
+    font-size: 112.5%;
+  }
+  html[data-text-size='larger'] {
+    font-size: 125%;
+  }
   body {
     @apply bg-background text-foreground font-sans;
   }
@@ -153,4 +160,16 @@
 
 .hairline-gold {
   background: linear-gradient(90deg, transparent, var(--primary), transparent);
+}
+
+/* Hindi typography. Outside any layer on purpose: it must override the tracking-* and leading-*
+   utilities. Letter-spacing breaks Devanagari joins, and the tight headline line-heights clip its
+   vowel signs. :lang() matches only Hindi text, so English inside lang="en" keeps its styling. */
+[class*='tracking-']:lang(hi) {
+  letter-spacing: normal;
+}
+.font-serif:lang(hi),
+h1:lang(hi),
+h2:lang(hi) {
+  line-height: 1.35;
 }

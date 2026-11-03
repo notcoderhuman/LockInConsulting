@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils'
 
 export interface NavAccess {
   support: boolean
+  /** May reply to students: this person's open panel counts as "team online" in the student chat. */
+  reply: boolean
   students: boolean
   team: boolean
 }
@@ -55,10 +57,37 @@ function useBadgeCounts(): Record<Badge, number | null> {
   return counts
 }
 
+const HEARTBEAT_MS = 30_000
+
+/**
+ * Team presence heartbeat (lib/support/presence.ts). Runs in background tabs too (browsers slow it
+ * to about once a minute, inside the 2-minute lease), and fires at once when the tab wakes or the
+ * network returns. Several tabs are fine: the server writes at most every 20 s per person.
+ */
+function usePresenceHeartbeat(enabled: boolean) {
+  useEffect(() => {
+    if (!enabled) return
+    const beat = () => {
+      void fetch('/api/admin/presence', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}', keepalive: true }).catch(() => {})
+    }
+    const onVisible = () => document.visibilityState === 'visible' && beat()
+    beat()
+    const timer = setInterval(beat, HEARTBEAT_MS)
+    window.addEventListener('online', beat)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      clearInterval(timer)
+      window.removeEventListener('online', beat)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [enabled])
+}
+
 // Navigation only. Every page and action authorises on the server regardless of what is shown.
 export function AdminNav({ access }: { access: NavAccess }) {
   const pathname = usePathname()
   const counts = useBadgeCounts()
+  usePresenceHeartbeat(access.reply)
   return (
     <nav aria-label="Admin sections" className="overflow-x-auto px-2 pb-3 md:overflow-visible md:px-3 md:pb-0">
       <ul className="flex gap-1 md:flex-col">

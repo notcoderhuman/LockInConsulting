@@ -3,18 +3,22 @@
 //
 //   off_topic   clearly unrelated (coding, games, entertainment, politics…) or an attempt to
 //               override Derek's role → a fixed refusal; no provider call
-//   greeting    a bare greeting → one fixed clarifying question; no provider call
-//   in_scope    mentions study abroad, universities, courses, admissions… → normal drafting
+//   greeting    a bare greeting, in any supported language → a short greeting back; no provider call
+//   thanks      thanks or a plain acknowledgement → a short reply; no provider call
+//   in_scope    mentions study abroad, universities, courses, admissions… → normal drafting.
+//               A greeting in front of a question ("hi, tell me about Germany") is removed first,
+//               so the question is classified (and answered) on its own.
 //   unclear     neither → drafted for review, never sent automatically
 //
-// English, Hindi (Devanagari) and Hinglish (romanised Hindi) are recognised. Anything that is not
-// plainly English is "uncertain" for automatic sending: the keyword lists below cannot promise to
-// catch every Hindi or Hinglish way of asking about a visa or describing distress, so a person
-// reads it first. Message text is untrusted: it is classified, never obeyed.
+// English, Hindi (Devanagari) and Hinglish (romanised Hindi) are recognised. Greetings and thanks
+// are answered in every language. Any other message that is not plainly English is "uncertain" for
+// automatic sending: the keyword lists below cannot promise to catch every Hindi or Hinglish way of
+// asking about a visa or describing distress, so a person reads it first. Message text is
+// untrusted: it is classified, never obeyed.
 
 import type { RiskAssessment } from './safeguards'
 
-export type Scope = 'in_scope' | 'off_topic' | 'greeting' | 'unclear'
+export type Scope = 'in_scope' | 'off_topic' | 'greeting' | 'thanks' | 'unclear'
 export type Language = 'en' | 'hi' | 'hinglish'
 
 export interface MessageClassification {
@@ -24,20 +28,23 @@ export interface MessageClassification {
   injection: boolean
   /** High-risk topics in any supported language (visa, legal, distress, payments, safety). */
   highRisk: string[]
+  /** The message without a leading greeting: what Derek actually answers. */
+  question: string
 }
 
 export const OFF_TOPIC_REPLY =
   "I'm Derek, LockIn Consulting's study-abroad assistant. I can help with universities, courses, admissions and studying abroad, but I can't assist with unrelated topics. What would you like to know about studying abroad?"
 
-export const CLARIFY_REPLY =
-  "I'm Derek, LockIn Consulting's AI assistant for studying abroad. What would you like help with: choosing a country or university, a course, or your application?"
+export const GREETING_REPLY = 'Hey! What are you planning to explore today—universities, courses, fees, or admissions?'
+
+export const THANKS_REPLY = 'You’re welcome! Ask me anytime if something else comes up.'
 
 const norm = (text: string) => text.normalize('NFKC').toLowerCase()
 
 // Words that put a message inside LockIn's service. Romanised Hindi spellings vary, so stems are used.
 const STUDY = [
-  /\b(universit\w*|uni|college\w*|campus\w*|course\w*|programme\w*|degree\w*|bachelor\w*|master\w*|masters|undergrad\w*|postgrad\w*|ug|pg|phd|doctorate|diploma\w*|foundation year|mba|msc|ms in|bsc|btech|mtech|llm)\b/,
-  /\b(admission\w*|admit\w*|apply\w*|appl(y|ie|ication)\w*|offer letter|conditional offer|unconditional offer|intake\w*|deadline\w*|enrol\w*|shortlist\w*)\b/,
+  /\b(universit\w*|uni|college\w*|campus\w*|course\w*|programme\w*|degree\w*|bachelor\w*|master\w*|masters|undergrad\w*|postgrad\w*|ug|pg|phd|doctorate|diploma\w*|foundation year|mba|msc|ms in|bsc|btech|mtech|llm|cs|computer science)\b/,
+  /\b(admission\w*|admit\w*|apply\w*|appl(y|ie|ication)\w*|offer letter|conditional offer|unconditional offer|intake\w*|deadline\w*|enrol\w*|shortlist\w*|eligib\w*|requirements?)\b/,
   /\b(sop|statement of purpose|lor|letter of recommendation|recommendation letter|cv|resume|portfolio|transcript\w*|personal statement)\b/,
   /\b(ielts|toefl|pte|duolingo|gre|gmat|cgpa|gpa|backlog\w*)\b/,
   /\b(scholarship\w*|bursar\w*|tuition|fees?|stipend\w*|assistantship\w*|education loan|living cost\w*|cost of living|accommodation|hostel\w*|dorm\w*)\b/,
@@ -81,7 +88,21 @@ const HIGH_RISK: [RegExp, string][] = [
 
 // Common romanised-Hindi function words. English look-alikes ("me", "to", "so") are left out.
 const HINGLISH_MARKERS = /\b(hai|hain|kya|kaise|kaisa|kaun|kitna|kitni|kitne|kab|mujhe|mera|meri|mere|humko|hume|chahiye|karna|karni|karu|karun|nahi|nahin|bhi|aur|ke liye|ki|ka|ko|se|mein|batao|bataiye|kijiye|kripya|accha|theek|lagega|lagegi|lagenge|milega|milegi)\b/g
-const GREETING = /^(hi+|hello|hey|hii+|namaste|namaskar|good (morning|afternoon|evening)|hola|yo)[\s!.,?]*(derek|there|team)?[\s!.,?]*$/
+
+// Greetings and acknowledgements in English, Hinglish and Hindi, optionally naming who they address.
+// `\b` does not work around Devanagari, so the patterns are anchored on the whole (trimmed) message.
+const HELLO =
+  "(?:h+i+|he+y+|hel+o+|hiya|howdy|yo|sup|hola|namaste|namaskar|namaskaar|pranam|ram ram|sat sri akal|salaam|salam|assalam\\w*|good (?:morning|afternoon|evening|day)|gm|नमस्ते|नमस्कार|प्रणाम)"
+const ADDRESSEE = "(?:\\s+(?:derek|there|team|sir|ma'?am|madam|ji|bhai|bhaiya|didi|dost|everyone|all|lockin))*"
+const HOW_ARE = "(?:how are you|how r u|how's it going|kaise ho|kaisi ho|kya haal hai|kya haal|sab theek|kaise hain|आप कैसे हैं|कैसे हो)(?:\\s+(?:doing|today))?"
+const HOW_ARE_YOU = `(?:[\\s,!.]*${HOW_ARE})?`
+const GREETING = new RegExp(`^(?:${HELLO}${ADDRESSEE}${HOW_ARE_YOU}|${HOW_ARE}${ADDRESSEE})[\\s!.,?🙏]*$`)
+/** A greeting at the start of a longer message. */
+const LEADING_GREETING = new RegExp(`^${HELLO}${ADDRESSEE}${HOW_ARE_YOU}[\\s!.,?:—-]+(?=\\S)`, 'i')
+const ACK = '(?:ok(?:ay)?|okk+|great|cool|perfect|nice|got it|alright|sure|awesome|achha|accha|acha|theek hai|thik hai)'
+const THANKS_WORD =
+  '(?:thanks?(?: a lot| so much| you(?: so much| very much)?)?|thank u|thx|ty|tysm|cheers|shukriya|bahut shukriya|dhanyavaa?d|dhanyawaa?d|धन्यवाद|शुक्रिया)'
+const THANKS = new RegExp(`^(?:${ACK}[\\s,!.]*)*(?:${THANKS_WORD}|${ACK})${ADDRESSEE}[\\s!.,🙏]*$`)
 
 export function detectLanguage(text: string): Language {
   if (/[ऀ-ॿ]/.test(text)) return 'hi'
@@ -90,25 +111,36 @@ export function detectLanguage(text: string): Language {
 }
 
 export function classifyMessage(raw: string): MessageClassification {
-  const text = norm(raw)
-  const language = detectLanguage(raw)
+  const whole = norm(raw).trim()
+  const trimmed = raw.trim()
+  // A bare greeting or thanks never reaches the model and is never turned into an essay.
+  if (GREETING.test(whole)) return { scope: 'greeting', language: detectLanguage(raw), injection: false, highRisk: [], question: trimmed }
+  if (THANKS.test(whole)) return { scope: 'thanks', language: detectLanguage(raw), injection: false, highRisk: [], question: trimmed }
+
+  const question = trimmed.replace(LEADING_GREETING, '').trim() || trimmed
+  const text = norm(question)
+  const language = detectLanguage(question)
   const injection = INJECTION.some((re) => re.test(text))
   const highRisk = [...new Set(HIGH_RISK.filter(([re]) => re.test(text)).map(([, label]) => label))]
   const study = STUDY.some((re) => re.test(text))
   const offTopic = OFF_TOPIC.some((re) => re.test(text))
   let scope: Scope
   if (injection) scope = 'off_topic' // a study word cannot launder an override attempt
-  else if (GREETING.test(text.trim())) scope = 'greeting'
   else if (study && !offTopic) scope = 'in_scope'
   else if (offTopic && !study) scope = 'off_topic'
   else scope = 'unclear' // both or neither: a person decides
   // High-risk topics are never dismissed as "unrelated": a person must see them.
   if (highRisk.length && scope === 'off_topic' && !injection) scope = 'unclear'
-  return { scope, language, injection, highRisk }
+  return { scope, language, injection, highRisk, question }
 }
+
+/** A greeting or thanks: answered with a fixed line, and never a reason to drop an earlier question. */
+export const isSmallTalk = (c: Pick<MessageClassification, 'scope'>) => c.scope === 'greeting' || c.scope === 'thanks'
 
 /** What the classification adds to a draft's risk. Anything not "low" is never sent automatically. */
 export function scopeRisk(c: MessageClassification): RiskAssessment {
+  // LockIn's own short reply to a greeting or thanks, in any language: nothing for a person to check.
+  if (c.scope === 'greeting' || c.scope === 'thanks') return { level: 'low', reasons: [] }
   const reasons: string[] = []
   let level: RiskAssessment['level'] = 'low'
   if (c.injection) (level = 'high'), reasons.push('The message tries to change Derek’s instructions or role')

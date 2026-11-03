@@ -7,10 +7,22 @@ __v0_jsx-dev-runtime.ts
 .v0-trash/
 .vercel/
 
-# Environment variables
+# Environment variables: never commit real values. The documented template is docs/env.example,
+# which these patterns do not match.
+.env
+.env.*
 .env*.local
+
+# AI Studio scratch output (screenshots, session artifacts)
+.aistudio/
 
 # Common ignores
 node_modules
 .next/
 .DS_Store
+# Claude Code worktrees (separate checkouts; never commit them)
+.claude/worktrees/
+# Launch videos and their working files (/brag): kept locally, never published
+brag-output/
+# TypeScript incremental build cache (rewritten by every typecheck)
+*.tsbuildinfo

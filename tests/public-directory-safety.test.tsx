@@ -12,18 +12,12 @@ import { getDestinationDirectory } from '@/lib/data/directory'
 import { DESTINATIONS } from '@/lib/destinations'
 
 const ROOT = path.join(__dirname, '..')
-const INTAKE_DIR = path.join(ROOT, 'db', 'intake', 'destinations')
 
-interface IntakeFile {
+// The real research is kept outside this repository; a synthetic file of the same shape stands in.
+const research = JSON.parse(readFileSync(path.join(__dirname, 'fixtures', 'pending-research.json'), 'utf8')) as {
   status: string
   records: { officialName: string; slug: string }[]
 }
-const intake = new Map<string, IntakeFile>(
-  DESTINATIONS.filter((d) => existsSync(path.join(INTAKE_DIR, `${d.slug}.json`))).map((d) => [
-    d.iso2,
-    JSON.parse(readFileSync(path.join(INTAKE_DIR, `${d.slug}.json`), 'utf8')) as IntakeFile,
-  ]),
-)
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
@@ -38,9 +32,9 @@ const stripComments = (code: string) => code.replace(/\/\*[\s\S]*?\*\//g, '').re
 describe('public directory never shows private research records', () => {
   afterEach(() => vi.unstubAllEnvs())
 
-  it('the research batch exists and is still pending admin entry (precondition)', () => {
-    expect(intake.size).toBe(DESTINATIONS.length)
-    for (const file of intake.values()) expect(file.status).toBe('pending_admin_entry')
+  it('the research stand-in is pending admin entry (precondition)', () => {
+    expect(research.status).toBe('pending_admin_entry')
+    expect(research.records.length).toBeGreaterThan(0)
   })
 
   it.each(DESTINATIONS.map((d) => [d.slug, d.iso2]))('%s: no database means "not configured", never research data', async (_slug, iso2) => {
@@ -54,13 +48,13 @@ describe('public directory never shows private research records', () => {
       const directory = await getDestinationDirectory(destination.iso2)
       const html = renderToStaticMarkup(<UniversityDirectory destination={destination} directory={directory} />)
       expect(html).toContain('Pending verification')
-      for (const record of intake.get(destination.iso2)!.records) expect(html).not.toContain(record.officialName)
+      for (const record of research.records) expect(html).not.toContain(record.officialName)
       expect(html).not.toMatch(/QS World University Rankings|#\d+/)
       expect(html).not.toMatch(/Verified(?!\s*:)/)
     }
   })
 
-  it('no application code reads db/intake/ or hard-codes ranking positions', () => {
+  it('no application code reads private research (db/intake/, LOCKIN_RESEARCH_DIR) or hard-codes ranking positions', () => {
     const files = ['app', 'components', 'lib', 'proxy.ts'].flatMap((p) => {
       const full = path.join(ROOT, p)
       return statSync(full).isDirectory() ? sourceFiles(full) : [full]
@@ -69,7 +63,7 @@ describe('public directory never shows private research records', () => {
     for (const file of files) {
       const code = stripComments(readFileSync(file, 'utf8'))
       const rel = path.relative(ROOT, file)
-      expect(code, rel).not.toMatch(/['"`](?:\.\/)?db\/intake|['"`]intake['"`]|intake\/destinations|research-batch/)
+      expect(code, rel).not.toMatch(/['"`](?:\.\/)?db\/intake|['"`]intake['"`]|intake\/destinations|research-batch|LOCKIN_RESEARCH_DIR/)
       expect(code, rel).not.toMatch(/QS_RANKINGS|QS World University Rankings/)
     }
     expect(existsSync(path.join(ROOT, 'lib', 'data', 'verified-directory.ts'))).toBe(false)

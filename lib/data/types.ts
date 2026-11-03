@@ -146,6 +146,10 @@ export interface PublicRanking {
   position: number | null
   bandLow: number | null
   bandHigh: number | null
+  /** Wording the provider's licence requires next to the rank (0007). */
+  attribution: string | null
+  /** Whether the licence lets Derek quote this rank in text sent to the AI provider (0007). */
+  aiUseAllowed: boolean
   source: SourceRef
 }
 
@@ -163,7 +167,43 @@ export interface PublicUniversity {
   rankings: PublicRanking[]
 }
 
+/**
+ * A candidate listed before review (D-043, D-044): identity only, labelled "Not yet verified". The type
+ * deliberately has no courses, fees, rankings, rates or requirements, so none can be rendered.
+ * 'pending' entries carry the name only: their website, city and check date are null.
+ */
+export interface ProvisionalUniversity {
+  listing: 'provisional'
+  id: number
+  slug: string
+  name: string
+  identityStatus: 'checked' | 'pending'
+  /** 'other': e.g. a polytechnic or branch campus, labelled "Other institution type — classification pending". */
+  category: 'university' | 'other'
+  officialWebsite: string | null
+  /** Only when the official website itself names the city. */
+  city: string | null
+  identityCheckedAt: IsoDate | null
+}
+
+export type DirectoryEntry = (PublicUniversity & { listing: 'verified' }) | ProvisionalUniversity
+
 export type DirectoryResult =
-  | { state: 'ready'; universities: PublicUniversity[] }
+  /** otherTotal: listed entries labelled "Other institution type" (not universities); 0 when omitted. */
+  | { state: 'ready'; entries: DirectoryEntry[]; total: number; verifiedTotal: number; otherTotal?: number }
   | { state: 'not_configured' }
   | { state: 'error' }
+
+/**
+ * One directory entry in search results, saved and recently viewed lists: identity fields only, from
+ * the public views. status: 'verified' (a reviewed profile), 'checked' (website-checked candidate,
+ * not verified) or 'pending' (identity/source check pending: name only, city always null).
+ */
+export interface ListingSummary {
+  destinationIso2: string
+  slug: string
+  name: string
+  status: 'verified' | 'checked' | 'pending'
+  category: 'university' | 'other'
+  city: string | null
+}

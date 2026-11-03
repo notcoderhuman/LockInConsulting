@@ -63,4 +63,5 @@ export const ACTION_LABEL: Record<string, string> = {
   support_grant: 'Support access granted',
   support_revoke: 'Support access revoked',
   student_erase: 'Student data erased',
+  provisional_change: 'Provisional listing changed',
 }

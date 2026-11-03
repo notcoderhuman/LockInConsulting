@@ -2,7 +2,8 @@
 // directly, the public read path (public_* views → fetchDestinationDirectory) shows a university
 // only when it is verified, sourced, published and inside its review window, and a ranking only
 // when its provider's reuse rights are licensed (and unexpired) or not required.
-// Research records from db/intake/ are entered here as ordinary drafts to prove they stay hidden.
+// Research-shaped records (a synthetic stand-in for the private research) are entered here as
+// ordinary drafts to prove they stay hidden.
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import type { Connection, RowDataPacket } from 'mysql2/promise'
@@ -11,13 +12,15 @@ import { connect, startTestDatabase, type TestDatabase } from './harness'
 import { loadMigrations, migrate } from '../../scripts/migrate.mjs'
 import { todayIso } from '@/lib/data/publication'
 
-const { fetchDestinationDirectory } = await import('@/lib/db/directory-queries')
+const { fetchDestinationDirectory, fetchDirectoryPage } = await import('@/lib/db/directory-queries')
+const { loadEvidence } = await import('@/lib/derek/evidence')
 
 let server: TestDatabase
 let db: Connection
 const TODAY = todayIso()
 const addDays = (n: number) => new Date(Date.parse(`${TODAY}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10)
-const research = JSON.parse(readFileSync(path.join(__dirname, '..', '..', 'db', 'intake', 'destinations', 'germany.json'), 'utf8')) as {
+// The real research is kept outside this repository; a synthetic file of the same shape stands in.
+const research = JSON.parse(readFileSync(path.join(__dirname, '..', 'fixtures', 'pending-research.json'), 'utf8')) as {
   status: string
   records: { officialName: string; slug: string; identity: { url: string } }[]
 }
@@ -97,5 +100,69 @@ describe('public directory output (R-029)', () => {
 
     await db.query("UPDATE ranking_providers SET rights_status = 'not_confirmed', licence_reference = NULL, licence_scope = NULL, licence_expires_at = NULL WHERE id = ?", [qsId])
     expect(await rankings()).toEqual([])
+  })
+})
+
+describe('public directory paging (5 per page, at most 50)', () => {
+  const page = (iso2: string, offset: number) => fetchDirectoryPage(db, iso2, TODAY, offset)
+  const addMany = async (iso2: string, names: string[]) => {
+    for (const name of names) await insertUniversity({ destination_iso2: iso2, name, slug: `${iso2}-${name}`.toLowerCase().replace(/\W+/g, '-'), ...verifiedPublished() })
+  }
+
+  it('pages 12 listings as 5, 5, 2 in a stable order, with no overlap and drafts excluded', async () => {
+    await addMany('IT', Array.from({ length: 12 }, (_, i) => `Italia ${String.fromCharCode(76 - i)}`)) // inserted Z→A-ish to prove ordering
+    await insertUniversity({ destination_iso2: 'IT', name: 'Italia Draft', slug: 'it-draft' })
+    const pages = [await page('IT', 0), await page('IT', 5), await page('IT', 10), await page('IT', 15)]
+    expect(pages.map((p) => p.total)).toEqual([12, 12, 12, 12])
+    expect(pages.map((p) => p.entries.length)).toEqual([5, 5, 2, 0])
+    const names = pages.flatMap((p) => p.entries.map((u) => u.name))
+    expect(new Set(names).size).toBe(12)
+    expect(names).toEqual([...names].sort())
+    expect(names).not.toContain('Italia Draft')
+    expect(await page('IT', 0)).toEqual(pages[0]) // the same request gives the same page
+  })
+
+  it('orders by the published QS rank or band once rights are licensed, and by name while they are not', async () => {
+    const names = async () => (await page('FI', 0)).entries.map((u) => u.name)
+    await addMany('FI', ['Aalto Test', 'Banded Test', 'Ranked Test'])
+    const [ids] = await db.query<RowDataPacket[]>("SELECT id, name FROM universities WHERE destination_iso2 = 'FI'")
+    const id = (n: string) => Number(ids.find((r) => r.name === n)!.id)
+    await db.query('INSERT INTO university_rankings SET ?', [{ university_id: id('Ranked Test'), provider_id: qsId, ranking_year: 2026, rank_position: 120, ...verifiedPublished() }])
+    await db.query('INSERT INTO university_rankings SET ?', [{ university_id: id('Banded Test'), provider_id: qsId, ranking_year: 2026, rank_band_low: 501, rank_band_high: 510, ...verifiedPublished() }])
+    expect(await names()).toEqual(['Aalto Test', 'Banded Test', 'Ranked Test']) // QS not licensed: name order
+    await db.query(
+      "UPDATE ranking_providers SET rights_status = 'licensed', licence_reference = 'TEST-2', licence_scope = 'Synthetic test licence', rights_checked_at = ?, licence_expires_at = ?, attribution_text = 'Source: synthetic attribution' WHERE id = ?",
+      [TODAY, addDays(30), qsId],
+    )
+    try {
+      // Licensed for display only: ranks are shown (with the attribution) but do not order the list.
+      expect(await names()).toEqual(['Aalto Test', 'Banded Test', 'Ranked Test'])
+      const ranked = (await page('FI', 0)).entries.find((u) => u.name === 'Ranked Test')!
+      if (ranked.listing !== 'verified') throw new Error('expected a verified entry')
+      expect(ranked.rankings).toMatchObject([{ position: 120, attribution: 'Source: synthetic attribution', aiUseAllowed: false }])
+      await db.query('UPDATE ranking_providers SET allow_ordering = 1 WHERE id = ?', [qsId])
+      expect(await names()).toEqual(['Ranked Test', 'Banded Test', 'Aalto Test']) // rank, band, then unranked
+
+      // Derek quotes the rank to the AI provider only when the licence allows that use.
+      const rankingEvidence = async () => (await loadEvidence(db, 'Is Ranked Test good?', TODAY)).filter((e) => e.ref.startsWith('university_ranking:'))
+      expect(await rankingEvidence()).toEqual([])
+      await db.query('UPDATE ranking_providers SET allow_ai_use = 1 WHERE id = ?', [qsId])
+      expect((await rankingEvidence()).map((e) => e.text)).toEqual(['Ranked Test ranking: QS Quacquarelli Symonds 2026: #120'])
+    } finally {
+      await db.query("UPDATE ranking_providers SET rights_status = 'not_confirmed', licence_reference = NULL, licence_scope = NULL, licence_expires_at = NULL, attribution_text = NULL, allow_ordering = 0, allow_ai_use = 0 WHERE id = ?", [qsId])
+    }
+    expect(await names()).toEqual(['Aalto Test', 'Banded Test', 'Ranked Test']) // licence withdrawn: back to name order
+  })
+
+  it('caps a destination at 50 listings', async () => {
+    await addMany('PL', Array.from({ length: 53 }, (_, i) => `Polska ${String(i).padStart(2, '0')}`))
+    expect((await page('PL', 0)).total).toBe(50)
+    const last = await page('PL', 45)
+    expect(last.entries.map((u) => u.name)).toEqual(['Polska 45', 'Polska 46', 'Polska 47', 'Polska 48', 'Polska 49'])
+    expect((await page('PL', 50)).entries).toEqual([])
+  })
+
+  it('returns an empty page, not an error, for a destination with nothing published', async () => {
+    expect(await page('NZ', 0)).toEqual({ entries: [], total: 0, verifiedTotal: 0, otherTotal: 0 })
   })
 })

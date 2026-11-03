@@ -40,7 +40,8 @@ export async function loadEvidence(db: Queryable, question: string, today = toda
     const directory = await fetchDestinationDirectory(db, iso, today)
     for (const u of directory.filter((d) => matched.some((m) => Number(m.id) === d.id))) {
       items.push({ ref: `university:${u.id}`, text: `${u.name}, official website ${u.officialWebsite}`, sourceUrl: u.source.url, checkedAt: u.source.checkedAt })
-      for (const r of u.rankings) {
+      // A rank goes to the AI provider only when the licence allows it (allow_ai_use, D-042).
+      for (const r of u.rankings.filter((x) => x.aiUseAllowed)) {
         const pos = r.position != null ? `#${r.position}` : `${r.bandLow}–${r.bandHigh}`
         items.push({ ref: `university_ranking:${r.id}`, text: `${u.name} ranking: ${r.providerName} ${r.year}${r.subject ? ` (${r.subject})` : ''}: ${pos}`, sourceUrl: r.source.url, checkedAt: r.source.checkedAt })
       }

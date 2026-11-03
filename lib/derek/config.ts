@@ -7,7 +7,14 @@ import { MockProvider } from './providers/mock'
 //   DEREK_AI_ENABLED=true          global feature flag (default false: no drafts at all)
 //   DEREK_PROVIDER=mock|gemini     default mock (offline; development/tests only, refused in production)
 //   GEMINI_API_KEY=…               server-side only; required for gemini. Opaque: trimmed, never format-checked
-//   DEREK_GEMINI_MODEL             optional; only gemini-3.5-flash-lite is accepted (no silent substitution)
+//   DEREK_GEMINI_MODEL             optional; only gemini-3.5-flash-lite is accepted (no silent substitution).
+//                                  gemini-3.5-flash is a deprecated ID that Google routes to gemini-3.6-flash
+//                                  (ai.google.dev/gemini-api/docs/deprecations, checked 25 Oct 2026); neither is wired in.
+//   DEREK_PROVIDER_APPROVED=<id>   records that the provider's OWN terms permit this student-facing service
+//                                  (for Gemini: the "not for consumer use" restriction and the under-18 rule)
+//                                  and the data-handling review is done. Required in production before that
+//                                  provider may see any real student message, drafts included. Neither
+//                                  DEREK_AUTO_REPLY_CLEARED nor a student's 18+ checkbox counts as this.
 //   GEMINI_PAID_TIER=true          required for gemini in production: unpaid-tier inputs may be
 //                                  read by human reviewers and used to improve Google's products
 //   DEREK_GEMINI_DAILY_DRAFT_LIMIT optional cost cap (default 100 drafts per rolling 24 h, max 2000)
@@ -19,11 +26,13 @@ import { MockProvider } from './providers/mock'
 //                                  for UNREVIEWED automatic replies was done for THAT provider id
 //                                  (e.g. "mock"); "true" or another provider's id clears nothing.
 //                                  Never enough on its own: the provider's adapter must also declare
-//                                  `autoReply.permitted` (Gemini never does: drafts only)
+//                                  `autoReply.permitted` (Gemini does since D-041; production also needs
+//                                  DEREK_PROVIDER_APPROVED=gemini and GEMINI_PAID_TIER=true)
 //
-// Automatic replies additionally need the owner to switch the support mode to offline and turn
-// automatic replies on in /admin/settings. Even then, only low-risk drafts that pass the
-// send-time checks in lib/derek/auto-reply.ts are auto-sent.
+// Automatic replies additionally need the owner's switch in /admin/settings, which is ON by
+// default (0005) and works as a kill switch. Even then, only low-risk drafts that pass the
+// send-time checks in lib/derek/auto-reply.ts are auto-sent. LockIn's own fixed replies
+// (greeting, thanks, scope refusal) need the switch but no provider clearance.
 
 type Env = Record<string, string | undefined>
 
@@ -118,17 +127,28 @@ export function getDerekStatus(env: Env = process.env): DerekStatus {
     const keyProblem = geminiKeyProblem(env)
     if (keyProblem) return blocked('gemini', keyProblem)
     if (env.DEREK_GEMINI_MODEL && env.DEREK_GEMINI_MODEL !== GEMINI_MODEL)
-      return blocked('gemini', `DEREK_GEMINI_MODEL must be ${GEMINI_MODEL}; other models are not approved.`)
+      return blocked(
+        'gemini',
+        env.DEREK_GEMINI_MODEL === 'gemini-3.5-flash'
+          ? `DEREK_GEMINI_MODEL gemini-3.5-flash is deprecated and routed by Google to gemini-3.6-flash, which is not approved here; use ${GEMINI_MODEL}.`
+          : `DEREK_GEMINI_MODEL must be ${GEMINI_MODEL}; other models are not approved.`,
+      )
+    if (production && env.DEREK_PROVIDER_APPROVED !== 'gemini')
+      return blocked(
+        'gemini',
+        'Gemini may not process real student messages: approval of its terms for this student-facing service (consumer-use and under-18 restrictions) and the data-handling review are not recorded (DEREK_PROVIDER_APPROVED).',
+      )
     if (production && env.GEMINI_PAID_TIER !== 'true')
       return blocked('gemini', 'GEMINI_PAID_TIER=true is required in production: unpaid-tier prompts may be read by human reviewers and used to improve Google products.')
     return {
       state: 'ready',
       providerId,
       notes: [
-        `Model ${GEMINI_MODEL}; drafts only, every reply needs human approval.`,
+        `Model ${GEMINI_MODEL}. Automatic replies only with DEREK_AUTO_REPLY_CLEARED=gemini, and only for low-risk questions while the team is offline.`,
         'Drafts are prepared only for students with a recorded 18+ confirmation (Gemini API terms).',
         `Cost cap: ${geminiDailyDraftLimit(env)} drafts per rolling 24 hours.`,
         ...(env.GEMINI_PAID_TIER === 'true' ? [] : ['Unpaid tier: synthetic test data only. Never real student messages.']),
+        ...(env.DEREK_PROVIDER_APPROVED === 'gemini' ? [] : ['Provider terms not approved for this service: synthetic local testing only (blocked in production).']),
       ],
       autoReply: autoReplyFor('gemini', GeminiProvider.autoReply, env),
     }

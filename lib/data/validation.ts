@@ -182,6 +182,9 @@ export const rankingRightsInput = z
     licenceExpiresAt: isoDate.optional(),
     rightsCheckedAt: isoDate.optional(),
     rightsNotes: z.string().trim().max(5000).optional(),
+    attributionText: z.string().trim().max(500).optional(),
+    allowOrdering: z.boolean().default(false),
+    allowAiUse: z.boolean().default(false),
   })
   .superRefine((r, ctx) => {
     if (r.rightsStatus === 'licensed') {
@@ -189,6 +192,9 @@ export const rankingRightsInput = z
       if (!r.licenceScope) ctx.addIssue({ code: 'custom', path: ['licenceScope'], message: 'Describe what the licence permits.' })
       if (!r.rightsCheckedAt) ctx.addIssue({ code: 'custom', path: ['rightsCheckedAt'], message: 'Record when the licence was confirmed.' })
     }
+    // Ordering and AI use are extra permissions on top of a licence (D-042), never without one.
+    if ((r.allowOrdering || r.allowAiUse) && r.rightsStatus !== 'licensed' && r.rightsStatus !== 'not_required')
+      ctx.addIssue({ code: 'custom', path: ['allowOrdering'], message: 'Only a licensed (or not required) provider can be used for ordering or by the AI assistant.' })
     if (r.rightsStatus === 'not_required' && (!r.rightsCheckedAt || !r.rightsNotes))
       ctx.addIssue({ code: 'custom', path: ['rightsNotes'], message: 'Explain why no licence is required and when this was checked.' })
   })

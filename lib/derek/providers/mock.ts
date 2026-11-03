@@ -60,6 +60,10 @@ function contractAnswer(request: DraftRequest): { text: string; uncertain: boole
     g?.kind === 'broad_destination'
       ? `When you compare universities${where}, look at:\n- course content and structure\n- entry requirements for your level\n- total cost, including tuition and living costs\n- location and city life\n- application timelines and intakes\nThese differ between universities, so check each official course page.`
       : 'In general, this depends on the university and the course, so treat this as general guidance and check the official course page for the details.'
-  const sourced = facts.length ? `\n${DIRECTORY_LABEL}\n${facts.join('\n')}` : ''
+  const sourced = facts.length
+    ? `\n${DIRECTORY_LABEL}\n${facts.join('\n')}`
+    : g && g.destinations.length > 1
+      ? `\nLockIn has not verified university data for ${g.destinations.join(' or ')} yet, so no figures are given here.`
+      : ''
   return { text: `${general}${sourced}${followUp}`, uncertain: false }
 }

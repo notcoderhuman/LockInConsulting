@@ -46,7 +46,12 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
           {ctx.state === 'ok' ? (
             <div className="flex flex-wrap items-center justify-between gap-4 md:flex-col md:items-end">
               <TeamPresence />
-              <SignOutButton compact redirectTo="/" />
+              <div className="flex items-center gap-4">
+                <Link href="/account" className="text-sm text-primary underline-offset-4 hover:underline">
+                  Your account
+                </Link>
+                <SignOutButton compact redirectTo="/" />
+              </div>
             </div>
           ) : null}
         </div>

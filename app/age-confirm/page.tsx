@@ -6,7 +6,7 @@ import { SiteHeader } from '@/components/site/site-header'
 import { SkipLink } from '@/components/site/skip-link'
 import { AgeConfirm } from '@/components/support/age-confirm'
 import { getAuth } from '@/lib/auth'
-import { googleConfigured, privacyNoticeUrl, studentSignUpOpen } from '@/lib/identity/policy'
+import { emailOtpOpen, getIdentityProviderStatus, privacyNoticeUrl, signUpMethodAvailable, studentSignUpOpen } from '@/lib/identity/policy'
 import { getStudentPageContext } from '@/lib/student/access'
 import { safeNextPath } from '@/lib/student/next-path'
 
@@ -18,13 +18,13 @@ export const metadata: Metadata = {
 
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)
 
-// Step one of creating a student account (D-045): an 18+ self-attestation before Google sign-up.
+// Step one of creating a student account (D-045): an 18+ self-attestation before any sign-up.
 // The page only collects the tick; the server records it and the sign-up callback enforces it.
 export default async function AgeConfirmPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const next = safeNextPath(one((await searchParams).next))
   const ctx = await getStudentPageContext()
   if (ctx.state === 'ok' || ctx.state === 'needs_profile') redirect(next)
-  const open = ctx.state === 'signed_out' && getAuth() !== null && studentSignUpOpen() && googleConfigured()
+  const open = ctx.state === 'signed_out' && getAuth() !== null && studentSignUpOpen() && signUpMethodAvailable()
   const back = `/auth?${new URLSearchParams({ tab: 'create', next })}`
 
   return (
@@ -40,7 +40,7 @@ export default async function AgeConfirmPage({ searchParams }: { searchParams: P
             Before you lock in
           </h1>
           {open ? (
-            <AgeConfirm next={next} back={back} privacyUrl={privacyNoticeUrl()} />
+            <AgeConfirm next={next} back={back} privacyUrl={privacyNoticeUrl()} providers={getIdentityProviderStatus()} emailCodes={emailOtpOpen()} />
           ) : (
             <div className="mt-6 flex flex-col gap-4 text-sm leading-relaxed text-muted-foreground">
               <p className="font-medium text-foreground">

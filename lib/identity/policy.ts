@@ -8,8 +8,8 @@
 //                    the student area fails closed unless STUDENT_ACCOUNTS_ENABLED=true, which must
 //                    not be set until the age-eligibility, privacy-notice, data-handling and Indian
 //                    legal/privacy review is complete (RISKS.md R-026).
-//                    Google sign-in (lib/auth.ts) can create a NEW account only when, in addition,
-//                    STUDENT_SELF_SIGNUP_ENABLED=true; even then the account has no student profile
+//                    Google, Microsoft, Apple, Yahoo or an emailed one-time code (lib/auth.ts) can
+//                    create a NEW account only when, in addition, STUDENT_SELF_SIGNUP_ENABLED=true; even then the account has no student profile
 //                    (and no access) until the person confirms they are 18 or older and accepts the
 //                    privacy notice (lib/student/onboarding.ts). It never grants a team role.
 //
@@ -53,51 +53,62 @@ export const ACCOUNT_POLICIES: Record<AccountKind, AccountPolicy> = {
 }
 
 // ---- Identity providers --------------------------------------------------------------------
-// Google is wired into Better Auth (lib/auth.ts) for STUDENTS when GOOGLE_CLIENT_ID and
-// GOOGLE_CLIENT_SECRET are both set; staff still sign in only with email and password. The others
-// only move to `credentials_supplied_untested` when their variables are present and are never
-// wired in: declaring one operational needs its callback registered, tested, and code changed.
+// Students may sign in with Google, Microsoft (personal and work or school accounts), Apple and
+// Yahoo, each wired into Better Auth (lib/auth.ts) only when its credentials are set AND the student
+// area is open. Staff still sign in only with email and password. Setup: docs/AUTH-PROVIDERS.md.
 
 export type ProviderId = 'google' | 'microsoft' | 'apple' | 'yahoo'
 
 export type ProviderStatus =
   | { id: ProviderId; label: string; state: 'not_configured'; detail: string }
-  | { id: ProviderId; label: string; state: 'credentials_supplied_untested'; detail: string }
-  | { id: ProviderId; label: string; state: 'deferred'; detail: string }
   | { id: ProviderId; label: string; state: 'closed'; detail: string }
   | { id: ProviderId; label: string; state: 'available'; detail: string }
 
-const PROVIDERS: { id: ProviderId; label: string; vars: string[] }[] = [
+export const PROVIDERS: { id: ProviderId; label: string; vars: string[] }[] = [
   { id: 'google', label: 'Google', vars: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] },
-  // Outlook / Hotmail accounts sign in through the Microsoft identity platform.
-  { id: 'microsoft', label: 'Microsoft (Outlook)', vars: ['MICROSOFT_CLIENT_ID', 'MICROSOFT_CLIENT_SECRET'] },
+  // Outlook / Hotmail and work or school accounts sign in through the Microsoft identity platform.
+  { id: 'microsoft', label: 'Microsoft', vars: ['MICROSOFT_CLIENT_ID', 'MICROSOFT_CLIENT_SECRET'] },
   { id: 'yahoo', label: 'Yahoo', vars: ['YAHOO_CLIENT_ID', 'YAHOO_CLIENT_SECRET'] },
-  { id: 'apple', label: 'Apple', vars: [] },
+  // Needs the paid Apple Developer Program; APPLE_CLIENT_SECRET is the signed client-secret JWT.
+  { id: 'apple', label: 'Apple', vars: ['APPLE_CLIENT_ID', 'APPLE_CLIENT_SECRET'] },
 ]
 
+/** Every credential for this provider is present (values are never read beyond "is it set"). */
+export function providerConfigured(id: ProviderId, env: Env = process.env): boolean {
+  return PROVIDERS.find((p) => p.id === id)!.vars.every((v) => (env[v] ?? '').trim().length > 0)
+}
+
+/** The provider is offered to students, and wired into Better Auth, only while the student area is open. */
+export function providerSignInOpen(id: ProviderId, env: Env = process.env): boolean {
+  return providerConfigured(id, env) && env.STUDENT_ACCOUNTS_ENABLED === 'true'
+}
+
 export function getIdentityProviderStatus(env: Env = process.env): ProviderStatus[] {
-  return PROVIDERS.map(({ id, label, vars }) => {
-    if (id === 'apple')
-      return { id, label, state: 'deferred', detail: 'Deferred until the Apple Developer Program cost is explicitly approved.' }
-    if (id === 'google' && googleSignInOpen(env))
-      return { id, label, state: 'available', detail: 'Students can sign in with Google. Callback: <BETTER_AUTH_URL>/api/auth/callback/google.' }
-    if (id === 'google' && googleConfigured(env))
-      // Shown to students on /auth, so it names no setting; Settings has its own label for this state.
-      return { id, label, state: 'closed', detail: 'Google sign-in opens when student accounts open.' }
-    if (vars.every((v) => (env[v] ?? '').trim().length > 0))
-      return { id, label, state: 'credentials_supplied_untested', detail: 'Credentials are present but the provider is not connected or tested. Sign-in with it is unavailable.' }
-    return { id, label, state: 'not_configured', detail: 'No OAuth credentials or callback have been supplied. Sign-in with it is unavailable.' }
+  return PROVIDERS.map(({ id, label }) => {
+    if (providerSignInOpen(id, env)) return { id, label, state: 'available', detail: `Students can sign in with ${label}.` }
+    // Shown to students on /auth, so it names no setting; Settings has its own label for this state.
+    if (providerConfigured(id, env)) return { id, label, state: 'closed', detail: `${label} sign-in opens when student accounts open.` }
+    return { id, label, state: 'not_configured', detail: 'Not set up yet. Sign-in with it is unavailable.' }
   })
 }
 
-/** Both Google credentials are present (values are never read beyond "is it set"). */
-export function googleConfigured(env: Env = process.env): boolean {
-  return Boolean(env.GOOGLE_CLIENT_ID?.trim() && env.GOOGLE_CLIENT_SECRET?.trim())
+export const googleConfigured = (env: Env = process.env) => providerConfigured('google', env)
+export const googleSignInOpen = (env: Env = process.env) => providerSignInOpen('google', env)
+
+/** Outgoing mail is configured (lib/mail.ts): SMTP host, sender and credentials, or the local log transport. */
+export function mailConfigured(env: Env = process.env): boolean {
+  if (env.MAIL_TRANSPORT === 'log') return env.NODE_ENV !== 'production'
+  return ['SMTP_HOST', 'SMTP_USER', 'SMTP_PASSWORD', 'MAIL_FROM'].every((v) => (env[v] ?? '').trim().length > 0)
 }
 
-/** Google is offered to students, and wired into Better Auth, only while the student area is open. */
-export function googleSignInOpen(env: Env = process.env): boolean {
-  return googleConfigured(env) && env.STUDENT_ACCOUNTS_ENABLED === 'true'
+/** Email one-time codes (sign-in, sign-up, password reset) for students: student area open and mail configured. */
+export function emailOtpOpen(env: Env = process.env): boolean {
+  return env.STUDENT_ACCOUNTS_ENABLED === 'true' && mailConfigured(env)
+}
+
+/** Some way to create a new student account exists: a social provider or email codes. */
+export function signUpMethodAvailable(env: Env = process.env): boolean {
+  return emailOtpOpen(env) || PROVIDERS.some((p) => providerConfigured(p.id, env))
 }
 
 /** The published student privacy notice: an https URL or a same-site path, else null (RISKS.md R-026). */

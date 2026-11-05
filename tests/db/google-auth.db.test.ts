@@ -257,7 +257,8 @@ describe('Google sign-in (students only)', () => {
     await db.query("INSERT INTO admin_members (user_id, role, status, granted_by) VALUES (?, 'owner', 'active', 'cli:test')", [staffId])
     const auth = createAuth()
     const out = await callback(auth, await start(auth, true), { email: 'owner-google@test.example', sub: 'sub-owner' })
-    expect(errorOf(out.location)).toBe('account_not_linked')
+    // Refused by Better Auth (unverified local email) or by the staff guard in lib/auth.ts.
+    expect(['account_not_linked', 'unable_to_link_account']).toContain(errorOf(out.location))
     expect(oauthErrorMessage('account_not_linked')).toMatch(/email and password/)
     expect(await rows('SELECT id FROM auth_account WHERE userId = ?', [staffId])).toHaveLength(0)
     expect(out.cookies).not.toMatch(/session_token=[^;]+/)

@@ -19,18 +19,20 @@ export function AuthTabs({
   providers,
   signUpOpen,
   oauthError,
+  emailCodes = false,
   next,
 }: {
   initialTab: AuthTab
   providers: ProviderStatus[]
   signUpOpen: boolean
   oauthError: string | null
+  emailCodes?: boolean
   next: string
 }) {
   const [tab, setTab] = useState<AuthTab>(initialTab)
   const base = useId()
   const refs = useRef<Record<AuthTab, HTMLButtonElement | null>>({ signin: null, create: null })
-  const googleReady = providers.some((p) => p.id === 'google' && p.state === 'available')
+  const methodReady = emailCodes || providers.some((p) => p.state === 'available')
 
   function onKeyDown(event: KeyboardEvent) {
     if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return
@@ -69,11 +71,11 @@ export function AuthTabs({
 
       <div role="tabpanel" id={`${base}-${tab}-panel`} aria-labelledby={`${base}-${tab}-tab`}>
         {tab === 'signin' ? (
-          <StudentSignIn providers={providers} oauthError={oauthError} next={next} />
-        ) : signUpOpen && googleReady ? (
+          <StudentSignIn providers={providers} emailCodes={emailCodes} oauthError={oauthError} next={next} />
+        ) : signUpOpen && methodReady ? (
           <div className="flex flex-col gap-4 text-sm leading-relaxed text-muted-foreground">
             <p>
-              Create your student account with Google. First you confirm that you are 18 or older; after Google, you accept how LockIn handles your data. Only then can you start chatting.
+              Create your student account. First you confirm that you are 18 or older; then you continue with an emailed code or a sign-in provider, and accept how LockIn handles your data. Only then can you start chatting.
             </p>
             {oauthError ? (
               <p role="alert" className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-foreground">
@@ -87,7 +89,7 @@ export function AuthTabs({
             >
               Create a student account
             </Link>
-            <p className="text-xs">Email sign-up isn’t available.</p>
+
           </div>
         ) : (
           <div role="status" className="flex flex-col gap-3 rounded-lg border border-border bg-background/40 p-4 text-sm leading-relaxed text-muted-foreground">

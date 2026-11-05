@@ -1,5 +1,5 @@
 import { getAuth } from '@/lib/auth'
-import { googleConfigured, studentSignUpOpen } from '@/lib/identity/policy'
+import { signUpMethodAvailable, studentSignUpOpen } from '@/lib/identity/policy'
 import { checkSameOrigin, jsonError } from '@/lib/student/access'
 import { ageCookieHeader, ageTokenFrom, issueAgeAttestation, normalizeFullName, revokeAgeAttestation } from '@/lib/student/age-attestation'
 
@@ -12,7 +12,7 @@ const NO_STORE = { 'Cache-Control': 'no-store' }
 export async function POST(request: Request) {
   const crossSite = checkSameOrigin(request)
   if (crossSite) return crossSite
-  if (!getAuth() || !studentSignUpOpen() || !googleConfigured()) return jsonError(503, 'New student accounts aren’t open yet.', { state: 'unavailable' })
+  if (!getAuth() || !studentSignUpOpen() || !signUpMethodAvailable()) return jsonError(503, 'New student accounts aren’t open yet.', { state: 'unavailable' })
   let body: Record<string, unknown> = {}
   try {
     body = await request.json()

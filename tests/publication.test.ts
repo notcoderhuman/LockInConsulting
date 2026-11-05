@@ -77,7 +77,8 @@ describe('ranking publication controls', () => {
   })
 
   it('never publishes a ranking without confirmed rights, even when verified', () => {
-    for (const status of ['not_confirmed', 'requested', 'denied'] as const) {
+    // 'conditional' = QS conditional acceptance pending a formal agreement (0013): never published.
+    for (const status of ['not_confirmed', 'requested', 'conditional', 'denied'] as const) {
       expect(rankingRightsAllowPublication(qs({ rightsStatus: status }), TODAY)).toBe(false)
       expect(isRankingPubliclyVisible(verified, qs({ rightsStatus: status }), TODAY)).toBe(false)
       expect(getRankingPublishBlockers(verified, qs({ rightsStatus: status }), TODAY).join(' ')).toMatch(/rights/)

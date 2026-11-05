@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { EmptyState, PageHeader, Panel } from '@/components/admin/page-header'
+import { AcademicYearForm } from '@/components/admin/data-tools-forms'
 import { FxRateForm, FxTermsForm, RankingRightsForm } from '@/components/admin/settings-forms'
+import { listAcademicYears } from '@/lib/admin/data-tools'
 import { SupportSettingsForm } from '@/components/admin/support-forms'
 import { requireAdminPage } from '@/lib/admin/access'
 import { humanize } from '@/lib/admin/entities'
@@ -40,6 +42,7 @@ function rankingValues(p: Row) {
     rightsCheckedAt: str(p.rights_checked_at),
     rightsNotes: str(p.rights_notes),
     attributionText: str(p.attribution_text),
+    attributionUrl: str(p.attribution_url),
     allowOrdering: str(p.allow_ordering),
     allowAiUse: str(p.allow_ai_use),
   }
@@ -63,6 +66,7 @@ export default async function SettingsPage() {
   const enterRates = can(actor.role, 'data.review')
   const approved = fxProviders.filter((p) => p.terms_status === 'approved')
   const support = await getSupportSettings(getAdminPool())
+  const academicYears = await listAcademicYears(getAdminPool())
   const derek = getDerekStatus()
   const blockers = [...new Set([...(derek.state === 'ready' ? derek.notes : derek.reasons), ...(derek.autoReply.permitted ? [] : derek.autoReply.blockers)])]
   const studentAccounts = process.env.STUDENT_ACCOUNTS_ENABLED === 'true'
@@ -112,7 +116,7 @@ export default async function SettingsPage() {
         </ul>
       </Panel>
 
-      <Panel title="Ranking reuse rights" description="Rankings are hidden from students until the provider's terms permit reuse. QS rankings are not shown without a licence.">
+      <Panel title="Ranking reuse rights" description="Rankings are hidden from students until the provider's terms permit reuse. QS rankings are not shown without an executed licence; conditional acceptance is recorded but never displayed.">
         {rankingProviders.length ? (
           <div className="flex flex-col divide-y divide-border">
             {rankingProviders.map((p) => (
@@ -142,6 +146,25 @@ export default async function SettingsPage() {
         ) : (
           <EmptyState>No ranking providers configured.</EmptyState>
         )}
+      </Panel>
+
+      <Panel title="Academic years" description="The list tuition fees are recorded against. Bulk imports refuse a fee whose academic year is not listed here. Only the owner can change it; every change is logged.">
+        {academicYears.length ? (
+          <ul className="flex flex-col divide-y divide-border text-sm">
+            {academicYears.map((y) => (
+              <li key={str(y.code)} className="flex flex-wrap items-baseline justify-between gap-2 py-2 first:pt-0 last:pb-0">
+                <span className="text-foreground">
+                  {str(y.code)}
+                  {Number(y.is_current) === 1 ? <span className="ml-2 text-xs font-medium text-primary">Current</span> : null}
+                </span>
+                <span className="text-xs text-muted-foreground">{`${formatDate(y.starts_on)} – ${formatDate(y.ends_on)}${y.notes ? ` · ${str(y.notes)}` : ''}`}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <EmptyState>No academic years yet.</EmptyState>
+        )}
+        {can(actor.role, 'data.years') ? <AcademicYearForm /> : null}
       </Panel>
 
       <Panel title="Exchange-rate providers" description="Approximate INR conversions are shown only from a provider whose terms the owner has reviewed and approved.">

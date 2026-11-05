@@ -26,6 +26,8 @@ describe('role permissions', () => {
     'members.manage': { editor: false, reviewer: false, owner: true },
     'support.settings': { editor: false, reviewer: false, owner: true },
     'students.erase': { editor: false, reviewer: false, owner: true },
+    'data.bulk_verify': { editor: false, reviewer: false, owner: true },
+    'data.years': { editor: false, reviewer: false, owner: true },
   }
   it.each(Object.entries(matrix))('%s', (permission, expected) => {
     for (const role of ADMIN_ROLES) expect(can(role, permission as Permission)).toBe(expected[role])

@@ -24,8 +24,8 @@ export function DestinationHero({ destination, verifiedListings, provisionalList
     ...(destination.subRegions?.length
       ? [{ term: 'Includes', value: destination.subRegions.map((s) => s.name).join(', ') }]
       : []),
-    { term: 'Verified university listings', value: verifiedListings === null ? 'Pending' : String(verifiedListings) },
-    ...(provisionalListings > 0 ? [{ term: 'Listed, not yet verified', value: String(provisionalListings) }] : []),
+    // One combined count: the public page shows no verification status (owner decision, 5 Nov 2026).
+    { term: 'University listings', value: verifiedListings === null ? 'Pending' : String(verifiedListings + provisionalListings) },
     { term: 'Official resources linked', value: String(resourceCount) },
   ]
 

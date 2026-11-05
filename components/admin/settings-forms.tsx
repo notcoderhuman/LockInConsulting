@@ -18,7 +18,7 @@ export function RankingRightsForm({ providerId, values }: { providerId: number; 
     <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
       <input type="hidden" name="id" value={providerId} />
       <div className="grid gap-4 md:grid-cols-2">
-        <Field id={`${p}-status`} label="Reuse rights" required errors={e.rightsStatus} help="Rankings stay hidden unless this is Licensed or Not required.">
+        <Field id={`${p}-status`} label="Reuse rights" required errors={e.rightsStatus} help="Rankings stay hidden unless this is Licensed or Not required. Conditional = accepted in principle, formal agreement pending (still hidden).">
           <select id={`${p}-status`} name="rightsStatus" defaultValue={values.rightsStatus} className={controlClass}>
             {RIGHTS_STATUSES.map((s) => (
               <option key={s} value={s}>
@@ -41,6 +41,9 @@ export function RankingRightsForm({ providerId, values }: { providerId: number; 
         </Field>
         <Field id={`${p}-attr`} label="Required attribution" errors={e.attributionText} className="md:col-span-2" help="Shown next to every rank, exactly as the licence requires.">
           <input id={`${p}-attr`} name="attributionText" defaultValue={values.attributionText} maxLength={500} className={controlClass} />
+        </Field>
+        <Field id={`${p}-attr-url`} label="Required attribution link" errors={e.attributionUrl} className="md:col-span-2" help="Every rank links here, as the licence requires.">
+          <input id={`${p}-attr-url`} name="attributionUrl" type="url" defaultValue={values.attributionUrl} maxLength={2048} className={controlClass} />
         </Field>
         <fieldset className="flex flex-col gap-2 md:col-span-2">
           <legend className="text-sm font-medium text-foreground">Extra uses the licence permits</legend>

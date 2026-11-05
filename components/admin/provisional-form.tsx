@@ -27,7 +27,7 @@ export function ProvisionalForm({ id, listed, hasCity }: { id: number; listed: b
       )}
       <FormMessage state={state} />
       <Button type="submit" variant={listed ? 'outline' : 'default'} disabled={pending} className="self-start">
-        {listed ? 'Remove from public list' : 'List as “Not yet verified”'}
+        {listed ? 'Remove from public list' : 'List publicly while under review'}
       </Button>
     </form>
   )

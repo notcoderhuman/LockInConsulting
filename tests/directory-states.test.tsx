@@ -165,13 +165,14 @@ describe('provisional entries (D-043)', () => {
   const render = (entries: DirectoryEntry[], total = entries.length, verifiedTotal = entries.filter((e) => e.listing === 'verified').length) =>
     renderToStaticMarkup(<UniversityDirectory destination={germany} directory={{ state: 'ready', entries, total, verifiedTotal }} />)
 
-  it('shows only the name, official website, city and check date, labelled Not yet verified', () => {
+  it('shows only the name, official website, city and check date, with the section notice but no status badge', () => {
     const html = render([provisional])
     expect(html).toContain('Provisional Example University')
     expect(html).toContain('href="https://provisional.example.edu/"')
     expect(html).toContain('Leipzig')
     expect(html).toContain('Official website checked 26 Oct 2026')
-    expect(html.match(/Not yet verified/g)!.length).toBeGreaterThanOrEqual(2) // the card and the section notice
+    // No public verification badge (owner decision, 5 Nov 2026); the section notice still explains the state.
+    expect(html).not.toMatch(/<li[^>]*>(Not yet verified|Verified|Identity\/source check pending)<\/li>/)
     expect(html).toContain('Course availability, tuition, rankings, entry requirements and other details are still being checked')
     expect(html).toContain('No university here has verified course or tuition details yet')
     expect(html).toContain('Being listed is not the same as a verified profile')
@@ -190,7 +191,7 @@ describe('provisional entries (D-043)', () => {
   it('shows a pending candidate by name only, with no website, city or date', () => {
     const html = render([{ ...provisional, identityStatus: 'pending', officialWebsite: null, city: null, identityCheckedAt: null }])
     expect(html).toContain('Provisional Example University')
-    expect(html).toContain('Identity/source check pending')
+    expect(html).not.toContain('>Identity/source check pending</li>')
     expect(html).toContain('QS eligibility pending verification')
     expect(html).not.toContain('href="https://provisional.example.edu/"')
     expect(html).not.toContain('Official website checked')
@@ -218,9 +219,9 @@ describe('provisional entries (D-043)', () => {
     expect(html).not.toContain('Leipzig')
   })
 
-  it('labels verified listings Verified, and drops the notice when every entry is verified', () => {
+  it('shows no Verified badge on verified listings, and drops the notice when every entry is verified', () => {
     const html = render([{ ...university, listing: 'verified' }])
-    expect(html).toMatch(/>Verified</)
+    expect(html).not.toMatch(/>Verified</)
     expect(html).not.toContain('Not yet verified')
   })
 

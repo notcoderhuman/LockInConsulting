@@ -47,6 +47,18 @@ async function withPool<T>(label: string, run: (db: import('@/lib/db/directory-q
   }
 }
 
+/**
+ * What the public APIs return for a listing: identity fields only. Verification status stays in the
+ * database and the admin (owner decision, 5 Nov 2026), so it is neither returned nor usable to filter or sort.
+ */
+export function publicListing({ status: _status, ...rest }: ListingSummary): Omit<ListingSummary, 'status'> {
+  return rest
+}
+
+export function publicQuery(query: SearchQuery): SearchQuery {
+  return { ...query, status: null, sort: query.sort === 'status' ? 'relevance' : query.sort }
+}
+
 export const searchUniversities = (query: SearchQuery) =>
   withPool('search', async (db) => (await import('@/lib/db/search-queries')).searchListings(db, query))
 

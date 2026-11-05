@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Bell, ClipboardCheck, GraduationCap, History, Inbox, LayoutDashboard, Library, Settings, UserRound, Users } from 'lucide-react'
+import { Bell, ClipboardCheck, GraduationCap, History, Inbox, LayoutDashboard, Library, Settings, UserRound, Users, Wrench } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export interface NavAccess {
@@ -23,6 +23,7 @@ const ITEMS: { href: string; label: string; icon: typeof Inbox; match: (p: strin
   { href: '/admin/universities', label: 'University Data', icon: GraduationCap, match: (p) => p.startsWith('/admin/universities') || p.startsWith('/admin/records') },
   { href: '/admin/sources', label: 'Data Sources', icon: Library, match: (p) => p.startsWith('/admin/sources') },
   { href: '/admin/review', label: 'Review Queue', icon: ClipboardCheck, match: (p) => p.startsWith('/admin/review') },
+  { href: '/admin/data-tools', label: 'Data Tools', icon: Wrench, match: (p) => p.startsWith('/admin/data-tools') },
   { href: '/admin/notifications', label: 'Notifications', icon: Bell, match: (p) => p.startsWith('/admin/notifications'), badge: 'notifications' },
   { href: '/admin/team', label: 'Our Team', icon: Users, match: (p) => p.startsWith('/admin/team'), needs: 'team' },
   { href: '/admin/changes', label: 'Change Log', icon: History, match: (p) => p.startsWith('/admin/changes') },

@@ -2,7 +2,8 @@ import type { DisplayState } from '@/lib/data/publication'
 import { DataStatusBadge, DISPLAY_STATE_DESCRIPTION } from './data-status-badge'
 import { SectionHeading } from './section-heading'
 
-const ORDER: DisplayState[] = ['verified', 'unavailable', 'unverified', 'expired', 'unpublished']
+// 'verified' is left out: no public verification badge yet (owner decision, 5 Nov 2026).
+const ORDER: DisplayState[] = ['unavailable', 'unverified', 'expired', 'unpublished']
 
 export function StatusLegend() {
   return (

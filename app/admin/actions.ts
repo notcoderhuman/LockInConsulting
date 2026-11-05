@@ -20,6 +20,7 @@ import {
   WorkflowError,
   type WorkflowAction,
 } from '@/lib/admin/workflow'
+import { bulkVerify, importRecords, IMPORT_MAX_BYTES, resolveConflict, saveAcademicYear, scanDuplicates } from '@/lib/admin/data-tools'
 import { getAdminPool } from '@/lib/db/pool'
 
 // Every action re-authorises on the server (session + active membership + role) before reading
@@ -32,7 +33,8 @@ export type ActionState = {
   blockers?: string[]
 } | null
 
-type Outcome = { redirectTo?: string; message?: string; revalidatePublic?: boolean }
+// blockers on a success: per-item notes for a partly applied bulk action (the applied part is saved).
+type Outcome = { redirectTo?: string; message?: string; revalidatePublic?: boolean; blockers?: string[] }
 
 async function run(permission: Permission, work: (actor: AdminActor) => Promise<Outcome>): Promise<ActionState> {
   let outcome: Outcome
@@ -49,7 +51,7 @@ async function run(permission: Permission, work: (actor: AdminActor) => Promise<
   revalidatePath('/admin', 'layout')
   if (outcome.revalidatePublic) revalidatePath('/destinations/[slug]', 'page')
   if (outcome.redirectTo) redirect(outcome.redirectTo)
-  return { ok: true, message: outcome.message ?? 'Saved.' }
+  return { ok: true, message: outcome.message ?? 'Saved.', ...(outcome.blockers?.length ? { blockers: outcome.blockers } : {}) }
 }
 
 function entityFrom(form: FormData) {
@@ -104,7 +106,7 @@ export async function provisionalListingAction(_prev: ActionState, form: FormDat
   return run('data.review', async (actor) => {
     const show = formText(form, 'show') === '1'
     await setProvisionalListing(getAdminPool(), actor, idFrom(form), show, form)
-    return { message: show ? 'Listed as “Not yet verified” (name, website and confirmed city only).' : 'Removed from the public list.', revalidatePublic: true }
+    return { message: show ? 'Listed publicly while under review (name, website and confirmed city only; no verification badge).' : 'Removed from the public list.', revalidatePublic: true }
   })
 }
 
@@ -135,5 +137,55 @@ export async function createFxRateAction(_prev: ActionState, form: FormData): Pr
   return run('data.review', async (actor) => {
     await createFxRate(getAdminPool(), actor, form)
     return { message: 'Exchange rate recorded.', revalidatePublic: true }
+  })
+}
+
+// ---- Data tools (lib/admin/data-tools.ts) ----
+
+export async function importRecordsAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  return run('data.capture', async (actor) => {
+    const file = form.get('file')
+    if (!(file instanceof File) || file.size === 0) throw new WorkflowError('Choose a JSON file to import.')
+    if (file.size > IMPORT_MAX_BYTES) throw new WorkflowError('The file is larger than 900 KB. Split it into smaller files.')
+    const s = await importRecords(getAdminPool(), actor, file.name, await file.text())
+    const parts = [
+      `${s.universitiesCreated} universities, ${s.coursesCreated} courses, ${s.intakesCreated} intakes and ${s.feesCreated} fees created as drafts`,
+      `${s.matchedExisting} matched existing records`,
+      `${s.conflicts} conflicts to review`,
+    ]
+    return { message: `Batch #${s.batchId}: ${parts.join('; ')}.${s.notes.length ? ` ${s.notes.length} note(s): ${s.notes.slice(0, 3).join(' ')}` : ''}` }
+  })
+}
+
+export async function scanDuplicatesAction(_prev: ActionState, _form: FormData): Promise<ActionState> {
+  return run('data.capture', async (actor) => {
+    const added = await scanDuplicates(getAdminPool(), actor)
+    return { message: added ? `${added} possible duplicate pair(s) added to the conflict queue.` : 'No new possible duplicates found.' }
+  })
+}
+
+export async function resolveConflictAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  return run('data.review', async (actor) => {
+    await resolveConflict(getAdminPool(), actor, idFrom(form), form)
+    return { message: 'Conflict resolved.' }
+  })
+}
+
+export async function bulkVerifyAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  return run('data.bulk_verify', async (actor) => {
+    const ids = form.getAll('ids').map((v) => (typeof v === 'string' && /^\d{1,15}$/.test(v) ? Number(v) : 0)).filter((n) => n > 0)
+    const results = await bulkVerify(getAdminPool(), actor, entityFrom(form), ids, form)
+    const refused = results.filter((r) => !r.ok)
+    return {
+      message: `${results.length - refused.length} verified, ${refused.length} refused. Publishing is a separate step.`,
+      blockers: refused.map((r) => `#${r.id}: ${r.message}`),
+    }
+  })
+}
+
+export async function saveAcademicYearAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  return run('data.years', async (actor) => {
+    await saveAcademicYear(getAdminPool(), actor, form)
+    return { message: 'Academic year saved.' }
   })
 }

@@ -15,6 +15,8 @@ export type Permission =
   | 'members.manage' // revoke membership and grant/revoke editor support access
   | 'support.settings' // automatic replies (kill switch)
   | 'students.erase' // erase a student's account and conversations
+  | 'data.bulk_verify' // verify many records in one step (each still runs the single-record checks)
+  | 'data.years' // manage the academic-year list
 
 const RANK: Record<AdminRole, number> = { editor: 1, reviewer: 2, owner: 3 }
 
@@ -31,6 +33,9 @@ const MINIMUM_ROLE: Record<Permission, AdminRole> = {
   'members.manage': 'owner',
   'support.settings': 'owner',
   'students.erase': 'owner',
+  // Owner only: the Owner is the final data approver (owner decision, 5 Nov 2026).
+  'data.bulk_verify': 'owner',
+  'data.years': 'owner',
 }
 
 // Support tasks an owner may explicitly delegate to an individual editor

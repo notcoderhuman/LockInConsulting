@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { parseLookupKeys, parseSearch } from '@/lib/data/search'
+import { parseLookupKeys, parseSearch, publicListing, publicQuery } from '@/lib/data/search'
 import { addItem, clearList, LIST_LIMIT, parseList, readList, removeItem, renameItem, STORAGE_KEYS, storageAvailable } from '@/lib/device-lists'
 import { GET as searchRoute } from '@/app/api/universities/search/route'
 import { GET as lookupRoute } from '@/app/api/universities/lookup/route'
@@ -41,6 +41,13 @@ describe('search and lookup routes', () => {
     expect(res.status).toBe(503)
     expect(await res.json()).toEqual({ error: 'Search is unavailable right now.' })
     expect((await lookupRoute(new Request('http://x/api/universities/lookup?u=DE:a'))).status).toBe(503)
+  })
+
+  it('never expose verification status: no status field, and no status filter or sort', () => {
+    const listing = { destinationIso2: 'DE', slug: 'a', name: 'A', status: 'verified' as const, category: 'university' as const, city: null }
+    expect(publicListing(listing)).toEqual({ destinationIso2: 'DE', slug: 'a', name: 'A', category: 'university', city: null })
+    const q = parseSearch(qs('status=verified&sort=status'))!
+    expect(publicQuery(q)).toMatchObject({ status: null, sort: 'relevance' })
   })
 })
 

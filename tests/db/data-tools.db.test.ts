@@ -149,6 +149,28 @@ describe('bulk import', () => {
     expect(await rows("SELECT city FROM universities WHERE slug = 'synthetic-university-of-alpha'")).toEqual([{ city: 'Alpha' }])
   })
 
+  it('records a pending field source for a field taken from another page, and rejects unknown or empty fields', async () => {
+    const summary = await T.importRecords(getAdminPool(), editor, 'fields.json', file([
+      uni('Theta', {
+        admissionsUrl: 'https://theta.example/apply', fieldSources: { admissionsUrl: src('theta-apply') },
+        courses: [{ name: 'MSc Theta', qualification: 'master', studyLevel: 'PG', languageRequirements: 'IELTS 6.5', fieldSources: { languageRequirements: src('theta-lang') },
+          fees: [{ amount: 9000, currency: 'EUR', billingPeriod: 'per_year', fieldSources: { amount: src('theta-fee') } }] }],
+      }),
+    ]))
+    expect(summary).toMatchObject({ universitiesCreated: 1, coursesCreated: 1, feesCreated: 1 })
+    const fs = await rows<{ entity_type: string; field_name: string; status: string; method: string; url: string }>(
+      "SELECT f.entity_type, f.field_name, f.status, f.method, s.url FROM field_sources f JOIN sources s ON s.id = f.source_id WHERE s.url LIKE '%theta-%' ORDER BY f.field_name",
+    )
+    expect(fs).toEqual([
+      { entity_type: 'university', field_name: 'admissions_url', status: 'pending', method: 'official_page', url: 'https://official.example/page-theta-apply' },
+      { entity_type: 'tuition_fee', field_name: 'amount', status: 'pending', method: 'official_page', url: 'https://official.example/page-theta-fee' },
+      { entity_type: 'course', field_name: 'language_requirements', status: 'pending', method: 'official_page', url: 'https://official.example/page-theta-lang' },
+    ])
+    await expect(T.importRecords(getAdminPool(), editor, 'badfields.json', file([uni('Iota', { fieldSources: { nonsense: src('x'), admissionsUrl: src('y') } })]))).rejects.toMatchObject({
+      blockers: [expect.stringMatching(/fieldSources\.nonsense: not a field/), expect.stringMatching(/fieldSources\.admissionsUrl: the record has no value/)],
+    })
+  })
+
   it('refuses import without capture permission', async () => {
     await expect(T.importRecords(getAdminPool(), { ...editor, role: 'nobody' as never }, 'x.json', file([uni('Zeta')]))).rejects.toThrow(/permission/)
   })

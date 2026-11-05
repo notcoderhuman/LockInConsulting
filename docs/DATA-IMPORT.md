@@ -57,7 +57,11 @@ What an import can and cannot do:
 
 Field values follow `lib/data/validation.ts` (`universityInput`, `courseInput`, `intakeInput`,
 `tuitionFeeInput`). `slug` is derived from the name when omitted. A course, intake or fee without its
-own `source` inherits its parent's. Fees for a course that already exists are not imported (the import
+own `source` inherits its parent's. When one field comes from a different page than its record (for
+example the admissions URL, or the English requirement on a separate page), add
+`"fieldSources": { "<field name>": { ...source } }` to that university, course, intake or fee; the
+import stores it as a pending `field_sources` row (migration 0013). Only fields the record sets are
+allowed. Fees for a course that already exists are not imported (the import
 report says so); add them on the course page.
 
 Never put fabricated values in a file: leave a field out when the official source does not publish it.

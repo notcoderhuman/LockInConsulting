@@ -20,3 +20,17 @@ describe('static security headers', () => {
     expect(nextConfig.poweredByHeader).toBe(false)
   })
 })
+
+describe('canonical origin', () => {
+  it('sends every www.<host> request permanently to <host>, keeping the path, and nothing else', async () => {
+    const rules = await nextConfig.redirects!()
+    expect(rules).toHaveLength(1)
+    const [rule] = rules
+    expect(rule).toMatchObject({ source: '/:path*', destination: 'https://:apex/:path*', permanent: true })
+    const host = rule.has?.find((h) => h.type === 'host')
+    // Next matches `has` values as a full-string regex.
+    const re = new RegExp(`^${host?.value}$`)
+    expect(re.exec('www.lockin.example')?.groups?.apex).toBe('lockin.example')
+    for (const h of ['lockin.example', 'localhost', 'staging.lockin.example', 'wwwlockin.example']) expect(re.test(h), h).toBe(false)
+  })
+})

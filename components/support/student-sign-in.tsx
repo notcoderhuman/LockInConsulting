@@ -6,24 +6,37 @@ import { Button } from '@/components/ui/button'
 import { controlClass, describedBy, Field } from '@/components/admin/form-controls'
 import { PasswordInput } from '@/components/ui/password-input'
 import { authClient } from '@/lib/auth-client'
-import type { ProviderStatus } from '@/lib/identity/policy'
+import type { ProviderId, ProviderStatus } from '@/lib/identity/policy'
 import { useT } from '@/lib/i18n/client'
 import { signInFieldErrors, type SignInFieldErrors } from '@/lib/identity/sign-in-validation'
 import { CHAT_PATH } from '@/lib/student/next-path'
+import { EmailCodeForm } from './email-code-form'
 
-// Student sign-in: email and password for provisioned accounts, and Google when it is configured
-// (lib/auth.ts). Sign in never creates an account: new accounts start at /age-confirm (D-045). Other providers are
-// listed with their honest status and cannot be clicked. `next` is already validated
+// Student sign-in: a provider (Google, Microsoft, Apple, Yahoo) when configured, an emailed code when
+// mail is configured, and email and password for students who set one. Sign in never creates an
+// account: new accounts start at /age-confirm (D-045). Providers that are not set up are listed
+// with their honest status and cannot be clicked. `next` is already validated
 // (lib/student/next-path.ts): after signing in the student goes there, never anywhere else.
 
-export function StudentSignIn({ providers, oauthError = null, next = CHAT_PATH }: { providers: ProviderStatus[]; oauthError?: string | null; next?: string }) {
+export function StudentSignIn({
+  providers,
+  emailCodes = false,
+  oauthError = null,
+  next = CHAT_PATH,
+}: {
+  providers: ProviderStatus[]
+  emailCodes?: boolean
+  oauthError?: string | null
+  next?: string
+}) {
   const router = useRouter()
   const { t, lang } = useT()
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<SignInFieldErrors>({})
   const [pending, setPending] = useState(false)
-  const google = providers.find((p) => p.id === 'google' && p.state === 'available')
-  const others = providers.filter((p) => p !== google)
+  const [resetting, setResetting] = useState(false)
+  const available = providers.filter((p) => p.state === 'available')
+  const others = providers.filter((p) => p.state !== 'available')
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -56,23 +69,36 @@ export function StudentSignIn({ providers, oauthError = null, next = CHAT_PATH }
 
   const shownError = error ?? oauthError
 
+  if (resetting)
+    return (
+      <div className="flex flex-col gap-4">
+        <h2 className="font-serif text-2xl text-foreground">Reset your password</h2>
+        <p className="text-sm leading-relaxed text-muted-foreground">We’ll email a 6-digit code to the address on your student account.</p>
+        <EmailCodeForm mode="reset" next={next} />
+        <button type="button" onClick={() => setResetting(false)} className="min-h-11 self-start text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+          Back to sign in
+        </button>
+      </div>
+    )
+
   return (
     <div className="flex flex-col gap-6">
-      {google ? (
-        <GoogleContinueButton next={next} requestSignUp={false} note="For existing student accounts. LockIn never gets your Google password." onError={setError} />
-      ) : null}
+      {available.map((p) => (
+        <ProviderContinueButton key={p.id} provider={p.id} label={p.label} next={next} requestSignUp={false} onError={setError} />
+      ))}
+      {available.length ? <p className="-mt-3 text-xs leading-relaxed text-muted-foreground">For existing student accounts. LockIn never gets your password for these accounts.</p> : null}
       {shownError ? (
         <p role="alert" className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-foreground">
           {shownError}
         </p>
       ) : null}
-      {google ? (
-        <div className="flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-muted-foreground" aria-hidden="true">
-          <span className="h-px flex-1 bg-border" />
-          or
-          <span className="h-px flex-1 bg-border" />
-        </div>
+      {emailCodes ? (
+        <>
+          {available.length ? <Divider /> : null}
+          <EmailCodeForm mode="sign-in" next={next} />
+        </>
       ) : null}
+      {available.length || emailCodes ? <Divider label="or use your password" /> : null}
       <form lang={lang} onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
         <Field id="student-email" label={t('signIn.email')} errors={fieldErrors.email}>
           <input
@@ -100,29 +126,61 @@ export function StudentSignIn({ providers, oauthError = null, next = CHAT_PATH }
         <Button type="submit" disabled={pending}>
           {pending ? t('signIn.pending') : t('signIn.submit')}
         </Button>
-        {/* No self-service reset: email flows are disabled (lib/auth-options.mjs). */}
-        <p className="text-xs leading-relaxed text-muted-foreground">{t('signIn.forgot')}</p>
+        {emailCodes ? (
+          <button type="button" onClick={() => setResetting(true)} className="min-h-11 self-start text-sm text-primary underline-offset-4 hover:underline">
+            Forgot your password?
+          </button>
+        ) : (
+          <p className="text-xs leading-relaxed text-muted-foreground">{t('signIn.forgot')}</p>
+        )}
       </form>
-      <ul className="flex flex-col gap-2" aria-label="Other sign-in options">
-        {others.map((p) => (
-          <li key={p.id}>
-            <button type="button" disabled aria-describedby={`provider-${p.id}`} className="w-full rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground opacity-70">
-              {`Continue with ${p.label} — unavailable`}
-            </button>
-            <p id={`provider-${p.id}`} className="mt-1 text-xs text-muted-foreground">
-              {p.detail}
-            </p>
-          </li>
-        ))}
-      </ul>
+      {others.length ? (
+        <ul className="flex flex-col gap-2" aria-label="Other sign-in options">
+          {others.map((p) => (
+            <li key={p.id}>
+              <button type="button" disabled aria-describedby={`provider-${p.id}`} className="w-full rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground opacity-70">
+                {`Continue with ${p.label} — unavailable`}
+              </button>
+              <p id={`provider-${p.id}`} className="mt-1 text-xs text-muted-foreground">
+                {p.detail}
+              </p>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   )
 }
 
-/** "Continue with Google": redirects to Google; failures and cancellations come back to /auth?error=… */
-export function GoogleContinueButton({ next, requestSignUp, note, onError }: { next: string; requestSignUp: boolean; note?: string; onError?: (message: string) => void }) {
+function Divider({ label = 'or' }: { label?: string }) {
+  return (
+    <div className="flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-muted-foreground" aria-hidden="true">
+      <span className="h-px flex-1 bg-border" />
+      {label}
+      <span className="h-px flex-1 bg-border" />
+    </div>
+  )
+}
+
+/** "Continue with <provider>": redirects to the provider; failures and cancellations come back to /auth?error=… */
+export function ProviderContinueButton({
+  provider,
+  label,
+  next,
+  requestSignUp,
+  note,
+  onError,
+}: {
+  provider: ProviderId
+  label: string
+  next: string
+  requestSignUp: boolean
+  note?: string
+  onError?: (message: string) => void
+}) {
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const unavailable = `${label} sign-in is unavailable right now. Try again shortly.`
   const fail = (message: string) => {
     setPending(false)
     if (onError) onError(message)
@@ -134,14 +192,14 @@ export function GoogleContinueButton({ next, requestSignUp, note, onError }: { n
     setError(null)
     try {
       const { error: socialError } = await authClient.signIn.social({
-        provider: 'google',
+        provider,
         callbackURL: next,
         errorCallbackURL: `/auth?${new URLSearchParams({ next })}`,
         requestSignUp,
       })
-      if (socialError) fail(socialError.status === 429 ? 'Too many attempts. Wait a few minutes and try again.' : 'Google sign-in is unavailable right now. Try again shortly.')
+      if (socialError) fail(socialError.status === 429 ? 'Too many attempts. Wait a few minutes and try again.' : unavailable)
     } catch {
-      fail('Google sign-in is unavailable right now. Try again shortly.')
+      fail(unavailable)
     }
   }
 
@@ -153,8 +211,8 @@ export function GoogleContinueButton({ next, requestSignUp, note, onError }: { n
         disabled={pending}
         className="inline-flex min-h-11 w-full items-center justify-center gap-3 rounded-lg border border-primary/50 bg-background px-4 text-sm font-medium text-foreground transition-colors hover:border-primary hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-60"
       >
-        <GoogleMark />
-        {pending ? 'Opening Google…' : 'Continue with Google'}
+        {provider === 'google' ? <GoogleMark /> : null}
+        {pending ? `Opening ${label}…` : `Continue with ${label}`}
       </button>
       {note ? <p className="text-xs leading-relaxed text-muted-foreground">{note}</p> : null}
       {error ? (

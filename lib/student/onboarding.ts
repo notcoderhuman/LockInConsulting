@@ -4,26 +4,27 @@ import { getAdminPool } from '@/lib/db/pool'
 import { studentSignUpOpen } from '@/lib/identity/policy'
 import { ageAttestation, clearAttestationName } from '@/lib/student/age-attestation'
 
-// The one way a student profile is created outside the CLI/sandbox: a person who signed in with
-// Google confirms they are 18 or older and accepts the privacy notice. Both are recorded on the
+// The one way a student profile is created outside the CLI/sandbox: a person who signed in (Google,
+// Microsoft, Apple, Yahoo or an emailed code) confirms they are 18 or older and accepts the privacy notice. Both are recorded on the
 // profile (age_confirmed_at, privacy_notice_version). Without that the account reaches nothing.
 //
 // Never for: team accounts (any admin_members row, even revoked), users who already have or had a
-// profile (suspended or erased stay that way), password accounts, or while sign-up is closed.
+// profile (suspended or erased stay that way), accounts whose email was never verified (the CLI
+// creates staff unverified; every student sign-in method verifies it), or while sign-up is closed.
 
 export const PRIVACY_NOTICE_VERSION = 'student-2026-10'
 
 const ELIGIBLE = `SELECT u.id, u.name,
          (SELECT COUNT(*) FROM admin_members m WHERE m.user_id = u.id) AS memberships,
          (SELECT COUNT(*) FROM student_profiles s WHERE s.user_id = u.id) AS profiles,
-         (SELECT COUNT(*) FROM auth_account a WHERE a.userId = u.id AND a.providerId = 'google') AS google
+         u.emailVerified AS verified
     FROM auth_user u WHERE u.id = ?`
 
 export async function canStartStudentProfile(userId: string, db: Pick<ReturnType<typeof getAdminPool>, 'query'> = getAdminPool()): Promise<boolean> {
   if (!studentSignUpOpen()) return false
   const [rows] = await db.query<RowDataPacket[]>(ELIGIBLE, [userId])
   const r = rows[0]
-  return Boolean(r) && Number(r.memberships) === 0 && Number(r.profiles) === 0 && Number(r.google) > 0
+  return Boolean(r) && Number(r.memberships) === 0 && Number(r.profiles) === 0 && Number(r.verified) === 1
 }
 
 export type OnboardingResult = { ok: true } | { ok: false; status: number; error: string }

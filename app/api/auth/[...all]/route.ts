@@ -1,6 +1,7 @@
 import { toNextJsHandler } from 'better-auth/next-js'
 import { resolveAuthBaseUrl } from '@/lib/admin/config'
 import { getAuth } from '@/lib/auth'
+import { guardEmailOtp, OTP_SEND_PATHS, OTP_VERIFY_PATHS } from '@/lib/auth-otp'
 import { throttleEmailSignIn } from '@/lib/auth-throttle'
 import { getAuthPool } from '@/lib/db/pool'
 
@@ -40,7 +41,9 @@ export async function POST(request: Request) {
   // Per-account throttle on password sign-in, independent of any client IP.
   const pathname = new URL(request.url).pathname
   if (pathname.endsWith('/sign-in/email')) return throttleEmailSignIn(request, handler.POST, getAuthPool())
-  // Better Auth would append browser-supplied `scopes` to the Google request; sign-in is identity only.
+  // Per-email limits, resend cooldown and staff exclusion for emailed codes (lib/auth-otp.ts).
+  if ([...OTP_SEND_PATHS, ...OTP_VERIFY_PATHS].some((p) => pathname.endsWith(p))) return guardEmailOtp(request, handler.POST, getAuthPool())
+  // Better Auth would append browser-supplied `scopes` to the provider request; sign-in is identity only.
   if (pathname.endsWith('/sign-in/social') || pathname.endsWith('/link-social')) {
     const body = (await request.clone().json().catch(() => null)) as Record<string, unknown> | null
     if (!body || 'scopes' in body) return Response.json({ error: 'Unsupported sign-in request.' }, { status: 400, headers: { 'Cache-Control': 'no-store' } })

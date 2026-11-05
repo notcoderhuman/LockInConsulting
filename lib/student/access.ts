@@ -22,7 +22,7 @@ export type StudentContext =
   | { state: 'error' }
   | { state: 'signed_out' }
   | { state: 'forbidden' }
-  /** Signed in with Google, no student profile yet: must confirm 18+ and the privacy notice first. */
+  /** Signed in (any student method), no student profile yet: must confirm 18+ and the privacy notice first. */
   | { state: 'needs_profile'; userId: string; name: string }
   | { state: 'ok'; student: StudentActor }
 

@@ -6,7 +6,7 @@ import { MockProvider } from '@/lib/derek/providers/mock'
 import { callProvider } from '@/lib/derek/runtime'
 import { assessDraft, assessQuestion, redactPersonalData, unsupportedFigures } from '@/lib/derek/safeguards'
 import { oauthErrorMessage } from '@/lib/identity/oauth-errors'
-import { ACCOUNT_POLICIES, getIdentityProviderStatus, getStudentAreaStatus, studentSignUpOpen } from '@/lib/identity/policy'
+import { ACCOUNT_POLICIES, emailOtpOpen, getIdentityProviderStatus, getStudentAreaStatus, studentSignUpOpen } from '@/lib/identity/policy'
 import { attributionLabel } from '@/lib/support/attribution'
 import { autoReplyActive } from '@/lib/support/settings'
 import { CONVERSATION_STATUSES, nextStatus, STUDENT_STATUS_LABEL, TransitionError } from '@/lib/support/state'
@@ -197,21 +197,34 @@ describe('identity policies', () => {
     expect(getStudentAreaStatus({ STUDENT_ACCOUNTS_ENABLED: 'true' }, true)).toEqual({ enabled: true })
     expect(getStudentAreaStatus({ STUDENT_ACCOUNTS_ENABLED: '1' }, true).enabled).toBe(false)
   })
-  it('reports Google as available only with both credentials, and never the others', () => {
+  it('reports a provider as available only with all its credentials and student accounts open', () => {
     const none = getIdentityProviderStatus({})
     expect(none.map((p) => [p.id, p.state])).toEqual([
       ['google', 'not_configured'],
       ['microsoft', 'not_configured'],
       ['yahoo', 'not_configured'],
-      ['apple', 'deferred'],
+      ['apple', 'not_configured'],
     ])
     const supplied = getIdentityProviderStatus({ GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 'secret', APPLE_CLIENT_ID: 'x', STUDENT_ACCOUNTS_ENABLED: 'true' })
+    for (const id of ['microsoft', 'yahoo', 'apple'] as const) {
+      const vars = { microsoft: 'MICROSOFT', yahoo: 'YAHOO', apple: 'APPLE' }[id]
+      const env = { [`${vars}_CLIENT_ID`]: 'id', [`${vars}_CLIENT_SECRET`]: 'secret' }
+      expect(getIdentityProviderStatus(env).find((p) => p.id === id)?.state, id).toBe('closed')
+      expect(getIdentityProviderStatus({ ...env, STUDENT_ACCOUNTS_ENABLED: 'true' }).find((p) => p.id === id)?.state, id).toBe('available')
+    }
+    // Email codes need the student area and a full mail configuration; the log transport never in production.
+    const mail = { SMTP_HOST: 'smtp.example', SMTP_USER: 'u', SMTP_PASSWORD: 'p', MAIL_FROM: 'LockIn <no-reply@example.com>' }
+    expect(emailOtpOpen(mail)).toBe(false)
+    expect(emailOtpOpen({ ...mail, STUDENT_ACCOUNTS_ENABLED: 'true' })).toBe(true)
+    expect(emailOtpOpen({ ...mail, SMTP_PASSWORD: ' ', STUDENT_ACCOUNTS_ENABLED: 'true' })).toBe(false)
+    expect(emailOtpOpen({ MAIL_TRANSPORT: 'log', STUDENT_ACCOUNTS_ENABLED: 'true' })).toBe(true)
+    expect(emailOtpOpen({ MAIL_TRANSPORT: 'log', STUDENT_ACCOUNTS_ENABLED: 'true', NODE_ENV: 'production' })).toBe(false)
     expect(supplied.find((p) => p.id === 'google')?.state).toBe('available')
     // Credentials alone do not offer Google while student accounts are closed.
     for (const flag of [undefined, 'false', '1'])
       expect(getIdentityProviderStatus({ GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 'secret', STUDENT_ACCOUNTS_ENABLED: flag }).find((p) => p.id === 'google')?.state).toBe('closed')
     expect(getIdentityProviderStatus({ GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: ' ' }).find((p) => p.id === 'google')?.state).toBe('not_configured')
-    expect(getIdentityProviderStatus({ MICROSOFT_CLIENT_ID: 'id', MICROSOFT_CLIENT_SECRET: 's' }).find((p) => p.id === 'microsoft')?.state).toBe('credentials_supplied_untested')
+    expect(getIdentityProviderStatus({ MICROSOFT_CLIENT_ID: 'id' }).find((p) => p.id === 'microsoft')?.state).toBe('not_configured')
     // New accounts need both switches; neither alone opens registration.
     expect(studentSignUpOpen({ STUDENT_ACCOUNTS_ENABLED: 'true' })).toBe(false)
     expect(studentSignUpOpen({ STUDENT_SELF_SIGNUP_ENABLED: 'true' })).toBe(false)
@@ -227,7 +240,7 @@ describe('identity policies', () => {
       expect(oauthErrorMessage(code), code).toMatch(/\.$/)
     expect(oauthErrorMessage('<script>')).not.toContain('<script>')
     expect(oauthErrorMessage(null)).toBeNull()
-    expect(supplied.find((p) => p.id === 'apple')?.state).toBe('deferred')
+    expect(supplied.find((p) => p.id === 'apple')?.state).toBe('not_configured')
     expect(JSON.stringify(supplied)).not.toContain('secret')
   })
 })

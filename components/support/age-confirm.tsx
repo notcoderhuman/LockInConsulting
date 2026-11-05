@@ -4,12 +4,14 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { controlClass, Field } from '@/components/admin/form-controls'
 import { Button } from '@/components/ui/button'
-import { GoogleContinueButton } from './student-sign-in'
+import type { ProviderStatus } from '@/lib/identity/policy'
+import { EmailCodeForm } from './email-code-form'
+import { ProviderContinueButton } from './student-sign-in'
 
 // The 18+ self-attestation (D-045). Ticking the box only enables the button: the server records the
-// confirmation and sets a short-lived HttpOnly token, and the Google sign-up callback refuses to
+// confirmation and sets a short-lived HttpOnly token, and account creation (any method) refuses to
 // create an account without it. Only the person's name and the tick are collected, nothing else about their age.
-export function AgeConfirm({ next, back, privacyUrl }: { next: string; back: string; privacyUrl: string | null }) {
+export function AgeConfirm({ next, back, privacyUrl, providers = [], emailCodes = false }: { next: string; back: string; privacyUrl: string | null; providers?: ProviderStatus[]; emailCodes?: boolean }) {
   const router = useRouter()
   const id = useId()
   const [fullName, setFullName] = useState('')
@@ -58,13 +60,18 @@ export function AgeConfirm({ next, back, privacyUrl }: { next: string; back: str
     return (
       <div className="mt-6 flex flex-col gap-5 text-sm leading-relaxed text-muted-foreground">
         <h2 ref={stepHeading} tabIndex={-1} className="font-serif text-2xl text-foreground outline-none">
-          Thank you. Next, Google.
+          Thank you. Next, your sign-in.
         </h2>
         <p>
-          Create your account with Google. Afterwards you’ll be asked to accept how LockIn handles your data
-          {privacyLink ? <> (read the {privacyLink})</> : null} before you can start chatting.
+          Create your account with {emailCodes ? 'a code sent to your email' : 'one of the options below'}. Afterwards you’ll be asked to accept how LockIn handles your data
+          {privacyLink ? <> (read the {privacyLink})</> : null} before you can start chatting. Your confirmation is valid for 15 minutes and can be used once.
         </p>
-        <GoogleContinueButton next={next} requestSignUp note="Your confirmation is valid for 15 minutes and can be used once. LockIn never gets your Google password." />
+        {emailCodes ? <EmailCodeForm mode="sign-in" next={next} /> : null}
+        {providers
+          .filter((p) => p.state === 'available')
+          .map((p) => (
+            <ProviderContinueButton key={p.id} provider={p.id} label={p.label} next={next} requestSignUp note={`LockIn never gets your ${p.label} password.`} />
+          ))}
         <button type="button" onClick={goBack} className="min-h-11 self-start text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
           Back
         </button>

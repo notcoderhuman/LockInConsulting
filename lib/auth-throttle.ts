@@ -61,7 +61,7 @@ export const CLEANUP_INTERVAL_MS = 10 * 60 * 1000
 export const CLEANUP_BATCH = 5000
 const MAX_TRACKED_IPS = 10_000
 
-type Limit = { burst: number; perSecond: number }
+export type Limit = { burst: number; perSecond: number }
 type Bucket = { tokens: number; at: number; limit: Limit }
 const buckets = new Map<string, Bucket>()
 let nextCleanup = 0
@@ -75,7 +75,7 @@ export function resetRequestBuckets() {
 const refilled = (b: Bucket, now: number) => Math.min(b.limit.burst, b.tokens + (Math.max(0, now - b.at) / 1000) * b.limit.perSecond)
 
 /** Takes one token: 0 when granted, otherwise ms until the next one. */
-function takeToken(key: string, limit: Limit, now: number): number {
+export function takeToken(key: string, limit: Limit, now: number): number {
   // Full buckets carry no information, so forgetting them keeps one entry per active client IP.
   if (buckets.size > MAX_TRACKED_IPS) for (const [k, b] of buckets) if (refilled(b, now) >= b.limit.burst) buckets.delete(k)
   const b = buckets.get(key) ?? { tokens: limit.burst, at: now, limit }
@@ -89,7 +89,7 @@ function takeToken(key: string, limit: Limit, now: number): number {
   return Math.ceil(((1 - b.tokens) / limit.perSecond) * 1000)
 }
 
-function giveTokenBack(key: string) {
+export function giveTokenBack(key: string) {
   const b = buckets.get(key)
   if (b) b.tokens = Math.min(b.limit.burst, b.tokens + 1)
 }
@@ -100,6 +100,13 @@ export async function pruneStaleRows(db: Pick<Pool, 'query'>, now = clock.now(),
   // few thousand rows, add an index if it ever grows to hundreds of thousands.
   const [res] = await db.query('DELETE FROM auth_rate_limit WHERE lastRequest < ? LIMIT ?', [now - QUIET_RESET_MS, limit])
   return (res as { affectedRows: number }).affectedRows
+}
+
+/** At most once per CLEANUP_INTERVAL_MS, deletes a batch of rows that already count as empty. */
+export async function maybeCleanup(db: Pick<Pool, 'query'>, now = clock.now()): Promise<void> {
+  if (now < nextCleanup) return
+  nextCleanup = now + CLEANUP_INTERVAL_MS
+  await pruneStaleRows(db, now).catch((error) => console.error('[auth] throttle cleanup failed', error instanceof Error ? error.name : 'unknown error'))
 }
 
 /** The header a trusted proxy overwrites with the client IP, or null to trust no header. */
@@ -225,10 +232,7 @@ export async function throttleEmailSignIn(
   secret = process.env.BETTER_AUTH_SECRET ?? '',
 ): Promise<Response> {
   const now = clock.now()
-  if (now >= nextCleanup) {
-    nextCleanup = now + CLEANUP_INTERVAL_MS
-    await pruneStaleRows(db, now).catch((error) => console.error('[auth] throttle cleanup failed', error instanceof Error ? error.name : 'unknown error'))
-  }
+  await maybeCleanup(db, now)
   // Exact match: a missing, form, multipart or doubled ("a, b") Content-Type never reaches Better Auth.
   if ((request.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase() !== 'application/json')
     return Response.json({ message: 'Unsupported content type.' }, { status: 415, headers: { 'Cache-Control': 'no-store' } })

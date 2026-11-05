@@ -1604,7 +1604,7 @@ describe('Google sign-in onboarding (18+ and privacy confirmation)', () => {
     expect(await profile(id)).toHaveLength(1)
   })
 
-  it('never creates a profile while sign-up is closed, for a team account, or for a password account', async () => {
+  it('never creates a profile while sign-up is closed, for a team account, or for an unverified (CLI-made) password account', async () => {
     const id = await googleUser()
     expect(await O.canStartStudentProfile(id)).toBe(false) // nothing set
     process.env.STUDENT_ACCOUNTS_ENABLED = 'true'
@@ -1614,6 +1614,7 @@ describe('Google sign-in onboarding (18+ and privacy confirmation)', () => {
     await db.query("INSERT INTO admin_members (user_id, role, status, granted_by) VALUES (?, 'editor', 'active', 'u-owner')", [staff])
     expect(await O.createStudentProfile(staff, { ageConfirmed: true, privacyAccepted: true })).toMatchObject({ ok: false, status: 403 })
     const password = await googleUser({ provider: 'credential' })
+    await db.query('UPDATE auth_user SET emailVerified = 0 WHERE id = ?', [password]) // as scripts/admin-user.mjs creates it
     expect(await O.canStartStudentProfile(password)).toBe(false)
     expect(await profile(staff)).toHaveLength(0)
   })

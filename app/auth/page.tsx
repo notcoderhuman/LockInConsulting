@@ -8,7 +8,7 @@ import { SiteHeader } from '@/components/site/site-header'
 import { SkipLink } from '@/components/site/skip-link'
 import { AuthTabs, type AuthTab } from '@/components/support/auth-tabs'
 import { oauthErrorMessage } from '@/lib/identity/oauth-errors'
-import { getIdentityProviderStatus, studentSignUpOpen } from '@/lib/identity/policy'
+import { emailOtpOpen, getIdentityProviderStatus, studentSignUpOpen } from '@/lib/identity/policy'
 import { getStudentPageContext } from '@/lib/student/access'
 import { ageTokenFrom, revokeAgeAttestation } from '@/lib/student/age-attestation'
 import { safeNextPath } from '@/lib/student/next-path'
@@ -71,6 +71,7 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
               initialTab={initialTab}
               providers={getIdentityProviderStatus()}
               signUpOpen={studentSignUpOpen()}
+              emailCodes={emailOtpOpen()}
               oauthError={oauthErrorMessage(one(params.error), studentSignUpOpen())}
               next={next}
             />

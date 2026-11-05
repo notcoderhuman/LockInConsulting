@@ -311,10 +311,12 @@ export function slugify(name: string): string {
   return normaliseName(name).replace(/ /g, '-').slice(0, 120).replace(/-+$/, '')
 }
 
-interface PlannedFee { data: Record<string, unknown>; source?: ImportSource }
-interface PlannedIntake { data: Record<string, unknown>; source?: ImportSource }
-interface PlannedCourse { data: Record<string, unknown>; source?: ImportSource; intakes: PlannedIntake[]; fees: PlannedFee[] }
-interface PlannedUniversity { data: Record<string, unknown>; source: ImportSource; courses: PlannedCourse[] }
+/** A field whose value comes from a different page than its record's source (field_sources, 0013). */
+interface PlannedFieldSource { column: string; source: ImportSource }
+interface PlannedFee { data: Record<string, unknown>; source?: ImportSource; fieldSources: PlannedFieldSource[] }
+interface PlannedIntake { data: Record<string, unknown>; source?: ImportSource; fieldSources: PlannedFieldSource[] }
+interface PlannedCourse { data: Record<string, unknown>; source?: ImportSource; fieldSources: PlannedFieldSource[]; intakes: PlannedIntake[]; fees: PlannedFee[] }
+interface PlannedUniversity { data: Record<string, unknown>; source: ImportSource; fieldSources: PlannedFieldSource[]; courses: PlannedCourse[] }
 
 export interface ImportSummary {
   batchId: number
@@ -355,14 +357,36 @@ export function planImport(text: string, managedYears: Set<string>): PlannedUniv
   const sourceAt = (path: string, raw: unknown, required: boolean) =>
     raw === undefined && !required ? undefined : (check(`${path}.source`, importSource.safeParse(raw)) ?? undefined)
   const list = (v: unknown) => (Array.isArray(v) ? (v as Record<string, unknown>[]) : [])
+  // "fieldSources": { "<field name>": source }, only for fields the record itself sets.
+  const fieldSourcesAt = (path: string, entity: EntityKey, raw: unknown, data: Record<string, unknown> | null): PlannedFieldSource[] => {
+    if (raw === undefined) return []
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+      problems.push(`${path}.fieldSources: must be an object of field name to source.`)
+      return []
+    }
+    return Object.entries(raw).flatMap(([name, s]) => {
+      const field = ENTITIES[entity].fields.find((f) => f.name === name && f.kind !== 'source')
+      if (!field) {
+        problems.push(`${path}.fieldSources.${name}: not a field of this record.`)
+        return []
+      }
+      if (data && data[name] == null) {
+        problems.push(`${path}.fieldSources.${name}: the record has no value for this field.`)
+        return []
+      }
+      const source = check(`${path}.fieldSources.${name}`, importSource.safeParse(s))
+      return source ? [{ column: field.column, source }] : []
+    })
+  }
 
   const planned: PlannedUniversity[] = []
   const slugs = new Set<string>()
   file.data.universities.forEach((u, ui) => {
     const p = `universities[${ui}]`
     const name = typeof u.name === 'string' ? u.name : ''
-    const data = check(p, universityInput.safeParse({ ...u, slug: u.slug ?? slugify(name), source: undefined, courses: undefined }))
+    const data = check(p, universityInput.safeParse({ ...u, slug: u.slug ?? slugify(name), source: undefined, courses: undefined, fieldSources: undefined }))
     const source = sourceAt(p, u.source, true)
+    const uFieldSources = fieldSourcesAt(p, 'university', u.fieldSources, data as Record<string, unknown> | null)
     if (data) {
       const key = `${data.destinationIso2}/${data.slug}`
       if (slugs.has(key)) problems.push(`${p}: the file lists ${key} twice.`)
@@ -381,7 +405,8 @@ export function planImport(text: string, managedYears: Set<string>): PlannedUniv
       const cSource = sourceAt(cp, c.source, false)
       const intakes = list(c.intakes).flatMap((i, ii) => {
         const d = check(`${cp}.intakes[${ii}]`, intakeInput.safeParse({ ...i, courseId: 1 }))
-        return d ? [{ data: d as Record<string, unknown>, source: sourceAt(`${cp}.intakes[${ii}]`, i.source, false) }] : []
+        const ip = `${cp}.intakes[${ii}]`
+        return d ? [{ data: d as Record<string, unknown>, source: sourceAt(ip, i.source, false), fieldSources: fieldSourcesAt(ip, 'course_intake', i.fieldSources, d as Record<string, unknown>) }] : []
       })
       const fees = list(c.fees).flatMap((f, fi) => {
         const fp = `${cp}.fees[${fi}]`
@@ -389,11 +414,12 @@ export function planImport(text: string, managedYears: Set<string>): PlannedUniv
         const d = check(fp, tuitionFeeInput.safeParse({ ...f, amount: f.amount == null ? null : String(f.amount), verificationStatus: 'unverified', courseId: 1 }))
         if (d?.academicYear && managedYears.size && !managedYears.has(d.academicYear))
           problems.push(`${fp}.academicYear: ${d.academicYear} is not in the academic-year list. Add it in Settings first.`)
-        return d ? [{ data: d as Record<string, unknown>, source: sourceAt(fp, f.source, false) }] : []
+        return d ? [{ data: d as Record<string, unknown>, source: sourceAt(fp, f.source, false), fieldSources: fieldSourcesAt(fp, 'tuition_fee', f.fieldSources, d as Record<string, unknown>) }] : []
       })
-      if (cData) courses.push({ data: cData as Record<string, unknown>, source: cSource, intakes, fees })
+      const cFieldSources = fieldSourcesAt(cp, 'course', c.fieldSources, cData as Record<string, unknown> | null)
+      if (cData) courses.push({ data: cData as Record<string, unknown>, source: cSource, fieldSources: cFieldSources, intakes, fees })
     })
-    if (data && source) planned.push({ data: data as Record<string, unknown>, source, courses })
+    if (data && source) planned.push({ data: data as Record<string, unknown>, source, fieldSources: uFieldSources, courses })
   })
   if (problems.length) throw new ImportValidationError(problems.slice(0, 200))
   return planned
@@ -433,6 +459,19 @@ async function createDraft(conn: PoolConnection, actor: AdminActor, entity: Enti
   const after = await readRow(conn, def.table, res.insertId)
   await appendChangeLog(conn, { entityType: def.logType, entityId: res.insertId, action: 'create', actorId: actor.userId, actorRole: actor.role, reason: 'Bulk import', before: null, after })
   return res.insertId
+}
+
+const FIELD_SOURCE_METHOD: Record<string, string> = { university_official: 'official_page', government: 'government_register', regulator: 'government_register' }
+
+/** Pending provenance rows for fields sourced from another page. Never verified here. */
+async function addFieldSources(conn: PoolConnection, actor: AdminActor, entity: EntityKey, entityId: number, list: PlannedFieldSource[], cache: Map<string, number>): Promise<void> {
+  for (const f of list) {
+    const id = await sourceId(conn, actor, f.source, cache)
+    await conn.query(
+      `INSERT INTO field_sources (entity_type, entity_id, field_name, source_id, accessed_on, status, method) VALUES (?, ?, ?, ?, ?, 'pending', ?)`,
+      [entity, entityId, f.column, id, f.source.accessedOn ?? todayIso(), FIELD_SOURCE_METHOD[f.source.sourceType] ?? 'other'],
+    )
+  }
 }
 
 const COMPARED: Record<'university' | 'course', string[]> = {
@@ -498,6 +537,7 @@ export async function importRecords(db: Pool, actor: AdminActor, fileName: strin
         universityId = Number(existing.id)
       } else {
         universityId = await createDraft(conn, actor, 'university', { ...row, source_id: uSource })
+        await addFieldSources(conn, actor, 'university', universityId, u.fieldSources, sources)
         summary.universitiesCreated++
         // Later entries in the same file are matched (and compared) against the full stored row.
         all.push(await readRow(conn, 'universities', universityId))
@@ -514,13 +554,16 @@ export async function importRecords(db: Pool, actor: AdminActor, fileName: strin
           continue
         }
         const courseId = await createDraft(conn, actor, 'course', { ...cRow, university_id: universityId, source_id: cSource })
+        await addFieldSources(conn, actor, 'course', courseId, c.fieldSources, sources)
         summary.coursesCreated++
         for (const i of c.intakes) {
-          await createDraft(conn, actor, 'course_intake', { ...columnsFor('course_intake', i.data), course_id: courseId, source_id: i.source ? await sourceId(conn, actor, i.source, sources) : cSource })
+          const intakeId = await createDraft(conn, actor, 'course_intake', { ...columnsFor('course_intake', i.data), course_id: courseId, source_id: i.source ? await sourceId(conn, actor, i.source, sources) : cSource })
+          await addFieldSources(conn, actor, 'course_intake', intakeId, i.fieldSources, sources)
           summary.intakesCreated++
         }
         for (const f of c.fees) {
-          await createDraft(conn, actor, 'tuition_fee', { ...columnsFor('tuition_fee', f.data), course_id: courseId, source_id: f.source ? await sourceId(conn, actor, f.source, sources) : cSource })
+          const feeId = await createDraft(conn, actor, 'tuition_fee', { ...columnsFor('tuition_fee', f.data), course_id: courseId, source_id: f.source ? await sourceId(conn, actor, f.source, sources) : cSource })
+          await addFieldSources(conn, actor, 'tuition_fee', feeId, f.fieldSources, sources)
           summary.feesCreated++
         }
       }

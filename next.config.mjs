@@ -28,6 +28,11 @@ const nextConfig = {
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }]
   },
+  // One canonical origin: any www.<host> request goes permanently to <host>, path and query kept.
+  // Sign-in only trusts BETTER_AUTH_URL's origin, and duplicate www pages would split indexing.
+  async redirects() {
+    return [{ source: '/:path*', has: [{ type: 'host', value: 'www\\.(?<apex>.+)' }], destination: 'https://:apex/:path*', permanent: true }]
+  },
 }
 
 export default nextConfig

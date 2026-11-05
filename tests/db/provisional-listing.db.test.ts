@@ -229,13 +229,13 @@ describe('provisional listings', () => {
     await db.query('INSERT INTO university_rankings SET ?', [{ university_id: gamma, provider_id: qs.id, ranking_year: 2026, rank_position: 300, publication_status: 'published', verification_status: 'verified', source_id: src.source_id, checked_at: TODAY, verified_at: `${TODAY} 00:00:00`, verified_by: 'u-reviewer', review_due_at: addDays(90) }])
     const order = async () => (await page('IT')).entries.filter((e) => e.slug.startsWith('prov-it-') && Number(e.slug.split('-')[2]) <= 3).map((e) => e.slug)
     expect(await order()).toEqual(['prov-it-1', 'prov-it-2', 'prov-it-3']) // QS not licensed: by name
-    await db.query("UPDATE ranking_providers SET rights_status = 'licensed', licence_reference = 'T', licence_scope = 'test', rights_checked_at = ?, allow_ordering = 1 WHERE id = ?", [TODAY, qs.id])
+    await db.query("UPDATE ranking_providers SET rights_status = 'licensed', licence_reference = 'T', licence_scope = 'test', rights_checked_at = ?, allow_ordering = 1, attribution_text = 'Source: synthetic', attribution_url = 'https://www.topuniversities.com/world-university-rankings' WHERE id = ?", [TODAY, qs.id])
     try {
       expect(await order()).toEqual(['prov-it-3', 'prov-it-1', 'prov-it-2'])
       const provisional = (await page('IT')).entries.filter((e) => e.listing === 'provisional')
       expect(provisional.every((e) => !('rankings' in e))).toBe(true)
     } finally {
-      await db.query("UPDATE ranking_providers SET rights_status = 'not_confirmed', licence_reference = NULL, licence_scope = NULL, rights_checked_at = NULL, allow_ordering = 0 WHERE id = ?", [qs.id])
+      await db.query("UPDATE ranking_providers SET rights_status = 'not_confirmed', licence_reference = NULL, licence_scope = NULL, rights_checked_at = NULL, allow_ordering = 0, attribution_text = NULL, attribution_url = NULL WHERE id = ?", [qs.id])
     }
   })
 

@@ -45,6 +45,7 @@ export const DIRECTORY_MAX = 50
 const qsRank = (alias: string) => `(SELECT COALESCE(r.rank_position, r.rank_band_low)
      FROM public_university_rankings r JOIN ranking_providers p ON p.id = r.provider_id
     WHERE r.university_id = ${alias}.id AND p.slug = 'qs' AND r.subject = '' AND r.allow_ordering = 1
+      AND r.attribution_text IS NOT NULL AND r.attribution_url IS NOT NULL
     ORDER BY r.ranking_year DESC LIMIT 1)`
 const order = (alias: string) => `ORDER BY qs_rank IS NULL, qs_rank, ${alias}.name, ${alias}.id`
 
@@ -150,7 +151,7 @@ export async function fetchDestinationDirectory(
       ? select(db, 'SELECT * FROM public_tuition_fees WHERE course_id IN (?) ORDER BY fee_category, id', [courseIds])
       : Promise.resolve([]),
     select(db, 'SELECT * FROM public_acceptance_rates WHERE university_id IN (?) ORDER BY id', [uniIds]),
-    select(db, 'SELECT * FROM public_university_rankings WHERE university_id IN (?) ORDER BY ranking_year DESC, id', [uniIds]),
+    select(db, 'SELECT * FROM public_university_rankings WHERE university_id IN (?) AND attribution_text IS NOT NULL AND attribution_url IS NOT NULL ORDER BY ranking_year DESC, id', [uniIds]),
   ])
 
   const sourceIds = [

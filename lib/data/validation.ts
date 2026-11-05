@@ -202,6 +202,8 @@ export const rankingRightsInput = z
       if (!r.licenceReference) ctx.addIssue({ code: 'custom', path: ['licenceReference'], message: 'Record the licence reference.' })
       if (!r.licenceScope) ctx.addIssue({ code: 'custom', path: ['licenceScope'], message: 'Describe what the licence permits.' })
       if (!r.rightsCheckedAt) ctx.addIssue({ code: 'custom', path: ['rightsCheckedAt'], message: 'Record when the licence was confirmed.' })
+      if (!r.attributionText) ctx.addIssue({ code: 'custom', path: ['attributionText'], message: 'Record the attribution wording the licence requires next to every rank.' })
+      if (!r.attributionUrl) ctx.addIssue({ code: 'custom', path: ['attributionUrl'], message: 'Record the attribution link (for QS: https://www.topuniversities.com/world-university-rankings).' })
     }
     // Ordering and AI use are extra permissions on top of a licence (D-042), never without one.
     if ((r.allowOrdering || r.allowAiUse) && r.rightsStatus !== 'licensed' && r.rightsStatus !== 'not_required')

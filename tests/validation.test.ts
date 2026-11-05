@@ -120,14 +120,17 @@ describe('rankingInput and rights', () => {
 
   it('requires licence evidence before rights can be marked licensed', () => {
     expect(rankingRightsInput.safeParse({ rightsStatus: 'licensed' }).success).toBe(false)
+    const evidence = { rightsStatus: 'licensed', licenceReference: 'QS-2026-001', licenceScope: 'Web display', rightsCheckedAt: '2026-10-15' }
+    // A licence also needs the attribution wording and link shown next to every rank.
+    expect(rankingRightsInput.safeParse(evidence).success).toBe(false)
     expect(
-      rankingRightsInput.safeParse({ rightsStatus: 'licensed', licenceReference: 'QS-2026-001', licenceScope: 'Web display', rightsCheckedAt: '2026-10-15' }).success,
+      rankingRightsInput.safeParse({ ...evidence, attributionText: 'Source: QS Quacquarelli Symonds', attributionUrl: 'https://www.topuniversities.com/world-university-rankings' }).success,
     ).toBe(true)
     expect(rankingRightsInput.safeParse({ rightsStatus: 'not_required' }).success).toBe(false)
   })
 
   it('allows ordering and AI use only on top of a licence, and both default to off (D-042)', () => {
-    const licensed = { rightsStatus: 'licensed', licenceReference: 'QS-2026-001', licenceScope: 'Web display', rightsCheckedAt: '2026-10-15' }
+    const licensed = { rightsStatus: 'licensed', licenceReference: 'QS-2026-001', licenceScope: 'Web display', rightsCheckedAt: '2026-10-15', attributionText: 'Source: QS Quacquarelli Symonds', attributionUrl: 'https://www.topuniversities.com/world-university-rankings' }
     expect(rankingRightsInput.parse(licensed)).toMatchObject({ allowOrdering: false, allowAiUse: false })
     expect(rankingRightsInput.safeParse({ ...licensed, allowOrdering: true, allowAiUse: true }).success).toBe(true)
     for (const rightsStatus of ['not_confirmed', 'requested', 'denied'])

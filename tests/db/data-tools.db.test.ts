@@ -171,6 +171,30 @@ describe('bulk import', () => {
     })
   })
 
+  it('imports ranks as drafts only while the provider is conditional or licensed, never visible', async () => {
+    const rank = (n: string, extra: Record<string, unknown> = {}) => uni(n, { rankings: [{ provider: 'qs', year: 2027, position: 150, source: { ...src(`${n}-qs`), sourceType: 'ranking_provider' } }], ...extra })
+    const [qs] = await rows<{ id: number; rights_status: string }>("SELECT id, rights_status FROM ranking_providers WHERE slug = 'qs'")
+    const pool = getAdminPool()
+    await db.query("UPDATE ranking_providers SET rights_status = 'not_confirmed' WHERE id = ?", [qs.id])
+    await expect(T.importRecords(pool, editor, 'qs-early.json', file([rank('Kappa')]))).rejects.toMatchObject({ blockers: [expect.stringMatching(/reuse rights are "not_confirmed"/)] })
+    await expect(T.importRecords(pool, editor, 'qs-nosrc.json', file([uni('Kappa', { rankings: [{ provider: 'qs', year: 2027, position: 150 }] })]))).rejects.toMatchObject({ blockers: [expect.stringMatching(/rankings\[0\]\.source/)] })
+    await expect(T.importRecords(pool, editor, 'qs-unknown.json', file([uni('Kappa', { rankings: [{ provider: 'nope', year: 2027, position: 1, source: src('n') }] })]))).rejects.toMatchObject({ blockers: [expect.stringMatching(/no ranking provider with the code "nope"/)] })
+    expect(await rows("SELECT id FROM universities WHERE name = 'Synthetic University of Kappa'")).toHaveLength(0)
+
+    await W.updateRankingRights(pool, owner, qs.id, form({ rightsStatus: 'conditional', licenceReference: 'Synthetic email', rightsCheckedAt: TODAY, rightsNotes: 'Formal agreement pending' }))
+    const summary = await T.importRecords(pool, editor, 'qs.json', file([rank('Kappa')]))
+    expect(summary).toMatchObject({ universitiesCreated: 1, rankingsCreated: 1 })
+    const [r] = await rows<{ id: number; rank_position: number; publication_status: string; verification_status: string; source_type: string }>(
+      "SELECT r.id, r.rank_position, r.publication_status, r.verification_status, s.source_type FROM university_rankings r JOIN sources s ON s.id = r.source_id JOIN universities u ON u.id = r.university_id WHERE u.name = 'Synthetic University of Kappa'",
+    )
+    expect(r).toMatchObject({ rank_position: 150, publication_status: 'draft', verification_status: 'unverified', source_type: 'ranking_provider' })
+    expect(await rows('SELECT id FROM public_university_rankings WHERE id = ?', [r.id])).toHaveLength(0)
+    // The same rank again is skipped with a note, not duplicated.
+    const again = await T.importRecords(pool, editor, 'qs-again.json', `${file([rank('Kappa')])} `) // trailing space: a different file hash
+    expect(again).toMatchObject({ rankingsCreated: 0, matchedExisting: 1, notes: [expect.stringMatching(/rank already exists/)] })
+    await db.query("UPDATE ranking_providers SET rights_status = 'not_confirmed' WHERE id = ?", [qs.id])
+  })
+
   it('refuses import without capture permission', async () => {
     await expect(T.importRecords(getAdminPool(), { ...editor, role: 'nobody' as never }, 'x.json', file([uni('Zeta')]))).rejects.toThrow(/permission/)
   })

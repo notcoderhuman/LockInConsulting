@@ -434,6 +434,8 @@ export async function updateRankingRights(db: Pool, actor: AdminActor, providerI
   await inTransaction(db, async (conn) => {
     const [[before]] = await conn.query<Row[]>('SELECT * FROM ranking_providers WHERE id = ? FOR UPDATE', [providerId])
     if (!before) throw new WorkflowError('Ranking provider not found.')
+    if (before.slug === 'qs' && r.rightsStatus === 'not_required')
+      throw new WorkflowError('QS rankings always need a licence: record it as conditional or licensed instead.', { rightsStatus: ['QS rankings always need a licence.'] })
     await conn.query(
       `UPDATE ranking_providers SET rights_status = ?, licence_reference = ?, licence_scope = ?, licence_expires_at = ?,
               rights_checked_at = ?, rights_notes = ?, attribution_text = ?, attribution_url = ?, allow_ordering = ?, allow_ai_use = ? WHERE id = ?`,

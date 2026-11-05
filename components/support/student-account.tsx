@@ -5,6 +5,7 @@ import { useCallback, useEffect, useId, useState, type FormEvent } from 'react'
 import { controlClass, Field } from '@/components/admin/form-controls'
 import { Button } from '@/components/ui/button'
 import { authClient } from '@/lib/auth-client'
+import { DeleteAccount } from './delete-account'
 import type { ProviderId } from '@/lib/identity/policy'
 
 // Student self-service: the name the team sees, sign-in methods (adding one goes through the
@@ -153,6 +154,27 @@ export function StudentAccount({ displayName, providers }: { displayName: string
             Sign out here
           </Button>
         </div>
+      </Section>
+
+      <Section title="Your data">
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Download everything LockIn holds about you (your account, sign-in methods, devices and every conversation) as a file, and who processes it. See the{' '}
+          <a href="/privacy#rights" className="text-primary underline-offset-4 hover:underline">
+            privacy notice
+          </a>{' '}
+          for your other rights.
+        </p>
+        <a
+          href="/api/student/account"
+          download="lockin-my-data.json"
+          className="inline-flex min-h-11 items-center justify-center self-start rounded-lg border border-border px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        >
+          Download my data
+        </a>
+      </Section>
+
+      <Section title="Delete your account">
+        <DeleteAccount />
       </Section>
     </div>
   )

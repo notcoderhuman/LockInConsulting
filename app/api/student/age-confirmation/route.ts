@@ -1,7 +1,8 @@
 import { getAuth } from '@/lib/auth'
+import { clientIpHeader, clock, takeToken } from '@/lib/auth-throttle'
 import { signUpMethodAvailable, studentSignUpOpen } from '@/lib/identity/policy'
 import { checkSameOrigin, jsonError } from '@/lib/student/access'
-import { ageCookieHeader, ageTokenFrom, issueAgeAttestation, normalizeFullName, revokeAgeAttestation } from '@/lib/student/age-attestation'
+import { AGE_CONFIRM_LIMITS, ageCookieHeader, ageTokenFrom, issueAgeAttestation, normalizeFullName, revokeAgeAttestation } from '@/lib/student/age-attestation'
 
 // POST { fullName, ageConfirmed: true } from /age-confirm: records the 18+ self-attestation and sets the
 // short-lived HttpOnly token the Google sign-up callback needs (D-045). DELETE: cancel ("Back").
@@ -13,6 +14,15 @@ export async function POST(request: Request) {
   const crossSite = checkSameOrigin(request)
   if (crossSite) return crossSite
   if (!getAuth() || !studentSignUpOpen() || !signUpMethodAvailable()) return jsonError(503, 'New student accounts aren’t open yet.', { state: 'unavailable' })
+  // Request budget before anything is written (PRODUCTION-READINESS S-4): one process-wide bucket, and
+  // per client IP only with a verified AUTH_CLIENT_IP_HEADER (unset on Hostinger, R-033).
+  const now = clock.now()
+  const ipHeader = clientIpHeader()
+  const wait =
+    (ipHeader ? takeToken(`age-ip:${(request.headers.get(ipHeader) ?? '').trim().slice(0, 64) || 'missing'}`, AGE_CONFIRM_LIMITS.perIp, now) : 0) ||
+    takeToken('age-global', AGE_CONFIRM_LIMITS.global, now)
+  if (wait > 0)
+    return Response.json({ error: 'Too many requests. Please try again in a moment.' }, { status: 429, headers: { ...NO_STORE, 'Retry-After': String(Math.max(1, Math.ceil(wait / 1000))) } })
   let body: Record<string, unknown> = {}
   try {
     body = await request.json()

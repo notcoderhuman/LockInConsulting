@@ -82,7 +82,7 @@ export default function PrivacyPage() {
         <h2>Consent, and how to withdraw it</h2>
         <p>
           We process this data on the basis of your consent, which you give when you create a student account (the 18+ step and the privacy step). You can withdraw it at any time,
-          as easily as you gave it, by deleting your account from the chat page (“Delete your account”). After you withdraw, we stop processing your data and erase it as described
+          as easily as you gave it, by deleting your account (“Delete your account” on Your account or the chat page). After you withdraw, we stop processing your data and erase it as described
           under “Deleting your account”, except where a law requires us to keep it. Withdrawing does not make processing before it unlawful.
         </p>
       </section>
@@ -166,7 +166,7 @@ export default function PrivacyPage() {
         <h2>Your rights</h2>
         <ul>
           <li>
-            <strong>Access:</strong> a summary of your personal data and how it is processed, and who it has been shared with (Act s.11).
+            <strong>Access:</strong> a summary of your personal data and how it is processed, and who it has been shared with (Act s.11). Signed in, choose “Download my data” on Your account for a copy.
           </li>
           <li>
             <strong>Correction and updating:</strong> you can change the name the team sees yourself. For anything else, contact us (s.12).
@@ -196,7 +196,7 @@ export default function PrivacyPage() {
       <section className="flex flex-col gap-3" id="deletion">
         <h2>Deleting your account</h2>
         <p>
-          Signed in, open the chat page and choose “Delete your account”. This removes, at once and permanently: your account, sign-in methods and sessions, your profile name,
+          Signed in, choose “Delete your account” on Your account or the chat page. This removes, at once and permanently: your account, sign-in methods and sessions, your profile name,
           every conversation and message (including Derek’s drafts), and your notifications. What remains is a record that a student account existed and was deleted on a given
           date, with no name, email or message content. LockIn’s Owner can carry out the same erasure on your request.
         </p>
@@ -231,7 +231,7 @@ export default function PrivacyPage() {
         <h2>Language and changes</h2>
         <p>
           This notice is in English. <OwnerToComplete>Hindi (and any other language under the Eighth Schedule) version, after review</OwnerToComplete> If we change it in
-          substance, we will show the new version and ask for your consent again where the law requires it.
+          substance, we will show the new version and ask you to accept it before you use the chat again; you can download your data or delete your account instead.
         </p>
       </section>
     </LegalPage>

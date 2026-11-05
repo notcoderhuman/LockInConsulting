@@ -11,6 +11,8 @@ import { getAdminPool } from '@/lib/db/pool'
 
 export const AGE_POLICY_VERSION = 'student-age-2026-10'
 export const AGE_ATTESTATION_TTL_SECONDS = 15 * 60
+// Request budget for /api/student/age-confirmation (unauthenticated; each call writes a row).
+export const AGE_CONFIRM_LIMITS = { global: { burst: 30, perSecond: 1 / 2 }, perIp: { burst: 5, perSecond: 1 / 60 } }
 // __Host-: Secure, path=/ and no Domain, so no other host or path can set or overwrite it.
 export const AGE_COOKIE = process.env.NODE_ENV === 'production' ? '__Host-lockin_age' : 'lockin_age'
 

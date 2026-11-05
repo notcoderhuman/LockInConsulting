@@ -5,7 +5,7 @@ import { getAuth } from '@/lib/auth'
 import { getAdminPool } from '@/lib/db/pool'
 import { REQUIRED_MIGRATIONS } from '@/lib/db/schema-version'
 import { getStudentAreaStatus } from '@/lib/identity/policy'
-import { canStartStudentProfile } from '@/lib/student/onboarding'
+import { canStartStudentProfile, PRIVACY_NOTICE_VERSION } from '@/lib/student/onboarding'
 
 // Server-side identity for the student chat. Every student route handler calls requireStudentApi,
 // which derives the student from the session cookie. A student id, conversation owner or role
@@ -24,6 +24,12 @@ export type StudentContext =
   | { state: 'forbidden' }
   /** Signed in (any student method), no student profile yet: must confirm 18+ and the privacy notice first. */
   | { state: 'needs_profile'; userId: string; name: string }
+  /**
+   * Accepted an earlier privacy notice than the one now published: must accept the new one (or
+   * delete the account) before using the chat. Profiles with no recorded version were provisioned
+   * by the team (CLI or sandbox), not through the consent step, and are not gated here.
+   */
+  | { state: 'needs_consent'; student: StudentActor; acceptedVersion: string }
   | { state: 'ok'; student: StudentActor }
 
 export async function resolveStudentContext(requestHeaders: Headers): Promise<StudentContext> {
@@ -36,7 +42,7 @@ export async function resolveStudentContext(requestHeaders: Headers): Promise<St
     const session = await auth.api.getSession({ headers: requestHeaders })
     if (!session?.user) return { state: 'signed_out' }
     const [rows] = await getAdminPool().query<RowDataPacket[]>(
-      `SELECT s.id, s.display_name, (SELECT COUNT(*) FROM admin_members m WHERE m.user_id = s.user_id) AS memberships
+      `SELECT s.id, s.display_name, s.privacy_notice_version, (SELECT COUNT(*) FROM admin_members m WHERE m.user_id = s.user_id) AS memberships
          FROM student_profiles s WHERE s.user_id = ? AND s.status = 'active'`,
       [session.user.id],
     )
@@ -44,7 +50,10 @@ export async function resolveStudentContext(requestHeaders: Headers): Promise<St
     if (!row && (await canStartStudentProfile(session.user.id))) return { state: 'needs_profile', userId: session.user.id, name: session.user.name ?? '' }
     // Staff accounts (even revoked ones) are never students.
     if (!row || Number(row.memberships) > 0) return { state: 'forbidden' }
-    return { state: 'ok', student: { userId: session.user.id, profileId: Number(row.id), displayName: String(row.display_name) } }
+    const student = { userId: session.user.id, profileId: Number(row.id), displayName: String(row.display_name) }
+    const accepted = row.privacy_notice_version == null ? null : String(row.privacy_notice_version)
+    if (accepted !== null && accepted !== PRIVACY_NOTICE_VERSION) return { state: 'needs_consent', student, acceptedVersion: accepted }
+    return { state: 'ok', student }
   } catch (error) {
     console.error('[student] could not resolve session', error instanceof Error ? error.message : 'unknown error')
     return { state: 'error' }
@@ -76,8 +85,11 @@ export function checkSameOrigin(request: Request): Response | null {
   return null
 }
 
-/** Route handlers: the signed-in student, or the Response to return as-is. */
-export async function requireStudentApi(request: Request, { mutation = false } = {}): Promise<StudentActor | Response> {
+/**
+ * Route handlers: the signed-in student, or the Response to return as-is. `consentOptional` is only
+ * for the rights that must stay available without the current consent: data export and deletion.
+ */
+export async function requireStudentApi(request: Request, { mutation = false, consentOptional = false } = {}): Promise<StudentActor | Response> {
   if (mutation) {
     const crossSite = checkSameOrigin(request)
     if (crossSite) return crossSite
@@ -94,6 +106,8 @@ export async function requireStudentApi(request: Request, { mutation = false } =
       return jsonError(403, 'Finish setting up your student account first.', { state: 'needs_profile' })
     case 'forbidden':
       return jsonError(403, 'This account cannot use the student area.', { state: 'forbidden' })
+    case 'needs_consent':
+      return consentOptional ? ctx.student : jsonError(403, 'Accept the updated privacy notice to continue.', { state: 'needs_consent' })
     case 'ok':
       return ctx.student
   }

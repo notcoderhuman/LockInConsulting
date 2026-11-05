@@ -23,7 +23,7 @@ const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)
 export default async function AgeConfirmPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const next = safeNextPath(one((await searchParams).next))
   const ctx = await getStudentPageContext()
-  if (ctx.state === 'ok' || ctx.state === 'needs_profile') redirect(next)
+  if (ctx.state === 'ok' || ctx.state === 'needs_profile' || ctx.state === 'needs_consent') redirect(next)
   const open = ctx.state === 'signed_out' && getAuth() !== null && studentSignUpOpen() && signUpMethodAvailable()
   const back = `/auth?${new URLSearchParams({ tab: 'create', next })}`
 

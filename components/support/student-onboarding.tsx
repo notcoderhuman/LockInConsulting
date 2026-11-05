@@ -45,8 +45,8 @@ export function StudentOnboarding({ name, privacyUrl = null, ageAttested = false
       <label className="flex items-start gap-3 text-foreground">
         <input type="checkbox" name="privacy" required className="mt-1 size-4 accent-[var(--primary)]" />
         <span>
-          I understand that LockIn keeps my name, email address and the messages I send so the team and Derek, LockIn’s AI assistant, can answer my questions, and that I can ask for my
-          data to be erased.
+          I agree that LockIn uses my name, email address and the messages I send to answer my study-abroad questions. Replies may be drafted by Derek, LockIn’s AI assistant,
+          using Google’s Gemini service, and say so. I can withdraw this consent at any time by deleting my account.
           {privacyUrl ? (
             <>
               {' '}

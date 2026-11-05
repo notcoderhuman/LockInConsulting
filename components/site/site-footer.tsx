@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import Link from 'next/link'
 import { BackToTop } from './back-to-top'
 import { KeyboardShortcuts } from './keyboard-shortcuts'
 
@@ -24,6 +25,17 @@ export function SiteFooter() {
           <p lang="en" className="text-xs text-muted-foreground">
             © 2026 LockIn Consulting · Precision guidance for global minds — verified facts, authentic admissions, zero guesswork.
           </p>
+          <nav aria-label="Legal" lang="en" className="flex flex-wrap gap-x-4 text-xs">
+            <Link href="/privacy" className="inline-flex min-h-11 items-center text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+              Privacy
+            </Link>
+            <Link href="/terms" className="inline-flex min-h-11 items-center text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+              Terms
+            </Link>
+            <Link href="/ai" className="inline-flex min-h-11 items-center text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+              AI disclosure
+            </Link>
+          </nav>
           <KeyboardShortcuts />
         </div>
       </div>

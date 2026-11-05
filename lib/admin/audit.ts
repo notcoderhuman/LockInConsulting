@@ -61,7 +61,7 @@ export interface ChangeLogEntry {
   entityId: number
   action: LogAction
   actorId: string
-  actorRole: AdminRole | 'cli' | 'derek' | 'system' | null
+  actorRole: AdminRole | 'cli' | 'derek' | 'system' | 'student' | null
   reason: string | null
   before: Record<string, unknown> | null
   after: Record<string, unknown> | null

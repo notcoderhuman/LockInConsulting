@@ -267,6 +267,28 @@ function toView(r: Row, viewer: 'student' | 'staff', viewerUserId: string): Mess
   }
 }
 
+/** Every conversation of this student with every message, labelled as the student sees them (data export, DPDP Act s.11). */
+export async function exportStudentConversations(db: Db, student: StudentActor) {
+  const convs = await selectRows(db, 'SELECT id, subject, status, created_at FROM conversations WHERE student_profile_id = ? ORDER BY id', [student.profileId])
+  const out = []
+  for (const c of convs) {
+    const messages: MessageView[] = []
+    for (let before: number | null = null; ; ) {
+      const page = await readMessages(db, Number(c.id), before, 200)
+      messages.unshift(...page.rows.map((r) => toView(r, 'student', student.userId)))
+      if (!page.hasMore || !page.rows.length) break
+      before = Number(page.rows[0].id)
+    }
+    out.push({
+      subject: String(c.subject),
+      status: isConversationStatus(String(c.status)) ? STUDENT_STATUS_LABEL[c.status as ConversationStatus] : String(c.status),
+      createdAt: String(c.created_at),
+      messages: messages.map(({ label, body, createdAt }) => ({ from: label, body, sentAt: createdAt })),
+    })
+  }
+  return out
+}
+
 export async function getStudentMessages(db: Db, student: StudentActor, conversationId: number, { before = null, limit = 30 }: { before?: number | null; limit?: number } = {}) {
   const conv = await selectRows(
     db,

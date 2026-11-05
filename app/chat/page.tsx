@@ -6,6 +6,7 @@ import { SiteFooter } from '@/components/site/site-footer'
 import { SiteHeader } from '@/components/site/site-header'
 import { SkipLink } from '@/components/site/skip-link'
 import { DeleteAccount } from '@/components/support/delete-account'
+import { Reconsent } from '@/components/support/reconsent'
 import { StudentChat } from '@/components/support/student-chat'
 import { StudentOnboarding } from '@/components/support/student-onboarding'
 import { TeamPresence } from '@/components/support/team-presence'
@@ -44,7 +45,7 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
               Every reply says who wrote it: a named person from the team, or Derek, LockIn’s AI assistant. No admission, scholarship or visa outcome is ever guaranteed.
             </p>
           </div>
-          {ctx.state === 'ok' ? (
+          {ctx.state === 'ok' || ctx.state === 'needs_consent' ? (
             <div className="flex flex-wrap items-center justify-between gap-4 md:flex-col md:items-end">
               <TeamPresence />
               <div className="flex items-center gap-4">
@@ -87,6 +88,10 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
         ) : ctx.state === 'needs_profile' ? (
           <Card title="Finish setting up your account">
             <StudentOnboarding name={attestation?.fullName ?? ctx.name} privacyUrl={privacyNoticeUrl()} ageAttested={attestation !== null} />
+          </Card>
+        ) : ctx.state === 'needs_consent' ? (
+          <Card title="We’ve updated our privacy notice">
+            <Reconsent privacyUrl={privacyNoticeUrl() ?? '/privacy'} />
           </Card>
         ) : ctx.state === 'ok' ? (
           <>

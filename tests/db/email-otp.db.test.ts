@@ -18,6 +18,11 @@ const { OTP_LIMITS } = await import('@/lib/auth-otp')
 const authRoute = await import('@/app/api/auth/[...all]/route')
 const ageRoute = await import('@/app/api/student/age-confirmation/route')
 const profileRoute = await import('@/app/api/student/profile/route')
+const accountRoute = await import('@/app/api/student/account/route')
+const conversationsRoute = await import('@/app/api/student/conversations/route')
+const { resolveStudentContext } = await import('@/lib/student/access')
+const { PRIVACY_NOTICE_VERSION } = await import('@/lib/student/onboarding')
+const { AGE_CONFIRM_LIMITS } = await import('@/lib/student/age-attestation')
 const { canStartStudentProfile } = await import('@/lib/student/onboarding')
 
 const BASE = 'http://localhost:3000'
@@ -254,6 +259,69 @@ describe('sessions and profile', () => {
     expect(await rows('SELECT display_name FROM student_profiles WHERE user_id = ?', [user.id])).toEqual([{ display_name: 'Asha Rao' }])
     const me = await profileRoute.GET(new Request(`${BASE}/api/student/profile`, { headers: { cookie } }))
     expect(await me.json()).toEqual({ displayName: 'Asha Rao', email, methods: [] })
+  })
+})
+
+describe('privacy rights', () => {
+  const studentCall = (route: { POST: (r: Request) => Promise<Response> }, path: string, cookie: string, body: unknown) =>
+    route.POST(new Request(`${BASE}${path}`, { method: 'POST', headers: { 'content-type': 'application/json', origin: BASE, cookie }, body: JSON.stringify(body) }))
+  async function student(email: string) {
+    const cookie = await signUp(email)
+    expect((await studentCall(profileRoute, '/api/student/profile', cookie, { action: 'create', privacyAccepted: true })).status).toBe(200)
+    return cookie
+  }
+
+  it('exports the student’s own data as a file, with no secrets in it', async () => {
+    const email = 'rights-export@test.example'
+    const cookie = await student(email)
+    expect((await studentCall(conversationsRoute, '/api/student/conversations', cookie, { body: 'Which documents do I need for a master’s in Germany?', clientRequestId: randomUUID() })).status).toBeLessThan(300)
+    const res = await accountRoute.GET(new Request(`${BASE}/api/student/account`, { headers: { cookie } }))
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-disposition')).toMatch(/^attachment;/)
+    const text = await res.text()
+    const data = JSON.parse(text)
+    expect(data.account.email).toBe(email)
+    expect(data.profile.privacyNoticeAccepted).toBe(PRIVACY_NOTICE_VERSION)
+    expect(data.ageConfirmation.confirmedAt).toBeTruthy()
+    expect(data.conversations[0].messages[0]).toMatchObject({ from: 'You', body: 'Which documents do I need for a master’s in Germany?' })
+    expect(data.processors.length).toBeGreaterThan(0)
+    const token = (await sessionOf(cookie))!.session.token
+    expect(text).not.toContain(token)
+    expect(text).not.toMatch(/"(password|token|accessToken|idToken|value)"|-otp-/i)
+    // Signed out: nothing.
+    expect((await accountRoute.GET(new Request(`${BASE}/api/student/account`))).status).toBe(401)
+  })
+
+  it('asks for consent again after a new notice, keeping export and deletion open meanwhile', async () => {
+    const email = 'rights-consent@test.example'
+    const cookie = await student(email)
+    const user = (await sessionOf(cookie))!.user
+    await db.query("UPDATE student_profiles SET privacy_notice_version = 'student-older' WHERE user_id = ?", [user.id])
+    expect(await resolveStudentContext(new Headers({ cookie }))).toMatchObject({ state: 'needs_consent', acceptedVersion: 'student-older' })
+    const chat = await conversationsRoute.GET(new Request(`${BASE}/api/student/conversations`, { headers: { cookie } }))
+    expect(chat.status).toBe(403)
+    expect(await chat.json()).toMatchObject({ state: 'needs_consent' })
+    expect((await accountRoute.GET(new Request(`${BASE}/api/student/account`, { headers: { cookie } }))).status).toBe(200)
+    expect((await studentCall(profileRoute, '/api/student/profile', cookie, { action: 'consent' })).status).toBe(400)
+    expect(await (await studentCall(profileRoute, '/api/student/profile', cookie, { action: 'consent', privacyAccepted: true })).json()).toEqual({ ok: true, version: PRIVACY_NOTICE_VERSION })
+    expect((await resolveStudentContext(new Headers({ cookie }))).state).toBe('ok')
+    expect((await studentCall(profileRoute, '/api/student/profile', cookie, { action: 'consent', privacyAccepted: true })).status).toBe(409)
+
+    // Withdrawal stays as easy while consent is pending.
+    await db.query("UPDATE student_profiles SET privacy_notice_version = 'student-older' WHERE user_id = ?", [user.id])
+    expect((await studentCall(accountRoute, '/api/student/account', cookie, { confirm: 'DELETE' })).status).toBe(200)
+    expect(await rows('SELECT id FROM auth_user WHERE id = ?', [user.id])).toHaveLength(0)
+  })
+
+  it('budgets the unauthenticated 18+ confirmation before anything is written', async () => {
+    resetRequestBuckets()
+    for (let i = 0; i < AGE_CONFIRM_LIMITS.global.burst; i++) await confirmAge()
+    const res = await ageRoute.POST(
+      new Request(`${BASE}/api/student/age-confirmation`, { method: 'POST', headers: { 'content-type': 'application/json', origin: BASE }, body: JSON.stringify({ fullName: 'Synthetic Adult Student', ageConfirmed: true }) }),
+    )
+    expect(res.status).toBe(429)
+    expect(Number(res.headers.get('retry-after'))).toBeGreaterThan(0)
+    resetRequestBuckets()
   })
 })
 

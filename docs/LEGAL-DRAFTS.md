@@ -39,7 +39,8 @@ apply 18 months after publication (around 13 May 2027).** The drafts follow the 
 | Withdrawal as easy as giving consent | Act s.6(4)–(6); r.3(c)(i) | "Delete your account" on `/chat`: two steps (type DELETE, press the button), much like the one-tick consent |
 | Erase on withdrawal or when the purpose ends, and make processors erase too | Act s.8(7) | Self-service and Owner erasure (below). Processor erasure is not automated: placeholder for processor contracts |
 | Security safeguards; logs kept 1 year | Rules r.6(1)(e) | Existing controls are described. **Open:** the 1-year log rule against immediate erasure (below) |
-| Breach notice to each affected person and to the Board (72 h detailed report) | Act s.8(6); Rules r.7 | Promise in `/privacy`. **Open:** an internal breach runbook (not written) |
+| Breach notice to each affected person and to the Board (72 h detailed report) | Act s.8(6); Rules r.7 | Promise in `/privacy`; Owner steps in `docs/BREACH-RUNBOOK.md` (draft) |
+| Access: summary of data and who it was shared with | Act s.11 | "Download my data" on `/account` (`GET /api/student/account`, `lib/student/export.ts`): account, profile, consent, sign-in methods, devices, every conversation, processors; no secrets |
 | Contact who answers data questions, published prominently and in every rights reply | Act s.8(9); Rules r.9 | Placeholder in `/privacy` and `/terms` |
 | Grievance redressal, reply within 90 days | Act s.8(10), s.13; Rules r.14(3) | `/privacy#rights`; the contact is a placeholder |
 | How to make rights requests, and which identifier | Rules r.14(1) | `/privacy#rights`: email from the account address |
@@ -51,12 +52,14 @@ apply 18 months after publication (around 13 May 2027).** The drafts follow the 
 
 When a student accepts the privacy step, the profile records `privacy_notice_version` (the version shown on `/privacy`) and
 `age_confirmed_at`, and `created_at` gives the time. `/age-confirm` keeps the 18+ confirmation time and policy version.
-Change `PRIVACY_NOTICE_VERSION` whenever `/privacy` changes in substance. Existing students must be asked again when the law
-requires it. **Open:** a re-consent prompt for students on an older version is not built.
+Change `PRIVACY_NOTICE_VERSION` whenever `/privacy` changes in substance. A student whose recorded version differs is then
+in the `needs_consent` state (`lib/student/access.ts`): the chat shows the new notice with "Accept and continue" (`action:
+'consent'` on `/api/student/profile`) or "delete my account", and every other student API answers 403 until they choose.
+Data export and deletion stay open. Profiles with no recorded version (provisioned by the team) are not gated.
 
 ## Account deletion workflow
 
-- **Student:** `/chat` → "Delete your account" → type `DELETE` → `POST /api/student/account`. The route uses the session's student
+- **Student:** `/account` or `/chat` → "Delete your account" → type `DELETE` → `POST /api/student/account`. The route uses the session's student
   only (`requireStudentApi`, same-origin plus JSON) and calls `eraseOwnAccount` in `lib/support/conversations.ts`.
 - **Owner:** `/admin/students/<id>` → "Erase student data" (type `ERASE`, with a reason), as before.
 - Both use one transaction (`eraseProfile`). It deletes conversations (messages, Derek drafts and events cascade), the person's

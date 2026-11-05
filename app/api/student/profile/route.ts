@@ -1,13 +1,14 @@
 import { getAdminPool } from '@/lib/db/pool'
 import { checkSameOrigin, json, jsonError, resolveStudentContext } from '@/lib/student/access'
 import { normalizeFullName } from '@/lib/student/age-attestation'
-import { createStudentProfile, discardUnfinishedAccount } from '@/lib/student/onboarding'
+import { createStudentProfile, discardUnfinishedAccount, PRIVACY_NOTICE_VERSION } from '@/lib/student/onboarding'
 
 // The signed-in student's own profile. The user is always the session's own; nothing in the body
 // can name another account.
 //   POST { action: 'create', ageConfirmed: true, privacyAccepted: true }  finish a new sign-in
 //   POST { action: 'discard' }                                           abandon an unfinished sign-in
 //   POST { action: 'rename', displayName }                               change the name the team sees
+//   POST { action: 'consent', privacyAccepted: true }                    accept an updated privacy notice
 //   GET                                                                  name, email and sign-in methods
 export async function GET(request: Request) {
   const ctx = await resolveStudentContext(request.headers)
@@ -35,6 +36,13 @@ export async function POST(request: Request) {
     if (!name) return jsonError(400, 'Enter your full name, using letters only.')
     await getAdminPool().query("UPDATE student_profiles SET display_name = ? WHERE id = ? AND status = 'active'", [name, ctx.student.profileId])
     return json({ ok: true, displayName: name })
+  }
+  // Accepting the notice now published, after an earlier version (lib/student/access.ts needs_consent).
+  if (body.action === 'consent') {
+    if (ctx.state !== 'needs_consent') return jsonError(409, 'There is no new privacy notice to accept.')
+    if (body.privacyAccepted !== true) return jsonError(400, 'Accept the privacy notice to continue, or delete your account.')
+    await getAdminPool().query("UPDATE student_profiles SET privacy_notice_version = ? WHERE id = ? AND status = 'active'", [PRIVACY_NOTICE_VERSION, ctx.student.profileId])
+    return json({ ok: true, version: PRIVACY_NOTICE_VERSION })
   }
   if (ctx.state !== 'needs_profile') return jsonError(409, 'This account already has its access settled.')
   const result = body.action === 'discard' ? await discardUnfinishedAccount(ctx.userId) : await createStudentProfile(ctx.userId, body)

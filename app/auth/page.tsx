@@ -29,7 +29,7 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
   if (one(params.error)) await revokeAgeAttestation(ageTokenFrom((await headers()).get('cookie'))).catch(() => undefined)
   const ctx = await getStudentPageContext()
   // Already signed in (or only the 18+/privacy step left, which /chat shows): go straight to the chat.
-  if (ctx.state === 'ok' || ctx.state === 'needs_profile') redirect(next)
+  if (ctx.state === 'ok' || ctx.state === 'needs_profile' || ctx.state === 'needs_consent') redirect(next)
   const initialTab: AuthTab = one(params.tab) === 'create' ? 'create' : 'signin'
 
   return (

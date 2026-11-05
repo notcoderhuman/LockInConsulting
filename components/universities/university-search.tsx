@@ -16,13 +16,13 @@ import { SaveButton } from './save-button'
 type Filters = Omit<SearchQuery, 'offset'>
 type Status = 'loading' | 'ready' | 'error'
 
-const SORTS: SearchQuery['sort'][] = ['relevance', 'name', 'name_desc', 'status']
+// No verification filter or status sort in the public UI (owner decision, 5 Nov 2026: no public verification status).
+const SORTS: SearchQuery['sort'][] = ['relevance', 'name', 'name_desc']
 
 function toParams(f: Filters, offset = 0) {
   const p = new URLSearchParams()
   if (f.q.trim()) p.set('q', f.q.trim())
   if (f.destination) p.set('destination', f.destination)
-  if (f.status) p.set('status', f.status)
   if (f.category) p.set('category', f.category)
   if (f.sort !== 'relevance') p.set('sort', f.sort)
   if (offset) p.set('offset', String(offset))
@@ -160,14 +160,6 @@ export function UniversitySearch({ initial, focusSearch = false }: { initial: Fi
               </option>
             ))}
           </Select>
-          <Select id="uni-status" label={t('search.verification')} value={filters.status ?? ''} onChange={(v) => set('status', (v || null) as Filters['status'])}>
-            <option value="">{t('search.anyStatus')}</option>
-            {(['verified', 'checked', 'pending'] as const).map((s) => (
-              <option key={s} value={s}>
-                {t(`search.status.${s}`)}
-              </option>
-            ))}
-          </Select>
           <Select id="uni-category" label={t('search.type')} value={filters.category ?? ''} onChange={(v) => set('category', (v || null) as Filters['category'])}>
             <option value="">{t('search.anyType')}</option>
             <option value="university">{t('search.type.university')}</option>
@@ -220,7 +212,7 @@ export function UniversitySearch({ initial, focusSearch = false }: { initial: Fi
                   const destination = getDestination(r.destinationIso2)
                   if (!destination) return null
                   return (
-                    <li key={`${r.destinationIso2}:${r.slug}`} className={`flex items-start justify-between gap-4 rounded-2xl border bg-card p-5 ${r.status === 'verified' ? 'border-primary/40' : 'border-dashed border-border'}`}>
+                    <li key={`${r.destinationIso2}:${r.slug}`} className="flex items-start justify-between gap-4 rounded-2xl border border-border bg-card p-5">
                       <div className="flex min-w-0 flex-col gap-2">
                         <ListingStatus listing={r} />
                         <h3 className="font-serif text-2xl leading-snug text-foreground" translate="no">

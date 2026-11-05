@@ -99,7 +99,7 @@ export function UniversityCard({ university, href, titleAs: Title = 'h3' }: { un
     <article lang="en" translate="no" aria-labelledby={`uni-${university.id}`} className="rounded-2xl border border-border bg-card p-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex flex-col gap-1">
-          <DataStatusBadge state="verified" className="self-start" />
+          {/* No public verification badge (owner decision, 5 Nov 2026): status stays in the database and admin only. */}
           <Title id={`uni-${university.id}`} className={`font-serif ${Title === 'h1' ? 'text-3xl md:text-5xl' : 'text-2xl'} leading-snug text-foreground`}>
             {href ? <Link href={href} className="hover:text-primary">{university.name}</Link> : university.name}
           </Title>
@@ -161,7 +161,18 @@ export function UniversityCard({ university, href, titleAs: Title = 'h3' }: { un
                       {r.subject ? ` · ${r.subject}` : ''}
                     </span>
                   </p>
-                  {r.attribution && <p className="text-xs text-muted-foreground">{r.attribution}</p>}
+                  {r.attribution && (
+                    <p className="text-xs text-muted-foreground">
+                      {r.attributionUrl ? (
+                        <a href={r.attributionUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-primary">
+                          {r.attribution}
+                          <span className="sr-only"> (opens in a new tab)</span>
+                        </a>
+                      ) : (
+                        r.attribution
+                      )}
+                    </p>
+                  )}
                   <SourceCitation source={r.source} />
                 </li>
               ))}

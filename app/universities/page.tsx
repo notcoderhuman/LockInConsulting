@@ -20,7 +20,9 @@ export default async function UniversitiesPage({ searchParams }: { searchParams:
   const { t } = await getT()
   const params = new URLSearchParams(Object.entries(raw).flatMap(([k, v]) => (typeof v === 'string' ? [[k, v]] : [])))
   // A hand-edited or out-of-date link falls back to a plain search rather than an error.
-  const { offset: _offset, ...initial } = parseSearch(params) ?? { q: '', destination: null, status: null, category: null, sort: 'relevance' as const, offset: 0 }
+  const { offset: _offset, ...parsed } = parseSearch(params) ?? { q: '', destination: null, status: null, category: null, sort: 'relevance' as const, offset: 0 }
+  // The public page offers no verification filter or status sort, so an old link carrying them is ignored.
+  const initial = { ...parsed, status: null, sort: parsed.sort === 'status' ? ('relevance' as const) : parsed.sort }
 
   return (
     <>

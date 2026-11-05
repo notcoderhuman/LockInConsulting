@@ -175,7 +175,7 @@ export default async function RecordPage({ params }: { params: Promise<{ entity:
           {entity === 'university' ? (
             <Panel
               title="Provisional public listing"
-              description="Until it is verified and published, a record in review is listed by name only (“Identity/source check pending”); once its official website is checked, the website and (if the website states it) the city are shown too, labelled “Not yet verified”."
+              description="Until it is verified and published, a record in review is listed publicly by name only; once its official website is checked, the website and (if the website states it) the city are shown too. The public card carries no verification badge; its text says details are still being checked."
             >
               <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 <Meta label="Listed">
@@ -184,9 +184,9 @@ export default async function RecordPage({ params }: { params: Promise<{ entity:
                     : status !== 'draft' && status !== 'in_review'
                       ? 'No — has its full listing or is unpublished'
                       : Number(row.provisional_listing) === 1
-                        ? 'Yes, as “Not yet verified” with its official website'
+                        ? 'Yes, under review, with its official website'
                         : status === 'in_review'
-                          ? 'Yes, name only (“Identity/source check pending”)'
+                          ? 'Yes, under review, name only'
                           : 'No (draft)'}
                 </Meta>
                 <Meta label="Website checked">{formatDate(row.identity_checked_at)}</Meta>

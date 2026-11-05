@@ -21,9 +21,8 @@ export function ProvisionalCard({ university, href, titleAs: Title = 'h3' }: { u
     <article lang={lang} aria-labelledby={`uni-${university.id}`} className="rounded-2xl border border-dashed border-border bg-card p-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex flex-col gap-1">
+          {/* No verification or identity-check badge publicly (owner decision, 5 Nov 2026); the body text below still says what was checked. */}
           <ul className="flex flex-wrap gap-1.5" aria-label={t('common.status')}>
-            <li className={badge}>{t('status.notYetVerified')}</li>
-            {!checked && <li className={badge}>{t('status.identityPending')}</li>}
             {university.category === 'other' && <li className={badge}>{t('status.otherType')}</li>}
             {/* Ranking-licence wording: English only until a reviewed translation is approved. */}
             <li className={badge} lang="en">

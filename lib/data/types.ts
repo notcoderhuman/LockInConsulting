@@ -39,7 +39,13 @@ export type BillingPeriod = (typeof BILLING_PERIODS)[number]
 export const APPLICANT_SCOPES = ['all', 'international', 'domestic', 'programme'] as const
 export type ApplicantScope = (typeof APPLICANT_SCOPES)[number]
 
-export const RIGHTS_STATUSES = ['not_confirmed', 'requested', 'licensed', 'denied', 'not_required'] as const
+// Detailed institution type for the admin (0013). The public "other institution type" label is institution_category (0009).
+export const INSTITUTION_SUBTYPES = ['research_university', 'university_of_applied_sciences', 'college', 'institute', 'other'] as const
+export type InstitutionSubtype = (typeof INSTITUTION_SUBTYPES)[number]
+
+// 'conditional': accepted in principle, formal agreement pending (migration 0013). Never displayed: only
+// 'licensed' (unexpired) and 'not_required' publish rankings.
+export const RIGHTS_STATUSES = ['not_confirmed', 'requested', 'conditional', 'licensed', 'denied', 'not_required'] as const
 export type RightsStatus = (typeof RIGHTS_STATUSES)[number]
 
 /** Currencies in use across the 11 destinations, plus INR for conversions. */
@@ -148,6 +154,8 @@ export interface PublicRanking {
   bandHigh: number | null
   /** Wording the provider's licence requires next to the rank (0007). */
   attribution: string | null
+  /** Link the provider's licence requires on every rank (0013). */
+  attributionUrl?: string | null
   /** Whether the licence lets Derek quote this rank in text sent to the AI provider (0007). */
   aiUseAllowed: boolean
   source: SourceRef

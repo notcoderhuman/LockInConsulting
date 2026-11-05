@@ -58,15 +58,14 @@ describe('university profile page', () => {
     const html = await render(params('checked-university'))
     expect(html.match(/<h1/g)).toHaveLength(1)
     expect(html).toContain('Candidate listing')
-    expect(html).toContain('Not yet verified')
-    expect(html).not.toContain('Identity/source check pending')
+    expect(html).not.toMatch(/<li[^>]*>(Not yet verified|Verified|Identity\/source check pending)<\/li>/) // no public status badge
     expect(html).not.toMatch(/Verified profile|#\d+|Tuition<|Acceptance rate/)
   })
 
   it('shows a pending candidate by name only', async () => {
     mocked.mockResolvedValue({ state: 'ready', entry: pending })
     const html = await render(params('pending-university'))
-    expect(html).toContain('Identity/source check pending')
+    expect(html).not.toContain('>Identity/source check pending</li>')
     expect(html).not.toContain('uni.example')
   })
 
@@ -77,24 +76,26 @@ describe('university profile page', () => {
 })
 
 describe('copied university information', () => {
-  it('carries the status and check date for a website-checked candidate, and says what is not shown', () => {
+  it('carries the check date for a website-checked candidate, says what is not shown, and no verification status', () => {
     const text = profileText(checked, 'Germany', 'https://site.example/p')
-    expect(text).toMatch(/Status: Not yet verified\. Official website checked 18 Oct 2026; this is not a verified LockIn profile\./)
+    expect(text).toContain('Official website checked 18 Oct 2026.')
     expect(text).toContain('Official website: https://uni.example/')
-    expect(text).toContain('not yet verified, so not shown')
+    expect(text).toContain('still being checked, so not shown')
     expect(text).toContain('LockIn page: https://site.example/p')
+    expect(text).not.toMatch(/verified|Status:/i)
   })
 
   it('never includes a website or city for a pending candidate', () => {
     const text = profileText({ ...pending, officialWebsite: 'https://leak.example/', city: 'Leakville' }, 'Germany', 'u')
-    expect(text).toContain('Identity/source check pending')
-    expect(text).not.toMatch(/leak/i)
+    expect(text).toContain('The official website has not been confirmed yet.')
+    expect(text).not.toMatch(/leak|verified|Status:/i)
   })
 
-  it('cites the source for a verified profile and leaves rankings out', () => {
+  it('cites the source for a published profile, with no verification status, and leaves rankings out', () => {
     const text = profileText(verified, 'Germany', 'u')
-    expect(text).toContain('Status: Verified by LockIn. Source: Example University, https://uni.example/about')
-    expect(text).not.toMatch(/QS|#42/)
+    expect(text).toContain('Source: Example University, https://uni.example/about')
+    // The synthetic fixture is named "Verified University", so look for status wording, not the word.
+    expect(text).not.toMatch(/QS|#42|Status:|Verified by|Verified courses/)
   })
 })
 

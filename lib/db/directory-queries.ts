@@ -252,6 +252,7 @@ export async function fetchDestinationDirectory(
     bandLow: numOrNull(r.rank_band_low),
     bandHigh: numOrNull(r.rank_band_high),
     attribution: strOrNull(r.attribution_text),
+    attributionUrl: strOrNull(r.attribution_url),
     aiUseAllowed: Number(r.allow_ai_use) === 1,
     source: ref(r),
   }))

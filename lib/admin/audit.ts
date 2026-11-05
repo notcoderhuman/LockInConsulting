@@ -21,6 +21,10 @@ export type LogEntityType =
   | 'ai_draft'
   | 'support_settings'
   | 'student_profile'
+  | 'academic_year'
+  | 'field_source'
+  | 'data_conflict'
+  | 'import_batch'
 
 export type LogAction =
   | 'create'
@@ -49,6 +53,8 @@ export type LogAction =
   | 'ai_takeover'
   | 'ai_return'
   | 'provisional_change'
+  | 'import'
+  | 'resolve_conflict'
 
 export interface ChangeLogEntry {
   entityType: LogEntityType

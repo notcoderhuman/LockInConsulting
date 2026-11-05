@@ -4,6 +4,7 @@ import {
   APPLICANT_SCOPES,
   BILLING_PERIODS,
   FEE_CATEGORIES,
+  INSTITUTION_SUBTYPES,
   QUALIFICATIONS,
   QUALIFICATIONS_BY_LEVEL,
   RIGHTS_STATUSES,
@@ -73,9 +74,11 @@ export const universityInput = z.object({
   slug,
   name: requiredText(255),
   officialWebsite: httpsUrl.optional(),
+  admissionsUrl: httpsUrl.optional(),
   city: z.string().trim().max(120).optional(),
   subRegion: z.string().trim().max(120).optional(),
   institutionType: z.enum(['public', 'private', 'unknown']).default('unknown'),
+  institutionSubtype: z.enum(INSTITUTION_SUBTYPES).optional(),
 })
 
 export const courseInput = z
@@ -90,6 +93,7 @@ export const courseInput = z
     teachingLanguage: z.string().trim().max(60).optional(),
     entryRequirements: z.string().trim().max(10_000).optional(),
     languageRequirements: z.string().trim().max(10_000).optional(),
+    otherLanguageRequirements: z.string().trim().max(10_000).optional(),
     courseUrl: httpsUrl.optional(),
   })
   .refine((c) => QUALIFICATIONS_BY_LEVEL[c.studyLevel].includes(c.qualification), {
@@ -183,10 +187,17 @@ export const rankingRightsInput = z
     rightsCheckedAt: isoDate.optional(),
     rightsNotes: z.string().trim().max(5000).optional(),
     attributionText: z.string().trim().max(500).optional(),
+    attributionUrl: httpsUrl.optional(),
     allowOrdering: z.boolean().default(false),
     allowAiUse: z.boolean().default(false),
   })
   .superRefine((r, ctx) => {
+    // Conditional acceptance is recorded, not acted on: it needs the reference, date and conditions.
+    if (r.rightsStatus === 'conditional') {
+      if (!r.licenceReference) ctx.addIssue({ code: 'custom', path: ['licenceReference'], message: 'Record the reference of the conditional acceptance (for example the email date and sender).' })
+      if (!r.rightsCheckedAt) ctx.addIssue({ code: 'custom', path: ['rightsCheckedAt'], message: 'Record when the conditional acceptance was received.' })
+      if (!r.rightsNotes) ctx.addIssue({ code: 'custom', path: ['rightsNotes'], message: 'Describe the conditions and what is still pending.' })
+    }
     if (r.rightsStatus === 'licensed') {
       if (!r.licenceReference) ctx.addIssue({ code: 'custom', path: ['licenceReference'], message: 'Record the licence reference.' })
       if (!r.licenceScope) ctx.addIssue({ code: 'custom', path: ['licenceScope'], message: 'Describe what the licence permits.' })

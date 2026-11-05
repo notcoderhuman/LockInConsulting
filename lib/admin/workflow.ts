@@ -69,7 +69,7 @@ function translateDbError(error: unknown): never {
   throw error
 }
 
-async function inTransaction<T>(db: Pool, work: (conn: PoolConnection) => Promise<T>): Promise<T> {
+export async function inTransaction<T>(db: Pool, work: (conn: PoolConnection) => Promise<T>): Promise<T> {
   const conn = await db.getConnection()
   try {
     await conn.beginTransaction()
@@ -90,7 +90,7 @@ async function lockRow(conn: PoolConnection, def: EntityDef, id: number): Promis
   return row
 }
 
-async function readRow(conn: PoolConnection, table: string, id: number): Promise<Row> {
+export async function readRow(conn: PoolConnection, table: string, id: number): Promise<Row> {
   const [[row]] = await conn.query<Row[]>(`SELECT * FROM ${table} WHERE id = ?`, [id])
   return row
 }
@@ -424,6 +424,7 @@ export async function updateRankingRights(db: Pool, actor: AdminActor, providerI
     rightsCheckedAt: formText(form, 'rightsCheckedAt') || undefined,
     rightsNotes: formText(form, 'rightsNotes') || undefined,
     attributionText: formText(form, 'attributionText') || undefined,
+    attributionUrl: formText(form, 'attributionUrl') || undefined,
     allowOrdering: form.get('allowOrdering') === 'on',
     allowAiUse: form.get('allowAiUse') === 'on',
   })
@@ -435,8 +436,8 @@ export async function updateRankingRights(db: Pool, actor: AdminActor, providerI
     if (!before) throw new WorkflowError('Ranking provider not found.')
     await conn.query(
       `UPDATE ranking_providers SET rights_status = ?, licence_reference = ?, licence_scope = ?, licence_expires_at = ?,
-              rights_checked_at = ?, rights_notes = ?, attribution_text = ?, allow_ordering = ?, allow_ai_use = ? WHERE id = ?`,
-      [r.rightsStatus, r.licenceReference ?? null, r.licenceScope ?? null, r.licenceExpiresAt ?? null, r.rightsCheckedAt ?? null, r.rightsNotes ?? null, r.attributionText ?? null, r.allowOrdering ? 1 : 0, r.allowAiUse ? 1 : 0, providerId],
+              rights_checked_at = ?, rights_notes = ?, attribution_text = ?, attribution_url = ?, allow_ordering = ?, allow_ai_use = ? WHERE id = ?`,
+      [r.rightsStatus, r.licenceReference ?? null, r.licenceScope ?? null, r.licenceExpiresAt ?? null, r.rightsCheckedAt ?? null, r.rightsNotes ?? null, r.attributionText ?? null, r.attributionUrl ?? null, r.allowOrdering ? 1 : 0, r.allowAiUse ? 1 : 0, providerId],
     )
     const after = await readRow(conn, 'ranking_providers', providerId)
     await appendChangeLog(conn, { entityType: 'ranking_provider', entityId: providerId, action: 'rights_change', actorId: actor.userId, actorRole: actor.role, reason, before, after })

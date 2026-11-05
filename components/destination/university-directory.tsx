@@ -58,15 +58,14 @@ function ProvisionalNotice() {
     <div role="note" className="rounded-2xl border border-dashed border-border bg-card p-5 text-sm leading-relaxed text-muted-foreground">
       <p className="font-medium text-foreground">Some universities are not yet verified</p>
       <p className="mt-1">
-        Being listed is not the same as a verified profile. Only entries marked &ldquo;Verified&rdquo; have details our
-        team has checked and approved.
+        Being listed is not the same as a verified profile. Entries still under review carry no badge; they show
+        only what is described below.
       </p>
       <p className="mt-1">
-        Entries marked <span className="font-medium text-foreground">Not yet verified</span> show only the
-        university&apos;s name, its official website once we have checked it and, where that website states it, its
-        city. <span className="font-medium text-foreground">Identity/source check pending</span> means we have not yet
-        confirmed the official website, so only the name is shown. Course availability, tuition, rankings, entry
-        requirements and other details are still being checked against official sources and are not shown.
+        An entry under review shows only the university&apos;s name, its official website once we have checked it
+        and, where that website states it, its city. Until the official website is confirmed, only the name is shown.
+        Course availability, tuition, rankings, entry requirements and other details are still being checked against
+        official sources and are not shown.
       </p>
       <p className="mt-2">
         A QS ranking is shown only where our licence covers it; every other entry says{' '}

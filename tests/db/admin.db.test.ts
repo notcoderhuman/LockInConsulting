@@ -318,6 +318,25 @@ describe('fees, acceptance rates and rankings', () => {
 
     await db.query('UPDATE ranking_providers SET licence_expires_at = ? WHERE id = ?', [addDays(-1), qs])
     expect(await rows('SELECT id FROM public_university_rankings WHERE id = ?', [ranking])).toHaveLength(0)
+
+    // Conditional acceptance (formal agreement pending, 0013) hides an already published rank and cannot publish one.
+    await W.updateRankingRights(pool, owner, qs, form({
+      rightsStatus: 'conditional', licenceReference: 'Email of 2 Nov 2026 (synthetic)', rightsCheckedAt: TODAY, rightsNotes: 'Pending formal agreement',
+      attributionText: 'Source: QS Quacquarelli Symonds (www.topuniversities.com). With permission.', attributionUrl: 'https://www.topuniversities.com/world-university-rankings',
+    }))
+    await db.query('UPDATE ranking_providers SET licence_expires_at = NULL WHERE id = ?', [qs])
+    expect(await rows('SELECT id FROM public_university_rankings WHERE id = ?', [ranking])).toHaveLength(0)
+    await W.transitionRecord(pool, reviewer, 'university_ranking', ranking, 'unpublish', form({ reason: 'Rights are conditional only' }))
+    await W.transitionRecord(pool, editor, 'university_ranking', ranking, 'submit_for_review', form({}))
+    await expect(W.transitionRecord(pool, reviewer, 'university_ranking', ranking, 'publish', form({}))).rejects.toMatchObject({
+      blockers: [expect.stringContaining('reuse rights are "conditional"')],
+    })
+    // The licensed state shows the rank with its attribution text and link.
+    await W.updateRankingRights(pool, owner, qs, form({ ...licence, attributionText: 'Source: QS Quacquarelli Symonds (www.topuniversities.com). With permission.', attributionUrl: 'https://www.topuniversities.com/world-university-rankings' }))
+    await W.transitionRecord(pool, reviewer, 'university_ranking', ranking, 'publish', form({}))
+    expect(await rows('SELECT attribution_text, attribution_url FROM public_university_rankings WHERE id = ?', [ranking])).toEqual([
+      { attribution_text: 'Source: QS Quacquarelli Symonds (www.topuniversities.com). With permission.', attribution_url: 'https://www.topuniversities.com/world-university-rankings' },
+    ])
     await W.updateRankingRights(pool, owner, qs, form({ rightsStatus: 'not_confirmed', rightsNotes: 'Reset after test' }))
   })
 })

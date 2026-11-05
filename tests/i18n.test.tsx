@@ -107,18 +107,21 @@ describe('content that is never translated', () => {
   it('translates the card’s interface but keeps the name, city, website and QS wording as published', () => {
     const html = inHindi(<ProvisionalCard university={candidate} />)
     expect(html).toContain('lang="hi-IN"')
-    expect(html).toContain('अभी सत्यापित नहीं')
+    expect(html).not.toContain('अभी सत्यापित नहीं') // no public status badge in either language
     expect(html).toMatch(/translate="no"[^>]*>Freie Universität Berlin</)
     expect(html).toMatch(/translate="no"[^>]*>Berlin</)
     expect(html).toContain('href="https://www.fu-berlin.de/en"')
     expect(html).toMatch(/lang="en"[^>]*>\s*QS eligibility pending verification/)
   })
 
-  it('keeps the status vocabulary consistent in both languages', () => {
-    expect(renderToStaticMarkup(<ListingStatus listing={{ status: 'checked', category: 'other' }} />)).toContain('Official website checked')
-    const html = inHindi(<ListingStatus listing={{ status: 'checked', category: 'other' }} />)
-    expect(html).toContain('आधिकारिक वेबसाइट जाँची गई')
+  it('shows only the institution-type label in both languages, never a verification status', () => {
+    const en = renderToStaticMarkup(<ListingStatus listing={{ category: 'other' }} />)
+    expect(en).toContain('Other institution type')
+    expect(en).not.toMatch(/Official website checked|Not yet verified|Verified/)
+    const html = inHindi(<ListingStatus listing={{ category: 'other' }} />)
+    expect(html).not.toContain('आधिकारिक वेबसाइट जाँची गई')
     expect(html).toContain('अन्य प्रकार का संस्थान')
+    expect(renderToStaticMarkup(<ListingStatus listing={{ category: 'university' }} />)).toBe('')
   })
 })
 

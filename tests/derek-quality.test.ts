@@ -9,13 +9,13 @@ import { assessDraft, assessQuestion, factTopicsIn, unsupportedFigures } from '@
 import { tidyDraft, wordCount } from '@/lib/derek/style'
 
 const feeEvidence: EvidenceItem[] = [
-  { ref: 'tuition_fee:7', text: 'MSc Data Science tuition fee (international): GBP 26000.00 per year, academic year 2026-2027', sourceUrl: 'https://uni.example/fees', checkedAt: '2026-10-01' },
+  { ref: 'tuition_fee:7', text: 'MSc Data Science tuition fee (international): GBP 26000.00 per year, academic year 2026-2027', publisher: 'Example University (synthetic)', sourceUrl: 'https://uni.example/fees', checkedAt: '2026-10-01' },
 ]
 const listing: EvidenceItem[] = [
-  { ref: 'university:3', text: 'Example University, London (UK) is listed in the LockIn directory; official website https://uni.example/', sourceUrl: 'https://uni.example/', checkedAt: '2026-10-01' },
+  { ref: 'university:3', text: 'Example University, London (UK) is listed in the LockIn directory; official website https://uni.example/', publisher: 'Example University (synthetic)', sourceUrl: 'https://uni.example/', checkedAt: '2026-10-01' },
 ]
 const intakeEvidence: EvidenceItem[] = [
-  { ref: 'course_intake:9', text: 'MSc Data Science intake: September 2027, application deadline 2027-06-30', sourceUrl: 'https://uni.example/apply', checkedAt: '2026-10-01' },
+  { ref: 'course_intake:9', text: 'MSc Data Science intake: September 2027, application deadline 2027-06-30', publisher: 'Example University (synthetic)', sourceUrl: 'https://uni.example/apply', checkedAt: '2026-10-01' },
 ]
 
 async function mockDraft(question: string, evidence: EvidenceItem[] = [], earlier = '') {

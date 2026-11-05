@@ -10,7 +10,7 @@ import { assessDraft, assessQuestion } from '@/lib/derek/safeguards'
 
 const KEY = 'AIzaSyFAKE-test-key-0000000000000000000'
 const evidence: EvidenceItem[] = [
-  { ref: 'tuition_fee:7', text: 'MSc Data Science tuition fee (international): EUR 15000.00 per year, academic year 2026-2027', sourceUrl: 'https://uni.example/fees', checkedAt: '2026-10-01' },
+  { ref: 'tuition_fee:7', text: 'MSc Data Science tuition fee (international): EUR 15000.00 per year, academic year 2026-2027', publisher: 'Example University (synthetic)', sourceUrl: 'https://uni.example/fees', checkedAt: '2026-10-01' },
 ]
 const request: DraftRequest = {
   question: 'What is a conditional offer?',
@@ -151,6 +151,7 @@ describe('Gemini responses', () => {
     [404, 'provider_error', false],
     [401, 'auth_failed', false],
     [403, 'auth_failed', false],
+    [402, 'quota_exhausted', false], // prepaid credit used up: no retry
   ] as const)('maps HTTP %i to %s', async (status, code, retryable) => {
     const error = await provider(fakeFetch(jsonResponse({ error: { message: 'details' } }, status)).impl).generate(request, { signal: signal() }).catch((e) => e)
     expect(error).toMatchObject({ code, retryable })

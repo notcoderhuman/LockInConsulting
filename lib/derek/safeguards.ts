@@ -52,12 +52,16 @@ export function factTopicsIn(text: string): string[] {
   return FACT_TOPICS.filter(([re]) => re.test(text)).map(([, label]) => label)
 }
 
-const FORBIDDEN_CLAIMS: [RegExp, string][] = [
+const INR_CONVERSION = 'Draft converts to INR'
+
+const FORBIDDEN_CLAIMS:[RegExp, string][] = [
   // Derek is the AI assistant; only staff messages carry a person's identity.
   [/\b(?:i am|i'm|i’m|as) (?:a |an )?(?:human|real person|counsell?or|advis[eo]r at lockin|member of (?:the )?lockin team|lockin (?:staff|employee|counsell?or))\b/i, 'Draft claims to be a person'],
   [/\b(guarantee[ds]?|assured|certain(?:ly)? (?:get|be admitted)|100 ?% (?:chance|sure))\b/i, 'Draft makes a guarantee'],
   [/\b(you will (?:definitely )?(?:get|be (?:admitted|accepted|granted))|visa will be (?:approved|granted))\b/i, 'Draft predicts an outcome'],
-  [/\b(approximately|about|around|roughly)\s+(?:INR|₹|rs\.?)\s?\d/i, 'Draft converts to INR'],
+  [/\b(?:scholarships?|visas?|admissions?|offers?|places?) (?:is|are) (?:guaranteed|certain|assured|sure)\b|\beasy (?:to )?(?:get|secure) (?:a |an )?(?:admission|scholarship|visa|offer)\b|\byou(?:'ll|’ll| will) (?:definitely |surely |easily )?(?:receive|win|be awarded|qualify for|secure) (?:a |an |the )?(?:scholarship|visa|admission|offer|place)\b/i, 'Draft promises admission, a scholarship or a visa'],
+  // Derek never converts; an INR figure may only be quoted from an evidence line that states it (assessDraft).
+  [/\b(approximately|about|around|roughly)\s+(?:INR|₹|rs\.?)\s?\d/i, INR_CONVERSION],
   // Visa and work-rights rules change and are never in the directory: any number beside one is invented.
   [/\b(visas?|work permits?|work rights?|post-?study work|psw|graduate route|stay[- ]back|part-?time work)\b[^.\n]{0,80}\d|\d+\s*(?:hours?|hrs?)\s*(?:a|per)\s*week/i, 'Draft states a visa or work-rights rule'],
 ]
@@ -100,6 +104,20 @@ const FIGURE_PATTERNS: RegExp[] = [
   /\b\d{1,2}(?:st|nd|rd|th)?(?:\s+of)?\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\b|\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?\b/gi,
 ]
 
+/** A URL without trailing punctuation, as a reader would follow it. */
+export const trimUrl = (u: string) => u.replace(/[),.;:!?'"’”\]]+$/, '')
+const urlsIn = (text: string) => (text.match(/https?:\/\/\S+/gi) ?? []).map(trimUrl)
+
+/** Every link a draft may cite: the evidence sources and the official pages named inside evidence. */
+export function evidenceUrls(evidence: EvidenceItem[]): Set<string> {
+  return new Set(evidence.flatMap((e) => [trimUrl(e.sourceUrl), ...urlsIn(e.text)]))
+}
+
+const hasFigure = (text: string) => {
+  const t = text.replace(/https?:\/\/\S+/g, ' ')
+  return FIGURE_PATTERNS.some((re) => new RegExp(re.source, re.flags.replace('g', '')).test(t))
+}
+
 const digits = (s: string) => (s.match(/\d+(?:\.\d+)?/g) ?? []).map((d) => d.replace(/^0+(?=\d)/, ''))
 
 export function unsupportedFigures(draft: string, evidence: EvidenceItem[]): string[] {
@@ -126,7 +144,18 @@ export function assessDraft(
   let level = question.level
   const reasons = [...question.reasons]
   if (modelUncertain) (level = worst(level, 'uncertain')), reasons.push('Derek reported it could not answer from the evidence')
-  for (const [re, label] of FORBIDDEN_CLAIMS) if (re.test(draft)) (level = worst(level, 'high')), reasons.push(label)
+  const quotesInr = evidence.some((e) => e.ref.endsWith(':inr'))
+  for (const [re, label] of FORBIDDEN_CLAIMS)
+    if (re.test(draft) && !(label === INR_CONVERSION && quotesInr)) (level = worst(level, 'high')), reasons.push(label)
+  // Every sourced fact names its source: each line under the directory label, and any figure at all.
+  if (evidence.length) {
+    const allowed = evidenceUrls(evidence)
+    const cites = (text: string) => urlsIn(text).some((u) => allowed.has(u))
+    const sourced = draft.split(DIRECTORY_LABEL).slice(1).join('\n')
+    const unsourcedLine = sourced.split('\n').some((l) => /^\s*-\s/.test(l) && !cites(l))
+    if (unsourcedLine || (sourced.trim() && !cites(sourced)) || (hasFigure(draft) && !cites(draft)))
+      (level = worst(level, 'uncertain')), reasons.push('Directory facts without their official source reference')
+  }
   if (!evidence.length && (draft.includes(DIRECTORY_LABEL) || /\b(lockin|our directory) (has )?(verified|confirms?)\b|\bverified by lockin\b/i.test(draft)))
     (level = worst(level, 'high')), reasons.push('Draft claims LockIn-verified information, but no verified evidence was provided')
   const invented = unsupportedFigures(draft, evidence)

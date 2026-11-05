@@ -149,7 +149,7 @@ export async function importRecordsAction(_prev: ActionState, form: FormData): P
     if (file.size > IMPORT_MAX_BYTES) throw new WorkflowError('The file is larger than 900 KB. Split it into smaller files.')
     const s = await importRecords(getAdminPool(), actor, file.name, await file.text())
     const parts = [
-      `${s.universitiesCreated} universities, ${s.coursesCreated} courses, ${s.intakesCreated} intakes and ${s.feesCreated} fees created as drafts`,
+      `${s.universitiesCreated} universities, ${s.coursesCreated} courses, ${s.intakesCreated} intakes and ${s.feesCreated} fees${s.rankingsCreated ? ` and ${s.rankingsCreated} ranks` : ''} created as drafts`,
       `${s.matchedExisting} matched existing records`,
       `${s.conflicts} conflicts to review`,
     ]

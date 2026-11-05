@@ -3,7 +3,7 @@ import type { Pool, PoolConnection, ResultSetHeader, RowDataPacket } from 'mysql
 import { z } from 'zod'
 import { todayIso } from '@/lib/data/publication'
 import { SOURCE_TYPES } from '@/lib/data/types'
-import { academicYear, courseInput, httpsUrl, intakeInput, isoDate, reasonInput, tuitionFeeInput, universityInput } from '@/lib/data/validation'
+import { academicYear, courseInput, httpsUrl, intakeInput, isoDate, rankingInput, reasonInput, tuitionFeeInput, universityInput } from '@/lib/data/validation'
 import { appendChangeLog } from './audit'
 import { ENTITIES, type EntityKey } from './entities'
 import { formText, parseEntityForm, type FieldErrors } from './forms'
@@ -316,10 +316,12 @@ interface PlannedFieldSource { column: string; source: ImportSource }
 interface PlannedFee { data: Record<string, unknown>; source?: ImportSource; fieldSources: PlannedFieldSource[] }
 interface PlannedIntake { data: Record<string, unknown>; source?: ImportSource; fieldSources: PlannedFieldSource[] }
 interface PlannedCourse { data: Record<string, unknown>; source?: ImportSource; fieldSources: PlannedFieldSource[]; intakes: PlannedIntake[]; fees: PlannedFee[] }
-interface PlannedUniversity { data: Record<string, unknown>; source: ImportSource; fieldSources: PlannedFieldSource[]; courses: PlannedCourse[] }
+interface PlannedRanking { provider: string; data: Record<string, unknown>; source: ImportSource }
+interface PlannedUniversity { data: Record<string, unknown>; source: ImportSource; fieldSources: PlannedFieldSource[]; courses: PlannedCourse[]; rankings: PlannedRanking[] }
 
 export interface ImportSummary {
   batchId: number
+  rankingsCreated: number
   universitiesCreated: number
   coursesCreated: number
   intakesCreated: number
@@ -419,7 +421,18 @@ export function planImport(text: string, managedYears: Set<string>): PlannedUniv
       const cFieldSources = fieldSourcesAt(cp, 'course', c.fieldSources, cData as Record<string, unknown> | null)
       if (cData) courses.push({ data: cData as Record<string, unknown>, source: cSource, fieldSources: cFieldSources, intakes, fees })
     })
-    if (data && source) planned.push({ data: data as Record<string, unknown>, source, fieldSources: uFieldSources, courses })
+    // Rankings are typed from the provider's public page (no scraping) and always need their own source.
+    const rankings = list(u.rankings).flatMap((r, ri) => {
+      const rp = `${p}.rankings[${ri}]`
+      if (typeof r.provider !== 'string' || !r.provider) {
+        problems.push(`${rp}.provider: give the provider's code, for example "qs".`)
+        return []
+      }
+      const d = check(rp, rankingInput.safeParse({ ...r, universityId: 1, providerId: 1, provider: undefined, source: undefined }))
+      const s = sourceAt(rp, r.source, true)
+      return d && s ? [{ provider: r.provider, data: d as Record<string, unknown>, source: s }] : []
+    })
+    if (data && source) planned.push({ data: data as Record<string, unknown>, source, fieldSources: uFieldSources, courses, rankings })
   })
   if (problems.length) throw new ImportValidationError(problems.slice(0, 200))
   return planned
@@ -508,6 +521,21 @@ export async function importRecords(db: Pool, actor: AdminActor, fileName: strin
   const sha = createHash('sha256').update(text).digest('hex')
   const [years] = await db.query<Row[]>('SELECT code FROM academic_years')
   const plan = planImport(text, new Set(years.map((y) => String(y.code))))
+  const providerCodes = [...new Set(plan.flatMap((u) => u.rankings.map((r) => r.provider)))]
+  const providers = new Map<string, number>()
+  if (providerCodes.length) {
+    const [found] = await db.query<Row[]>('SELECT id, slug, name, rights_status FROM ranking_providers WHERE slug IN (?)', [providerCodes])
+    const problems = providerCodes.flatMap((code) => {
+      const p = found.find((f) => f.slug === code)
+      if (!p) return [`rankings: no ranking provider with the code "${code}".`]
+      // Storing ranks is itself a licensed use: only after the Owner records the provider as conditional or licensed.
+      if (p.rights_status !== 'conditional' && p.rights_status !== 'licensed')
+        return [`rankings: ${String(p.name)} reuse rights are "${String(p.rights_status)}". Ranks can be imported only once the Owner records them as conditional or licensed in Settings.`]
+      providers.set(code, Number(p.id))
+      return []
+    })
+    if (problems.length) throw new ImportValidationError(problems)
+  }
 
   return inTransaction(db, async (conn) => {
     const [[already]] = await conn.query<Row[]>('SELECT id FROM import_batches WHERE file_sha256 = ?', [sha])
@@ -517,7 +545,7 @@ export async function importRecords(db: Pool, actor: AdminActor, fileName: strin
       { file_name: fileName.slice(0, 255) || 'import.json', file_sha256: sha, rows_total: total, created_count: 0, duplicate_count: 0, conflict_count: 0, imported_by: actor.userId },
     ])
     const batchId = batch.insertId
-    const summary: ImportSummary = { batchId, universitiesCreated: 0, coursesCreated: 0, intakesCreated: 0, feesCreated: 0, matchedExisting: 0, conflicts: 0, notes: [] }
+    const summary: ImportSummary = { batchId, rankingsCreated: 0, universitiesCreated: 0, coursesCreated: 0, intakesCreated: 0, feesCreated: 0, matchedExisting: 0, conflicts: 0, notes: [] }
     const sources = new Map<string, number>()
     const [all] = await conn.query<Row[]>('SELECT * FROM universities FOR UPDATE')
 
@@ -541,6 +569,18 @@ export async function importRecords(db: Pool, actor: AdminActor, fileName: strin
         summary.universitiesCreated++
         // Later entries in the same file are matched (and compared) against the full stored row.
         all.push(await readRow(conn, 'universities', universityId))
+      }
+
+      for (const r of u.rankings) {
+        const rRow: Record<string, unknown> = { ...columnsFor('university_ranking', r.data), subject: r.data.subject ?? '' }
+        const [[same]] = await conn.query<Row[]>('SELECT id FROM university_rankings WHERE university_id = ? AND provider_id = ? AND ranking_year = ? AND subject = ?', [universityId, providers.get(r.provider), rRow.ranking_year, rRow.subject])
+        if (same) {
+          summary.notes.push(`${String(u.data.name)}: a ${r.provider} ${String(rRow.ranking_year)} rank already exists (#${same.id}), so the file's rank was not imported.`)
+          continue
+        }
+        const rSource = await sourceId(conn, actor, r.source, sources)
+        await createDraft(conn, actor, 'university_ranking', { ...rRow, university_id: universityId, provider_id: providers.get(r.provider), source_id: rSource, checked_at: r.source.accessedOn ?? todayIso() })
+        summary.rankingsCreated++
       }
 
       for (const c of u.courses) {
@@ -569,7 +609,7 @@ export async function importRecords(db: Pool, actor: AdminActor, fileName: strin
       }
     }
 
-    const created = summary.universitiesCreated + summary.coursesCreated + summary.intakesCreated + summary.feesCreated
+    const created = summary.universitiesCreated + summary.coursesCreated + summary.intakesCreated + summary.feesCreated + summary.rankingsCreated
     await conn.query('UPDATE import_batches SET created_count = ?, duplicate_count = ?, conflict_count = ? WHERE id = ?', [created, summary.matchedExisting, summary.conflicts, batchId])
     const after = await readRow(conn, 'import_batches', batchId)
     await appendChangeLog(conn, { entityType: 'import_batch', entityId: batchId, action: 'import', actorId: actor.userId, actorRole: actor.role, reason: `Imported ${fileName}`.slice(0, 500), before: null, after })

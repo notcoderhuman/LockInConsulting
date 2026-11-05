@@ -96,9 +96,11 @@ describe('public directory output (R-029)', () => {
     )
     expect(await rankings()).toEqual([]) // licence expired
     await db.query('UPDATE ranking_providers SET licence_expires_at = ? WHERE id = ?', [addDays(30), qsId])
+    expect(await rankings()).toEqual([]) // licensed, but no attribution wording and link recorded yet
+    await db.query("UPDATE ranking_providers SET attribution_text = 'Source: synthetic', attribution_url = 'https://www.topuniversities.com/world-university-rankings' WHERE id = ?", [qsId])
     expect((await rankings()).map((r) => r.position)).toEqual([7]) // the gate, not the code, decides
 
-    await db.query("UPDATE ranking_providers SET rights_status = 'not_confirmed', licence_reference = NULL, licence_scope = NULL, licence_expires_at = NULL WHERE id = ?", [qsId])
+    await db.query("UPDATE ranking_providers SET rights_status = 'not_confirmed', licence_reference = NULL, licence_scope = NULL, licence_expires_at = NULL, attribution_text = NULL, attribution_url = NULL WHERE id = ?", [qsId])
     expect(await rankings()).toEqual([])
   })
 })
@@ -131,7 +133,7 @@ describe('public directory paging (5 per page, at most 50)', () => {
     await db.query('INSERT INTO university_rankings SET ?', [{ university_id: id('Banded Test'), provider_id: qsId, ranking_year: 2026, rank_band_low: 501, rank_band_high: 510, ...verifiedPublished() }])
     expect(await names()).toEqual(['Aalto Test', 'Banded Test', 'Ranked Test']) // QS not licensed: name order
     await db.query(
-      "UPDATE ranking_providers SET rights_status = 'licensed', licence_reference = 'TEST-2', licence_scope = 'Synthetic test licence', rights_checked_at = ?, licence_expires_at = ?, attribution_text = 'Source: synthetic attribution' WHERE id = ?",
+      "UPDATE ranking_providers SET rights_status = 'licensed', licence_reference = 'TEST-2', licence_scope = 'Synthetic test licence', rights_checked_at = ?, licence_expires_at = ?, attribution_text = 'Source: synthetic attribution', attribution_url = 'https://www.topuniversities.com/world-university-rankings' WHERE id = ?",
       [TODAY, addDays(30), qsId],
     )
     try {
@@ -149,7 +151,7 @@ describe('public directory paging (5 per page, at most 50)', () => {
       await db.query('UPDATE ranking_providers SET allow_ai_use = 1 WHERE id = ?', [qsId])
       expect((await rankingEvidence()).map((e) => e.text)).toEqual(['Ranked Test ranking: QS Quacquarelli Symonds 2026: #120'])
     } finally {
-      await db.query("UPDATE ranking_providers SET rights_status = 'not_confirmed', licence_reference = NULL, licence_scope = NULL, licence_expires_at = NULL, attribution_text = NULL, allow_ordering = 0, allow_ai_use = 0 WHERE id = ?", [qsId])
+      await db.query("UPDATE ranking_providers SET rights_status = 'not_confirmed', licence_reference = NULL, licence_scope = NULL, licence_expires_at = NULL, attribution_text = NULL, attribution_url = NULL, allow_ordering = 0, allow_ai_use = 0 WHERE id = ?", [qsId])
     }
     expect(await names()).toEqual(['Aalto Test', 'Banded Test', 'Ranked Test']) // licence withdrawn: back to name order
   })

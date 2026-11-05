@@ -64,4 +64,11 @@ import stores it as a pending `field_sources` row (migration 0013). Only fields 
 allowed. Fees for a course that already exists are not imported (the import
 report says so); add them on the course page.
 
+Rankings: a university may list `"rankings": [{ "provider": "qs", "year": 2027, "position": 150, "source": { ... } }]`
+(or `bandLow` + `bandHigh` instead of `position`; `subject` empty for the overall table). Each rank needs its own
+source, typed from the provider's public page: no scraping or bulk download. The whole file is refused unless the
+Owner has recorded that provider as `conditional` or `licensed` in Settings → Ranking reuse rights. Imported ranks
+are drafts; none is ever shown publicly until the provider is `licensed` with its attribution text and link
+(QS: https://www.topuniversities.com/world-university-rankings), and the rank is verified and published.
+
 Never put fabricated values in a file: leave a field out when the official source does not publish it.

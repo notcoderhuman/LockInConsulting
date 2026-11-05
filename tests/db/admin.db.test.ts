@@ -309,9 +309,15 @@ describe('fees, acceptance rates and rankings', () => {
     })
 
     // Reviewers can't change rights; owners can, and only with licence evidence.
-    const licence = { id: String(qs), rightsStatus: 'licensed', licenceReference: 'SYNTHETIC-TEST', licenceScope: 'Test scope', rightsCheckedAt: TODAY }
+    const attribution = { attributionText: 'Source: QS Quacquarelli Symonds (www.topuniversities.com). With permission.', attributionUrl: 'https://www.topuniversities.com/world-university-rankings' }
+    const licence = { id: String(qs), rightsStatus: 'licensed', licenceReference: 'SYNTHETIC-TEST', licenceScope: 'Test scope', rightsCheckedAt: TODAY, ...attribution }
     await expect(W.updateRankingRights(pool, reviewer, qs, form(licence))).rejects.toBeInstanceOf(W.PermissionError)
     await expect(W.updateRankingRights(pool, owner, qs, form({ ...licence, licenceReference: undefined }))).rejects.toMatchObject({ fieldErrors: { licenceReference: expect.any(Array) } })
+    // A licence without the attribution wording and link is refused; QS can never be "not required".
+    await expect(W.updateRankingRights(pool, owner, qs, form({ ...licence, attributionText: undefined, attributionUrl: undefined }))).rejects.toMatchObject({
+      fieldErrors: { attributionText: expect.any(Array), attributionUrl: expect.any(Array) },
+    })
+    await expect(W.updateRankingRights(pool, owner, qs, form({ rightsStatus: 'not_required', rightsCheckedAt: TODAY, rightsNotes: 'x' }))).rejects.toThrow(/always need a licence/)
     await W.updateRankingRights(pool, owner, qs, form(licence))
     await W.transitionRecord(pool, reviewer, 'university_ranking', ranking, 'publish', form({}))
     expect(await rows('SELECT id FROM public_university_rankings WHERE id = ?', [ranking])).toHaveLength(1)

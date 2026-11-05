@@ -5,6 +5,7 @@ import { SignOutButton } from '@/components/admin/sign-out-button'
 import { SiteFooter } from '@/components/site/site-footer'
 import { SiteHeader } from '@/components/site/site-header'
 import { SkipLink } from '@/components/site/skip-link'
+import { DeleteAccount } from '@/components/support/delete-account'
 import { StudentChat } from '@/components/support/student-chat'
 import { StudentOnboarding } from '@/components/support/student-onboarding'
 import { TeamPresence } from '@/components/support/team-presence'
@@ -88,7 +89,15 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
             <StudentOnboarding name={attestation?.fullName ?? ctx.name} privacyUrl={privacyNoticeUrl()} ageAttested={attestation !== null} />
           </Card>
         ) : ctx.state === 'ok' ? (
-          <StudentChat initialConversationId={initial} />
+          <>
+            <StudentChat initialConversationId={initial} />
+            <details id="delete-account" className="max-w-2xl rounded-2xl border border-border bg-card p-6 md:p-8">
+              <summary className="min-h-11 cursor-pointer font-serif text-xl text-foreground">Delete your account</summary>
+              <div className="mt-4">
+                <DeleteAccount />
+              </div>
+            </details>
+          </>
         ) : null}
       </main>
       <SiteFooter />

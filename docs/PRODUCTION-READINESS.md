@@ -78,7 +78,7 @@ Not done: `lockin_app` holds no directory data yet, no staff account exists, and
 
 | ID | Priority | Issue | Evidence | Action |
 | --- | --- | --- | --- | --- |
-| P-1 | **Critical** | No published student privacy notice, retention period, grievance contact or Indian legal review (R-026). `STUDENT_PRIVACY_NOTICE_URL` is unset. | No `/privacy` or terms page exists; the only notice is one checkbox sentence. | Owner/legal. New accounts stay closed in production until set (enforced in code). |
+| P-1 | **Critical** | No reviewed student privacy notice, retention periods, grievance contact or Indian legal review (R-026). `STUDENT_PRIVACY_NOTICE_URL` is unset. | Drafts exist at `/privacy`, `/terms` and `/ai`, marked "pending legal review", with placeholders the Owner must fill (`docs/LEGAL-DRAFTS.md`). | Owner/legal review, then set the URL. New accounts stay closed in production until set (enforced in code). |
 | P-2 | **Critical** | Real Google sign-in is not fully tested. | Passed live: redirect, refusal from Sign in, Create account → `/chat`. **Never reached the server:** sign-out, returning sign-in, cancellation. Not run: the full-name field with a real account, a staff-email conflict. | Re-run locally, then on staging with its own OAuth client. |
 | P-3 | **Critical** | Gemini has never been tested live from this build. | `GEMINI_API_KEY` is not set; only the mock provider and stubbed tests ran. R-027 conditions remain. | Run `pnpm test:gemini-live` with the paid-tier key before Derek touches real students. |
 | D-1 | **Closed** | Target database engine verified. | MariaDB 11.8.9: migrations and the full suite passed (see results above). | None. |

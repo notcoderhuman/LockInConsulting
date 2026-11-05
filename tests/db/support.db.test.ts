@@ -1487,6 +1487,31 @@ describe('students and erasure', () => {
     await expect(C.eraseStudent(pool(), owner, s.profileId, 'again')).rejects.toMatchObject({ status: 409 })
     expect(await verifyAuditChain(db)).toMatchObject({ ok: true })
   })
+
+  it('lets a student delete their own account through the same erasure, recorded as their own action', async () => {
+    const s = await makeStudent('Delete Myself')
+    const other = await makeStudent('Someone Else')
+    const { conversationId } = await ask(s, 'My email is delete.me@test.example')
+    await ask(other)
+    await db.query("INSERT INTO auth_session (id, expiresAt, token, updatedAt, userId) VALUES (?, UTC_TIMESTAMP(3) + INTERVAL 1 DAY, ?, UTC_TIMESTAMP(3), ?)", [rid(), rid(), s.userId])
+
+    expect(await C.eraseOwnAccount(pool(), s)).toEqual({ conversations: 1 })
+    expect(await rows('SELECT id FROM messages WHERE conversation_id = ?', [conversationId])).toHaveLength(0)
+    expect(await rows('SELECT id FROM auth_user WHERE id = ?', [s.userId])).toHaveLength(0)
+    expect(await rows('SELECT id FROM auth_session WHERE userId = ?', [s.userId])).toHaveLength(0)
+    // Nobody else's data is touched.
+    expect(await rows('SELECT id FROM auth_user WHERE id = ?', [other.userId])).toHaveLength(1)
+    expect(await rows('SELECT id FROM conversations WHERE student_profile_id = ?', [other.profileId])).toHaveLength(1)
+    const log = await rows<{ actor_id: string; actor_role: string; after_data: unknown }>(
+      "SELECT actor_id, actor_role, after_data FROM data_change_log WHERE entity_type = 'student_profile' AND action = 'student_erase' AND entity_id = ?",
+      [s.profileId],
+    )
+    expect(log).toHaveLength(1)
+    expect(log[0]).toMatchObject({ actor_id: s.userId, actor_role: 'student' })
+    expect(JSON.stringify(log)).not.toMatch(/Delete Myself|delete\.me@/)
+    await expect(C.eraseOwnAccount(pool(), s)).rejects.toMatchObject({ status: 409 })
+    expect(await verifyAuditChain(db)).toMatchObject({ ok: true })
+  })
 })
 
 describe('our team', () => {

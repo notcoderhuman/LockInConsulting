@@ -675,7 +675,18 @@ export async function getStudent(db: Db, actor: AdminActor, profileId: number) {
  */
 export async function eraseStudent(pool: Pool, actor: AdminActor, profileId: number, rawReason: unknown): Promise<{ conversations: number }> {
   assertActor(actor, 'students.erase')
-  const reason = parse(reasonText, rawReason ?? '')
+  return eraseProfile(pool, profileId, { userId: actor.userId, role: actor.role }, parse(reasonText, rawReason ?? ''))
+}
+
+/**
+ * The student's own deletion request (DPDP Act s.12(3), and withdrawal of consent under s.6(4)):
+ * the same erasure, recorded as the student's own action. The profile comes from the session only.
+ */
+export async function eraseOwnAccount(pool: Pool, student: StudentActor): Promise<{ conversations: number }> {
+  return eraseProfile(pool, student.profileId, { userId: student.userId, role: 'student' }, 'Deleted by the student from their account')
+}
+
+async function eraseProfile(pool: Pool, profileId: number, actor: { userId: string; role: AdminActor['role'] | 'student' }, reason: string): Promise<{ conversations: number }> {
   return inTransaction(pool, async (conn) => {
     const rows = await selectRows(conn, 'SELECT * FROM student_profiles WHERE id = ? FOR UPDATE', [profileId])
     const profile = rows[0]

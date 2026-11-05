@@ -41,7 +41,7 @@ export class MockProvider implements AiProvider {
 
 function contractAnswer(request: DraftRequest): { text: string; uncertain: boolean } {
   const g = request.guidance
-  const facts = request.evidence.slice(0, 5).map((e) => `- ${e.text} (official source: ${e.sourceUrl}, checked ${e.checkedAt})`)
+  const facts = request.evidence.slice(0, 5).map((e) => `- ${e.text} (official source: ${e.sourceUrl}, ${e.publisher}, checked ${e.checkedAt})`)
   const followUp = g?.followUp ? `\n${g.followUp}` : ''
 
   // A specific fact with matching verified evidence: quote it, nothing else.

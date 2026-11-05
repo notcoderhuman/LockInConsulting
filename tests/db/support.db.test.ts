@@ -835,7 +835,7 @@ describe('Derek Auto Mode (offline, mock providers only)', () => {
 
   it('states university facts only from verified evidence', async () => {
     const evidence = [
-      { ref: 'tuition_fee:9001', text: 'Synthetic Thames University MSc Data Science tuition: GBP 30000 per year (2026/27)', sourceUrl: 'https://www.synthetic-thames.example/fees', checkedAt: '2026-10-01' },
+      { ref: 'tuition_fee:9001', text: 'Synthetic Thames University MSc Data Science tuition: GBP 30000 per year (2026/27)', publisher: 'Example University (synthetic)', sourceUrl: 'https://www.synthetic-thames.example/fees', checkedAt: '2026-10-01' },
     ]
     const question = 'What is the tuition fee for the MSc Data Science at Synthetic Thames University?'
     const sourced = `${DIRECTORY_LABEL}\n- ${evidence[0].text} (official source: ${evidence[0].sourceUrl}, checked 2026-10-01)`
@@ -937,6 +937,12 @@ describe('Derek Auto Mode (offline, mock providers only)', () => {
       const another = await ask(await makeStudent(), general)
       expect((await run(another, fixed(reply))).state).toBe('review')
       expect(await lastReason(another.conversationId)).toBe('Automatic reply held: hourly automatic-reply limit reached')
+
+      AUTO_REPLY_LIMITS.globalPerHour = saved.globalPerHour
+      AUTO_REPLY_LIMITS.globalPerDay = 0
+      const daily = await ask(await makeStudent(), general)
+      expect((await run(daily, fixed(reply))).state).toBe('review')
+      expect(await lastReason(daily.conversationId)).toBe('Automatic reply held: daily automatic-reply limit reached')
     } finally {
       Object.assign(AUTO_REPLY_LIMITS, saved)
     }

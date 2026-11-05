@@ -9,7 +9,7 @@ import { MockProvider } from './providers/mock'
 //   GEMINI_API_KEY=…               server-side only; required for gemini. Opaque: trimmed, never format-checked
 //   DEREK_GEMINI_MODEL             optional; only gemini-3.5-flash-lite is accepted (no silent substitution).
 //                                  gemini-3.5-flash is a deprecated ID that Google routes to gemini-3.6-flash
-//                                  (ai.google.dev/gemini-api/docs/deprecations, checked 25 Oct 2026); neither is wired in.
+//                                  (ai.google.dev/gemini-api/docs/deprecations, checked 25 Oct and 5 Nov 2026); neither is wired in.
 //   DEREK_PROVIDER_APPROVED=<id>   records that the provider's OWN terms permit this student-facing service
 //                                  (for Gemini: the "not for consumer use" restriction and the under-18 rule)
 //                                  and the data-handling review is done. Required in production before that

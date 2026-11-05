@@ -43,7 +43,7 @@ describe('shortening never drops a caveat', () => {
 })
 
 describe('content checks before an unreviewed reply', () => {
-  const evidence = [{ ref: 'tuition_fee:1', text: 'Fee', sourceUrl: 'https://uni.example/fees', checkedAt: '2026-10-01' }]
+  const evidence = [{ ref: 'tuition_fee:1', text: 'Fee', publisher: 'Example University (synthetic)', sourceUrl: 'https://uni.example/fees', checkedAt: '2026-10-01' }]
 
   it('passes short, ordinary answers and links taken from verified evidence', () => {
     expect(autoReplyContentBlockers('A statement of purpose explains your goals.', [])).toEqual([])

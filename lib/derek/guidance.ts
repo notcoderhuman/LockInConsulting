@@ -128,6 +128,9 @@ export function analyseQuestion(question: string, evidence: EvidenceItem[], earl
         ? `The student asks about ${topics.join(', ')}. Use ONLY the matching EVIDENCE lines for these facts, on the "From the LockIn directory:" line with the official source. Anything not in EVIDENCE is unknown.`
         : `The student asks about ${topics.join(', ')}${where}, but LockIn has no verified record for it. Start with [UNCERTAIN]. Say in one sentence that LockIn has not verified this yet, give brief general guidance on where to check (the official university course page), and do not give any figure, date or range.`,
     )
+  const universities = new Set(evidence.filter((e) => e.ref.startsWith('university:')).map((e) => e.ref)).size
+  if (kind === 'specific_fact' && universities > 1)
+    notes.push(`This compares ${universities} universities. Keep each fact with its own university and source; where one has a fact the other lacks, say LockIn has not verified it for that university. Never fill a gap with another university's figure.`)
   if (followUp) notes.push(`The student's goals are not clear yet. End with exactly this one follow-up question, or a close equivalent: "${followUp}"`)
   else notes.push('Do not ask a follow-up question unless you truly need one.')
 

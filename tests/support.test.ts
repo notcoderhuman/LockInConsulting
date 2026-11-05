@@ -13,8 +13,8 @@ import { CONVERSATION_STATUSES, nextStatus, STUDENT_STATUS_LABEL, TransitionErro
 import { contextSubject, deriveSubject, INSTAGRAM_HANDLE, isSafeTargetPath, messageBody, newConversationInput, normaliseText, parsePageParams } from '@/lib/support/validation'
 
 const evidence: EvidenceItem[] = [
-  { ref: 'tuition_fee:7', text: 'MSc Data tuition fee (international): EUR 15000.00 per year, academic year 2026-2027', sourceUrl: 'https://uni.example/fees', checkedAt: '2026-10-01' },
-  { ref: 'university_ranking:3', text: 'Example U ranking: Licensed Provider 2026: #120', sourceUrl: 'https://rank.example/', checkedAt: '2026-09-01' },
+  { ref: 'tuition_fee:7', text: 'MSc Data tuition fee (international): EUR 15000.00 per year, academic year 2026-2027', publisher: 'Example University (synthetic)', sourceUrl: 'https://uni.example/fees', checkedAt: '2026-10-01' },
+  { ref: 'university_ranking:3', text: 'Example U ranking: Licensed Provider 2026: #120', publisher: 'Example University (synthetic)', sourceUrl: 'https://rank.example/', checkedAt: '2026-09-01' },
 ]
 
 describe('conversation state machine', () => {

@@ -1,6 +1,7 @@
 import { ProviderError, UNCERTAIN_MARKER, type AiProvider, type AutoReplyCapability, type DraftRequest, type DraftResult, type ProviderPolicy } from '../provider'
 
-// Google Gemini API adapter (REST `models.generateContent`), checked 21 Oct 2026 and again 26 Oct 2026
+// Google Gemini API adapter (REST `models.generateContent`), checked 21 Oct, 26 Oct and 5 Nov 2026 (docs now
+// served from aistudio.google.com/docs/models and /docs/deprecations: Stable, "No shutdown date announced")
 // against https://ai.google.dev/gemini-api/docs/models (gemini-3.5-flash-lite: Stable, no shutdown date),
 // https://ai.google.dev/api/generate-content and https://ai.google.dev/gemini-api/docs/api-key.
 //
@@ -45,7 +46,7 @@ const count = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v 
 
 export function buildGeminiRequest(req: DraftRequest, maxOutputTokens = GEMINI_MAX_OUTPUT_TOKENS) {
   const evidence = req.evidence.length
-    ? req.evidence.map((e) => `- [${e.ref}] ${e.text} (official source: ${e.sourceUrl}, checked ${e.checkedAt})`).join('\n')
+    ? req.evidence.map((e) => `- [${e.ref}] ${e.text} (official source: ${e.sourceUrl}, ${e.publisher}, checked ${e.checkedAt})`).join('\n')
     : '- none: there is no verified LockIn directory record for this question.'
   return {
     systemInstruction: {
@@ -62,6 +63,8 @@ export function buildGeminiRequest(req: DraftRequest, maxOutputTokens = GEMINI_M
 function httpError(status: number): ProviderError {
   if (status === 429) return new ProviderError('rate_limited', true)
   if (status === 408) return new ProviderError('timeout', true)
+  // Prepaid credit used up (aistudio.google.com/docs/billing, checked 5 Nov 2026): retrying cannot help.
+  if (status === 402) return new ProviderError('quota_exhausted', false)
   if (status === 401 || status === 403) return new ProviderError('auth_failed', false)
   if (status >= 500) return new ProviderError('unavailable', true)
   return new ProviderError('provider_error', false) // 400, 404 (unknown model) and other client errors

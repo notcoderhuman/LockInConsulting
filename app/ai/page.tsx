@@ -1,12 +1,13 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { LegalPage, OwnerToComplete } from '@/components/legal/legal-page'
+import { LEGAL_REVIEWED } from '@/lib/legal/notice'
 import { AUTO_REPLY_LIMITS } from '@/lib/derek/auto-reply'
 
 export const metadata: Metadata = {
   title: 'AI disclosure (draft) · LockIn Consulting',
   description: 'How Derek, LockIn’s AI assistant, is used in the student chat. Draft pending legal review.',
-  robots: { index: false, follow: true },
+  robots: { index: LEGAL_REVIEWED, follow: true },
 }
 
 // What Derek is and is not, in plain language. The facts come from the code: labels from

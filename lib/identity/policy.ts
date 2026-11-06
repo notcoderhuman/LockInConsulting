@@ -16,6 +16,8 @@
 // One auth_user can never be both staff and a student: lib/admin/access.ts refuses a user with a
 // student profile and lib/student/access.ts refuses a user with an admin membership.
 
+import { noticeReady } from '@/lib/legal/notice'
+
 type Env = Record<string, string | undefined>
 
 export type AccountKind = 'administrator' | 'team_member' | 'student'
@@ -47,7 +49,7 @@ export const ACCOUNT_POLICIES: Record<AccountKind, AccountPolicy> = {
     kind: 'student',
     provisioning: 'disabled',
     selfSignUp: false,
-    sessionHours: 8,
+    sessionHours: 24 * 30,
     description: 'Student accounts are not open. Sign-up stays disabled until the legal and privacy review is complete.',
   },
 }
@@ -123,15 +125,16 @@ export function privacyNoticeUrl(env: Env = process.env): string | null {
 }
 
 /**
- * New student accounts (via Google) may be created: the student area AND self sign-up are on, and in
- * production a privacy notice is published (STUDENT_PRIVACY_NOTICE_URL), so the 18+ and privacy step
- * always has a full notice to link to. The flags alone never open production sign-up.
+ * New student accounts may be created: the student area AND self sign-up are on, and in production
+ * STUDENT_PRIVACY_NOTICE_URL is this site's own /privacy and that notice is complete: reviewed, with
+ * every business contact detail filled in (lib/legal/notice.ts). An external notice cannot be checked,
+ * so it never opens production sign-up. The flags alone never open it either (R-026).
  */
-export function studentSignUpOpen(env: Env = process.env): boolean {
+export function studentSignUpOpen(env: Env = process.env, noticeComplete: boolean = noticeReady()): boolean {
   return (
     env.STUDENT_ACCOUNTS_ENABLED === 'true' &&
     env.STUDENT_SELF_SIGNUP_ENABLED === 'true' &&
-    (env.NODE_ENV !== 'production' || privacyNoticeUrl(env) !== null)
+    (env.NODE_ENV !== 'production' || (privacyNoticeUrl(env) === '/privacy' && noticeComplete))
   )
 }
 

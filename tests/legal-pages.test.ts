@@ -15,8 +15,21 @@ describe('legal drafts', () => {
     for (const p of PAGES) {
       const page = read(p)
       expect(page, p).toContain('<LegalPage')
-      expect(page, p).toMatch(/robots: \{ index: false/)
+      expect(page, p).toMatch(/robots: \{ index: LEGAL_REVIEWED/)
     }
+    expect(layout).toMatch(/LEGAL_REVIEWED \? null : \(/)
+  })
+
+  it('counts the notice complete only when reviewed and every business detail is filled in', async () => {
+    const { BUSINESS, LEGAL_REVIEWED, noticeReady } = await import('@/lib/legal/notice')
+    // Today: a draft with no details, so production sign-up stays closed (lib/identity/policy.ts).
+    expect(LEGAL_REVIEWED).toBe(false)
+    expect(noticeReady()).toBe(false)
+    const full = { legalName: 'X', address: 'Y', contactPerson: 'Z', contactEmail: 'a@b.example', contactPhone: '1' }
+    expect(noticeReady(full, true)).toBe(true)
+    expect(noticeReady(full, false)).toBe(false)
+    expect(noticeReady({ ...full, contactPhone: ' ' }, true)).toBe(false)
+    expect(noticeReady({ ...BUSINESS }, true)).toBe(false)
   })
 
   it('never claim compliance and leave every unknown business detail to the Owner', () => {

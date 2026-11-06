@@ -106,5 +106,6 @@ consulting is ever sold through the site; their obligations include seller detai
 
 ## Before going live
 
-Legal review → Owner fills placeholders → remove the draft banner and `noindex`, bump the versions → set
-`STUDENT_PRIVACY_NOTICE_URL=/privacy` in the hosting panel → new build. None of this is done.
+Legal review → the Owner fills `BUSINESS` and sets `LEGAL_REVIEWED = true` in `lib/legal/notice.ts` (this removes the draft
+banner and `noindex` and is the code gate for production sign-up), bumps `PRIVACY_NOTICE_VERSION` → new build → set
+`STUDENT_PRIVACY_NOTICE_URL=/privacy` in the hosting panel. None of this is done.

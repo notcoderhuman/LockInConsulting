@@ -26,6 +26,7 @@ const { AGE_CONFIRM_LIMITS } = await import('@/lib/student/age-attestation')
 const { createStudentProfile, PASSWORD_SET_LIMIT } = await import('@/lib/student/onboarding')
 const { takeToken } = await import('@/lib/auth-throttle')
 const messagesRoute = await import('@/app/api/student/conversations/[id]/messages/route')
+const passwordRoute = await import('@/app/api/student/password/route')
 const { canStartStudentProfile } = await import('@/lib/student/onboarding')
 
 const BASE = 'http://localhost:3000'
@@ -390,6 +391,55 @@ describe('sign-up with name, email and password', () => {
     expect(await rows("SELECT id FROM auth_account WHERE providerId = 'credential' AND userId = (SELECT id FROM auth_user WHERE email = ?)", [email])).toHaveLength(0)
     resetRequestBuckets()
     expect((await onboard(cookie, { password: PASSWORD })).status).toBe(200)
+  })
+
+  it('keeps a student signed in for 30 days with an HttpOnly, SameSite=Lax session cookie', async () => {
+    const cookie = await signUp('pw-session@test.example')
+    expect((await onboard(cookie, { password: PASSWORD })).status).toBe(200)
+    const res = await passwordSignIn('pw-session@test.example', PASSWORD)
+    const session = res.headers.getSetCookie().find((c) => c.includes('session_token='))!
+    expect(session).toMatch(/;\s*HttpOnly/i)
+    expect(session).toMatch(/;\s*SameSite=Lax/i)
+    expect(session).toMatch(/Max-Age=2592000/)
+    const token = (await sessionOf(cookiesFrom(res)))!.session.token
+    const [s] = await rows<{ days: number }>('SELECT TIMESTAMPDIFF(DAY, createdAt, expiresAt) AS days FROM auth_session WHERE token = ?', [token])
+    expect(Number(s.days)).toBe(30)
+  })
+
+  it('changes a password only with the current one, and signs out every other device', async () => {
+    const email = 'pw-change@test.example'
+    const first = await signUp(email)
+    expect((await onboard(first, { password: PASSWORD })).status).toBe(200)
+    const other = cookiesFrom(await passwordSignIn(email, PASSWORD))
+    const change = (cookie: string, body: unknown) =>
+      passwordRoute.POST(new Request(`${BASE}/api/student/password`, { method: 'POST', headers: { 'content-type': 'application/json', origin: BASE, cookie }, body: JSON.stringify(body) }))
+    expect((await change(first, { newPassword: 'a-brand-new-passphrase' })).status).toBe(400) // current password missing
+    expect((await change(first, { currentPassword: 'not-the-password-123', newPassword: 'a-brand-new-passphrase' })).status).toBe(400)
+    expect((await change(first, { currentPassword: PASSWORD, newPassword: 'short' })).status).toBe(400)
+    const ok = await change(first, { currentPassword: PASSWORD, newPassword: 'a-brand-new-passphrase' })
+    expect(ok.status).toBe(200)
+    expect(await sessionOf(other)).toBeNull() // the other device is signed out
+    expect(await sessionOf(cookiesFrom(ok))).not.toBeNull() // this browser got a fresh session
+    expect((await passwordSignIn(email, PASSWORD)).status).toBe(401)
+    expect((await passwordSignIn(email, 'a-brand-new-passphrase')).status).toBe(200)
+    // Staff never reach this endpoint.
+    expect((await change('', { currentPassword: PASSWORD, newPassword: 'a-brand-new-passphrase' })).status).toBe(401)
+  })
+
+  it('adds a first password only shortly after signing in', async () => {
+    const email = 'pw-first@test.example'
+    const cookie = await signUp(email)
+    const user = (await sessionOf(cookie))!.user
+    // A provider account (no password needed at onboarding) adds one later from /account.
+    await db.query("INSERT INTO auth_account (id, accountId, providerId, userId, updatedAt) VALUES (?, 'sub-first', 'google', ?, UTC_TIMESTAMP(3))", [randomUUID(), user.id])
+    expect((await onboard(cookie, {})).status).toBe(200)
+    const set = (body: unknown) =>
+      passwordRoute.POST(new Request(`${BASE}/api/student/password`, { method: 'POST', headers: { 'content-type': 'application/json', origin: BASE, cookie }, body: JSON.stringify(body) }))
+    await db.query('UPDATE auth_session SET createdAt = UTC_TIMESTAMP(3) - INTERVAL 1 HOUR WHERE userId = ?', [user.id])
+    expect(await (await set({ newPassword: PASSWORD })).json()).toMatchObject({ state: 'reauthenticate' })
+    await db.query('UPDATE auth_session SET createdAt = UTC_TIMESTAMP(3) WHERE userId = ?', [user.id])
+    expect((await set({ newPassword: PASSWORD })).status).toBe(200)
+    expect((await passwordSignIn(email, PASSWORD)).status).toBe(200)
   })
 
   it('lets a student read only their own conversations', async () => {

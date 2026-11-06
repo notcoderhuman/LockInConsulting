@@ -234,8 +234,10 @@ describe('identity policies', () => {
     expect(studentSignUpOpen(prod)).toBe(false)
     for (const bad of ['', 'http://example.com/privacy', '//evil.example/p', 'javascript:alert(1)', 'not a url'])
       expect(studentSignUpOpen({ ...prod, STUDENT_PRIVACY_NOTICE_URL: bad }), bad).toBe(false)
-    expect(studentSignUpOpen({ ...prod, STUDENT_PRIVACY_NOTICE_URL: 'https://lockin.example/privacy' })).toBe(true)
-    expect(studentSignUpOpen({ ...prod, STUDENT_PRIVACY_NOTICE_URL: '/privacy' })).toBe(true)
+    // Production: only this site's /privacy, and only once that notice is reviewed and complete (lib/legal/notice.ts).
+    expect(studentSignUpOpen({ ...prod, STUDENT_PRIVACY_NOTICE_URL: 'https://lockin.example/privacy' }, true)).toBe(false)
+    expect(studentSignUpOpen({ ...prod, STUDENT_PRIVACY_NOTICE_URL: '/privacy' })).toBe(false) // the draft today
+    expect(studentSignUpOpen({ ...prod, STUDENT_PRIVACY_NOTICE_URL: '/privacy' }, true)).toBe(true)
     for (const code of ['access_denied', 'state_mismatch', 'signup_disabled', 'account_not_linked', 'email_not_verified', 'unavailable', 'something_new'])
       expect(oauthErrorMessage(code), code).toMatch(/\.$/)
     expect(oauthErrorMessage('<script>')).not.toContain('<script>')

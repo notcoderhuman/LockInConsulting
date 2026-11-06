@@ -115,7 +115,8 @@ export function signUpMethodAvailable(env: Env = process.env): boolean {
 
 /** The published student privacy notice: an https URL or a same-site path, else null (RISKS.md R-026). */
 export function privacyNoticeUrl(env: Env = process.env): string | null {
-  const v = env.STUDENT_PRIVACY_NOTICE_URL?.trim() ?? ''
+  // Defaults to this site's own notice, whose completeness lib/legal/notice.ts checks.
+  const v = env.STUDENT_PRIVACY_NOTICE_URL?.trim() || '/privacy'
   if (v.startsWith('/') && !v.startsWith('//')) return v
   try {
     return new URL(v).protocol === 'https:' ? v : null

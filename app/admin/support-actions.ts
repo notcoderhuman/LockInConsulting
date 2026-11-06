@@ -10,6 +10,8 @@ import { recordHref } from '@/lib/admin/view'
 import { revokeMember, setSupportAccess } from '@/lib/admin/team'
 import { getAdminPool } from '@/lib/db/pool'
 import { mailer } from '@/lib/mail'
+import { readGeminiApiKey } from '@/lib/derek/config'
+import { GEMINI_ENDPOINT, GEMINI_MODEL } from '@/lib/derek/providers/gemini'
 import { mailConfigured } from '@/lib/identity/policy'
 import { approveAndSendDraft, editDraft, rejectDraft, requestDraftForConversation } from '@/lib/derek/drafts'
 import { eraseStudent, markStaffRead, returnToDerek, setConversationStatus, staffReply, takeOverConversation } from '@/lib/support/conversations'
@@ -154,6 +156,38 @@ No action is needed.`,
     }
     console.info(`[mail:test] accepted by the SMTP server for owner ${actor.userId}`)
     return { message: `Accepted by the mail server for ${actor.email}. Check that inbox, including spam.` }
+  })
+}
+
+let lastGeminiTestAt = 0
+
+/**
+ * Owner-only Gemini connectivity check: one fixed synthetic prompt (no student data) to the approved
+ * model, at most once a minute. Reports only HTTP status, Google's error status and the model version.
+ */
+export async function testGeminiAction(): Promise<ActionState> {
+  return run('support.settings', async () => {
+    const key = readGeminiApiKey()
+    if (!key) throw new SupportError(400, 'GEMINI_API_KEY is not set in this environment.')
+    if (Date.now() - lastGeminiTestAt < 60_000) throw new SupportError(429, 'A Gemini test ran less than a minute ago.')
+    lastGeminiTestAt = Date.now()
+    const started = Date.now()
+    let res: Response
+    try {
+      res = await fetch(`${GEMINI_ENDPOINT}/${GEMINI_MODEL}:generateContent`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
+        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'Reply with the single word OK.' }] }], generationConfig: { maxOutputTokens: 16, temperature: 0 } }),
+        signal: AbortSignal.timeout(20_000),
+      })
+    } catch (error) {
+      throw new SupportError(503, `Gemini could not be reached (${error instanceof Error ? error.name : 'network error'}).`)
+    }
+    const body = (await res.json().catch(() => null)) as { modelVersion?: string; error?: { status?: string } } | null
+    const ms = Date.now() - started
+    console.info(`[derek:test] gemini ${res.status} ${body?.error?.status ?? ''} ${ms}ms`)
+    if (!res.ok) throw new SupportError(503, `Gemini refused the request: HTTP ${res.status}${body?.error?.status ? ` ${body.error.status}` : ''}.`)
+    return { message: `Gemini answered in ${ms} ms (model ${body?.modelVersion ?? GEMINI_MODEL}).` }
   })
 }
 

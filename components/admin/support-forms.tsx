@@ -14,6 +14,7 @@ import {
   returnToDerekAction,
   revokeMemberAction,
   sendTestEmailAction,
+  testGeminiAction,
   setStatusAction,
   setSupportAccessAction,
   syncReviewNoticesAction,
@@ -306,6 +307,19 @@ export function TestEmailForm({ email }: { email: string }) {
       <FormMessage state={state} />
       <Button type="submit" variant="outline" disabled={pending} className="self-start">
         {pending ? 'Sending…' : 'Send test email'}
+      </Button>
+    </form>
+  )
+}
+
+export function GeminiTestForm() {
+  const { state, pending, onSubmit } = useFormAction(testGeminiAction)
+  return (
+    <form onSubmit={onSubmit} className="flex flex-col gap-3">
+      <p className="text-sm leading-relaxed text-muted-foreground">Sends one fixed test sentence (no student data) to Gemini with the configured key.</p>
+      <FormMessage state={state} />
+      <Button type="submit" variant="outline" disabled={pending} className="self-start">
+        {pending ? 'Testing…' : 'Test Gemini connection'}
       </Button>
     </form>
   )

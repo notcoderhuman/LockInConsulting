@@ -25,6 +25,8 @@ const ENV = {
   SMTP_USER: 'synthetic',
   SMTP_PASSWORD: 'synthetic-not-real',
   MAIL_FROM: 'LockIn <no-reply@test.example>',
+  GOOGLE_CLIENT_ID: 'synthetic-client-id.apps.googleusercontent.com',
+  GOOGLE_CLIENT_SECRET: 'synthetic-client-secret-not-real',
 }
 Object.assign(process.env, ENV)
 
@@ -204,6 +206,48 @@ describe('pre-launch tester mode', () => {
     expect(admin.status).toBe(200)
     expect((await resolveAdminContext(new Headers({ cookie: cookiesFrom(admin) }))).state).toBe('ok')
     expect(await rows('SELECT id FROM student_profiles WHERE user_id = ?', [staff.userId])).toHaveLength(0)
+  })
+
+  it('lets a listed tester sign up with Google, and refuses an unlisted Google account', async () => {
+    const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64url')
+    // The "Continue with Google" button on /age-confirm?tester=1, with Google's token endpoint stubbed.
+    async function google(person: { email: string; sub: string }) {
+      const age = await confirmAge()
+      const auth = getAuth()!
+      const started = await auth.handler(
+        new Request(`${BASE}/api/auth/sign-in/social`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', origin: BASE, cookie: age.cookie },
+          body: JSON.stringify({ provider: 'google', callbackURL: '/chat', errorCallbackURL: '/auth?tester=1', requestSignUp: true }),
+        }),
+      )
+      const url = new URL(((await started.json()) as { url: string }).url)
+      const realFetch = globalThis.fetch
+      vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (!String(input instanceof Request ? input.url : input).startsWith('https://oauth2.googleapis.com/token')) return realFetch(input, init)
+        const t = Math.floor(Date.now() / 1000)
+        const claims = { iss: 'https://accounts.google.com', aud: ENV.GOOGLE_CLIENT_ID, sub: person.sub, email: person.email, email_verified: true, name: 'Synthetic', iat: t, exp: t + 3600, nonce: url.searchParams.get('nonce') }
+        return Response.json({ access_token: 'a', id_token: `${b64({ alg: 'RS256' })}.${b64(claims)}.sig`, token_type: 'Bearer', expires_in: 3600, scope: 'openid email profile' })
+      })
+      const cookie = [cookiesFrom(started), age.cookie].filter(Boolean).join('; ')
+      const query = new URLSearchParams({ state: url.searchParams.get('state')!, code: 'c' })
+      const res = await auth.handler(new Request(`${BASE}/api/auth/callback/google?${query}`, { headers: { cookie } }))
+      vi.unstubAllGlobals()
+      return { location: new URL(res.headers.get('location') ?? '/', BASE), cookie: cookiesFrom(res) }
+    }
+    process.env.STUDENT_TEST_EMAILS = `${ENV.STUDENT_TEST_EMAILS},google-tester@test.example`
+    const ok = await google({ email: 'Google-Tester@test.example', sub: 'sub-google-tester' })
+    expect(ok.location.searchParams.get('error')).toBeNull()
+    expect(ok.location.pathname).toBe('/chat')
+    expect((await resolveStudentContext(new Headers({ cookie: ok.cookie }))).state).toBe('needs_profile')
+    // A Google account has its own way in, so onboarding needs no password.
+    expect((await onboard(ok.cookie, {})).status).toBe(200)
+    expect((await resolveStudentContext(new Headers({ cookie: ok.cookie }))).state).toBe('ok')
+
+    const refused = await google({ email: 'google-outsider@test.example', sub: 'sub-google-outsider' })
+    expect(refused.location.searchParams.get('error')).toBeTruthy()
+    expect(refused.cookie).not.toMatch(/session_token=[^;]+/)
+    expect(await rows('SELECT id FROM auth_user WHERE email = ?', ['google-outsider@test.example'])).toHaveLength(0)
   })
 
   it('keeps everything closed once the list is empty and public sign-up is off', async () => {

@@ -9,6 +9,8 @@ import type { AdminActor, Permission } from '@/lib/admin/roles'
 import { recordHref } from '@/lib/admin/view'
 import { revokeMember, setSupportAccess } from '@/lib/admin/team'
 import { getAdminPool } from '@/lib/db/pool'
+import { mailer } from '@/lib/mail'
+import { mailConfigured } from '@/lib/identity/policy'
 import { approveAndSendDraft, editDraft, rejectDraft, requestDraftForConversation } from '@/lib/derek/drafts'
 import { eraseStudent, markStaffRead, returnToDerek, setConversationStatus, staffReply, takeOverConversation } from '@/lib/support/conversations'
 import { SupportError } from '@/lib/support/db'
@@ -125,6 +127,33 @@ export async function updateSupportSettingsAction(_prev: ActionState, form: Form
   return run('support.settings', async (actor) => {
     await updateSupportSettings(getAdminPool(), actor, { autoReplyEnabled: formText(form, 'autoReplyEnabled') === '1' })
     return { message: 'Support settings saved.' }
+  })
+}
+
+let lastTestEmailAt = 0
+
+/** Owner-only SMTP check: one plain email to the owner's own sign-in address, at most once a minute. */
+export async function sendTestEmailAction(): Promise<ActionState> {
+  return run('support.settings', async (actor) => {
+    if (!mailConfigured()) throw new SupportError(400, 'Outgoing mail is not configured (SMTP_HOST, SMTP_USER, SMTP_PASSWORD and MAIL_FROM).')
+    if (Date.now() - lastTestEmailAt < 60_000) throw new SupportError(429, 'A test email was sent less than a minute ago.')
+    lastTestEmailAt = Date.now()
+    try {
+      await mailer.send({
+        to: actor.email,
+        subject: 'LockIn Consulting test email',
+        text: `This is a test of LockIn Consulting's outgoing email, sent from Admin settings at ${new Date().toISOString()}.
+No action is needed.`,
+      })
+    } catch (error) {
+      // Only nodemailer's code and SMTP status reach the log and the page: never the host, user or password.
+      const e = error as { code?: unknown; responseCode?: unknown }
+      const detail = [e.code, e.responseCode].filter((v) => typeof v === 'string' || typeof v === 'number').join(' ') || 'unknown'
+      console.error(`[mail:test] failed: ${detail}`)
+      throw new SupportError(503, `The mail server refused or could not be reached (${detail}).`)
+    }
+    console.info(`[mail:test] accepted by the SMTP server for owner ${actor.userId}`)
+    return { message: `Accepted by the mail server for ${actor.email}. Check that inbox, including spam.` }
   })
 }
 

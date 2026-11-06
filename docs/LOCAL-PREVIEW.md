@@ -30,3 +30,9 @@ In the Claude desktop app, the preview pane's **lockin-local** entry (`.claude/l
 3. Close the admin window. After about 2 minutes the status turns amber, after 3 minutes grey; the student's next check-in hands an eligible waiting question to Derek (mock), with the handoff notice first.
 
 `pnpm dev:local` refuses to start if port 3000 is busy: stop the other server first (it may be an old preview from a worktree), or run on another port with `DEV_PORT=3100 pnpm dev:local` (sign-in then works on http://localhost:3100).
+
+## Rehearsing student sign-up (`pnpm dev:local:signup`)
+
+Same sandbox as `pnpm dev:local`, plus `STUDENT_SELF_SIGNUP_ENABLED=true` and `MAIL_TRANSPORT=log`. Emailed codes are printed to the
+terminal as `[mail:log]`; nothing is sent, and any `SMTP_*` set in your shell is ignored. Flow: `/auth` → Create account →
+`/age-confirm` (name and 18+) → code → `/chat` (name, password, privacy) → sign out → sign in with email and password.

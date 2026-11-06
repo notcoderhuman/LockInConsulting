@@ -44,7 +44,7 @@ export function AuthTabs({
 
   return (
     <div className="flex flex-col gap-6">
-      <div role="tablist" aria-label="Student account" className="grid grid-cols-2 rounded-lg border border-border p-1" onKeyDown={onKeyDown}>
+      <div role="tablist" aria-label="Student account" className="grid grid-cols-2 rounded-xl bg-muted p-1" onKeyDown={onKeyDown}>
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -60,8 +60,8 @@ export function AuthTabs({
             tabIndex={tab === t.id ? 0 : -1}
             onClick={() => setTab(t.id)}
             className={cn(
-              'min-h-11 rounded-md px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
-              tab === t.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
+              'min-h-11 rounded-lg px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+              tab === t.id ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
             )}
           >
             {t.label}
@@ -73,10 +73,21 @@ export function AuthTabs({
         {tab === 'signin' ? (
           <StudentSignIn providers={providers} emailCodes={emailCodes} oauthError={oauthError} next={next} />
         ) : signUpOpen && methodReady ? (
-          <div className="flex flex-col gap-4 text-sm leading-relaxed text-muted-foreground">
-            <p>
-              Create your student account. First you confirm that you are 18 or older; then you continue with an emailed code or a sign-in provider, and accept how LockIn handles your data. Only then can you start chatting.
-            </p>
+          <div className="flex flex-col gap-5 text-sm leading-relaxed text-muted-foreground">
+            <ol className="flex flex-col gap-3">
+              {[
+                'Confirm you’re 18 or older and tell us your name.',
+                emailCodes ? 'Verify your email with a 6-digit code.' : 'Continue with your sign-in provider.',
+                emailCodes ? 'Choose a password and accept the privacy notice.' : 'Accept the privacy notice.',
+              ].map((step, i) => (
+                <li key={step} className="flex items-start gap-3">
+                  <span aria-hidden="true" className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium text-foreground">
+                    {i + 1}
+                  </span>
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ol>
             {oauthError ? (
               <p role="alert" className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-foreground">
                 {oauthError}
@@ -85,9 +96,9 @@ export function AuthTabs({
             {/* Sign-up always goes through the 18+ confirmation first (D-045); the server enforces it too. */}
             <Link
               href={`/age-confirm?${new URLSearchParams({ next })}`}
-              className="inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-primary px-5 text-base font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             >
-              Create a student account
+              Create account
             </Link>
 
           </div>

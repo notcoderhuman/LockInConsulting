@@ -67,15 +67,23 @@ describe('/auth tabs', () => {
     const open = render({ initialTab: 'create', providers: google, signUpOpen: true })
     expect(open).toContain('href="/age-confirm?next=%2Fchat"')
     expect(open).not.toContain('Continue with Google')
-    expect(open).toMatch(/confirm that you are 18 or older/)
+    expect(open).toMatch(/Confirm you’re 18 or older/)
+    // With email codes the steps name the code and the password.
+    const withCodes = render({ initialTab: 'create', providers: closed, signUpOpen: true, emailCodes: true })
+    expect(withCodes).toContain('Verify your email with a 6-digit code.')
+    expect(withCodes).toContain('Choose a password')
   })
 
-  it('offers Google sign-in only while student accounts are open, even when its credentials are set', () => {
-    expect(render({ providers: google })).not.toContain('Continue with Google — unavailable')
+  it('shows only sign-in methods that work: no button for a provider that is closed or not set up', () => {
+    expect(render({ providers: google })).toContain('Continue with Google')
     const closedHtml = render({ providers: googleClosed })
-    expect(closedHtml).toMatch(/<button type="button" disabled=""[^>]*>Continue with Google — unavailable</)
-    expect(closedHtml).toContain('Google sign-in opens when student accounts open.')
+    expect(closedHtml).not.toContain('Continue with Google')
+    expect(closedHtml).not.toMatch(/disabled=""[^>]*>Continue with/)
     expect(closedHtml).not.toContain('STUDENT_ACCOUNTS_ENABLED')
+    // Email and password always; the emailed code only when mail is configured.
+    expect(closedHtml).toContain('"current-password"')
+    expect(closedHtml).not.toContain('Email me a sign-in code')
+    expect(render({ providers: googleClosed, emailCodes: true })).toContain('Sign in with an emailed code instead')
   })
 
   it('shows a readable OAuth error and never echoes the raw code', () => {

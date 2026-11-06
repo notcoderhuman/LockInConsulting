@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from 'next'
-import { Cormorant_Garamond, Manrope, Noto_Sans_Devanagari, Noto_Serif_Devanagari } from 'next/font/google'
 import { headers } from 'next/headers'
 import { connection } from 'next/server'
 import { HTML_LANG } from '@/lib/i18n'
@@ -7,38 +6,8 @@ import { LocaleProvider } from '@/lib/i18n/client'
 import { getLocale, hindiEnabled } from '@/lib/i18n/server'
 import { getSiteUrl } from '@/lib/site-url'
 import { TEXT_SIZE_BOOT } from '@/lib/text-size'
+import './fonts.css'
 import './globals.css'
-
-const cormorant = Cormorant_Garamond({
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-cormorant',
-  display: 'swap',
-})
-
-const manrope = Manrope({
-  subsets: ['latin'],
-  variable: '--font-manrope',
-  display: 'swap',
-})
-
-// Devanagari for the Hindi interface. The Latin fonts have no Devanagari, so these sit next in the
-// font stacks; not preloaded, and the browser fetches them only for a page that shows Devanagari.
-const notoSans = Noto_Sans_Devanagari({
-  subsets: ['devanagari'],
-  weight: ['400', '500', '600'],
-  variable: '--font-noto-devanagari',
-  display: 'swap',
-  preload: false,
-})
-
-const notoSerif = Noto_Serif_Devanagari({
-  subsets: ['devanagari'],
-  weight: ['400', '500'],
-  variable: '--font-noto-serif-devanagari',
-  display: 'swap',
-  preload: false,
-})
 
 const siteUrl = getSiteUrl()
 
@@ -85,7 +54,7 @@ export default async function RootLayout({
     // suppressHydrationWarning: the boot script may set data-text-size before React hydrates.
     <html
       lang={HTML_LANG[locale]}
-      className={`${cormorant.variable} ${manrope.variable} ${notoSans.variable} ${notoSerif.variable} bg-background`}
+      className="bg-background"
       suppressHydrationWarning
     >
       <head>

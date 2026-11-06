@@ -53,8 +53,8 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-manrope), 'Manrope', var(--font-noto-devanagari), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-cormorant), 'Cormorant Garamond', var(--font-noto-serif-devanagari), ui-serif, Georgia, serif;
+  --font-sans: 'Manrope', 'Noto Sans Devanagari', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Cormorant Garamond', 'Noto Serif Devanagari', ui-serif, Georgia, serif;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);

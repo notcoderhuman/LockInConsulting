@@ -22,7 +22,7 @@ export function createNonce(): string {
 
 /**
  * Every resource the site loads is first-party: scripts and CSS from /_next/static, fonts
- * self-hosted by next/font, globe textures and photos from /public, and API calls to /api.
+ * self-hosted from /public/fonts (app/fonts.css), globe textures and photos from /public, and API calls to /api.
  * - script-src: nonce + 'strict-dynamic' so only Next's nonced bootstrap and the chunks it loads run.
  * - style-src: nonce for <style> elements; style-src-attr allows the `style=""` attributes React
  *   and React Three Fiber set for layout (attributes cannot carry script).

@@ -1,7 +1,7 @@
 import 'server-only'
 import type { RowDataPacket } from 'mysql2/promise'
 import { getAdminPool } from '@/lib/db/pool'
-import { studentSignUpOpen } from '@/lib/identity/policy'
+import { newAccountsAllowed, studentEmailAllowed } from '@/lib/identity/policy'
 import { PASSWORD_POLICY } from '@/lib/auth-options.mjs'
 import { clock, takeToken } from '@/lib/auth-throttle'
 import { getAuth } from '@/lib/auth'
@@ -19,17 +19,18 @@ import { ageAttestation, clearAttestationName, normalizeFullName } from '@/lib/s
 // Change it whenever /privacy changes in substance, so consent can be traced to the exact text.
 export const PRIVACY_NOTICE_VERSION = 'student-2026-11-draft'
 
-const ELIGIBLE = `SELECT u.id, u.name,
+const ELIGIBLE = `SELECT u.id, u.name, u.email,
          (SELECT COUNT(*) FROM admin_members m WHERE m.user_id = u.id) AS memberships,
          (SELECT COUNT(*) FROM student_profiles s WHERE s.user_id = u.id) AS profiles,
          u.emailVerified AS verified
     FROM auth_user u WHERE u.id = ?`
 
 export async function canStartStudentProfile(userId: string, db: Pick<ReturnType<typeof getAdminPool>, 'query'> = getAdminPool()): Promise<boolean> {
-  if (!studentSignUpOpen()) return false
+  // Public sign-up, or pre-launch tester mode for a listed address only (lib/identity/policy.ts).
+  if (!newAccountsAllowed()) return false
   const [rows] = await db.query<RowDataPacket[]>(ELIGIBLE, [userId])
   const r = rows[0]
-  return Boolean(r) && Number(r.memberships) === 0 && Number(r.profiles) === 0 && Number(r.verified) === 1
+  return Boolean(r) && studentEmailAllowed(String(r.email)) && Number(r.memberships) === 0 && Number(r.profiles) === 0 && Number(r.verified) === 1
 }
 
 export type OnboardingResult = { ok: true } | { ok: false; status: number; error: string }

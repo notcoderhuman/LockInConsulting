@@ -6,7 +6,7 @@ import { SiteHeader } from '@/components/site/site-header'
 import { SkipLink } from '@/components/site/skip-link'
 import { AgeConfirm } from '@/components/support/age-confirm'
 import { getAuth } from '@/lib/auth'
-import { emailOtpOpen, getIdentityProviderStatus, privacyNoticeUrl, signUpMethodAvailable, studentSignUpOpen } from '@/lib/identity/policy'
+import { emailOtpOpen, getIdentityProviderStatus, newAccountsAllowed, privacyNoticeUrl, signUpMethodAvailable, testerMode } from '@/lib/identity/policy'
 import { getStudentPageContext } from '@/lib/student/access'
 import { safeNextPath } from '@/lib/student/next-path'
 
@@ -21,11 +21,14 @@ const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)
 // Step one of creating a student account (D-045): an 18+ self-attestation before any sign-up.
 // The page only collects the tick; the server records it and the sign-up callback enforces it.
 export default async function AgeConfirmPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const next = safeNextPath(one((await searchParams).next))
+  const params = await searchParams
+  const next = safeNextPath(one(params.next))
+  const tester = one(params.tester) === '1'
   const ctx = await getStudentPageContext()
   if (ctx.state === 'ok' || ctx.state === 'needs_profile' || ctx.state === 'needs_consent') redirect(next)
-  const open = ctx.state === 'signed_out' && getAuth() !== null && studentSignUpOpen() && signUpMethodAvailable()
-  const back = `/auth?${new URLSearchParams({ tab: 'create', next })}`
+  // Tester mode: only via /auth?tester=1 (the server still lets only listed emails get a code or an account).
+  const open = ctx.state === 'signed_out' && getAuth() !== null && newAccountsAllowed() && signUpMethodAvailable() && (!testerMode() || tester)
+  const back = `/auth?${new URLSearchParams({ tab: 'create', next, ...(tester ? { tester: '1' } : {}) })}`
 
   return (
     <>

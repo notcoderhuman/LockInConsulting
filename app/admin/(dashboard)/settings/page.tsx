@@ -13,7 +13,7 @@ import { formatDate, formatUtc } from '@/lib/admin/view'
 import { todayIso } from '@/lib/data/publication'
 import { getAdminPool } from '@/lib/db/pool'
 import { getDerekStatus } from '@/lib/derek/config'
-import { getIdentityProviderStatus, mailConfigured } from '@/lib/identity/policy'
+import { getIdentityProviderStatus, mailConfigured, testerEmails, testerMode } from '@/lib/identity/policy'
 import { getSupportSettings } from '@/lib/support/settings'
 
 export const metadata: Metadata = { title: 'Settings' }
@@ -121,6 +121,14 @@ export default async function SettingsPage() {
             </li>
           ))}
         </ul>
+        {/* The count only: the addresses themselves are never shown (STUDENT_TEST_EMAILS). */}
+        <p className="mt-3 text-sm text-foreground">
+          {testerMode()
+            ? `Tester mode: ${testerEmails().length} ${testerEmails().length === 1 ? 'address' : 'addresses'} (only they can sign up and sign in; the public sees “not open yet”)`
+            : testerEmails().length
+              ? `Tester mode: off (${testerEmails().length} listed, but student accounts are off or the privacy notice is ready)`
+              : 'Tester mode: off'}
+        </p>
       </Panel>
 
       <Panel title="Ranking reuse rights" description="Rankings are hidden from students until the provider's terms permit reuse. QS rankings are not shown without an executed licence; conditional acceptance is recorded but never displayed.">

@@ -20,6 +20,7 @@ export function AuthTabs({
   signUpOpen,
   oauthError,
   emailCodes = false,
+  tester = false,
   next,
 }: {
   initialTab: AuthTab
@@ -27,6 +28,8 @@ export function AuthTabs({
   signUpOpen: boolean
   oauthError: string | null
   emailCodes?: boolean
+  /** Reached through the unlinked tester entry point (/auth?tester=1): keep it on the next step. */
+  tester?: boolean
   next: string
 }) {
   const [tab, setTab] = useState<AuthTab>(initialTab)
@@ -95,7 +98,7 @@ export function AuthTabs({
             ) : null}
             {/* Sign-up always goes through the 18+ confirmation first (D-045); the server enforces it too. */}
             <Link
-              href={`/age-confirm?${new URLSearchParams({ next })}`}
+              href={`/age-confirm?${new URLSearchParams({ next, ...(tester ? { tester: '1' } : {}) })}`}
               className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-primary px-5 text-base font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             >
               Create account

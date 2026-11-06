@@ -8,7 +8,7 @@ import { SiteHeader } from '@/components/site/site-header'
 import { SkipLink } from '@/components/site/skip-link'
 import { AuthTabs, type AuthTab } from '@/components/support/auth-tabs'
 import { oauthErrorMessage } from '@/lib/identity/oauth-errors'
-import { emailOtpOpen, getIdentityProviderStatus, studentSignUpOpen } from '@/lib/identity/policy'
+import { emailOtpOpen, getIdentityProviderStatus, newAccountsAllowed, testerMode } from '@/lib/identity/policy'
 import { getStudentPageContext } from '@/lib/student/access'
 import { ageTokenFrom, revokeAgeAttestation } from '@/lib/student/age-attestation'
 import { safeNextPath } from '@/lib/student/next-path'
@@ -31,6 +31,10 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
   // Already signed in (or only the 18+/privacy step left, which /chat shows): go straight to the chat.
   if (ctx.state === 'ok' || ctx.state === 'needs_profile' || ctx.state === 'needs_consent') redirect(next)
   const initialTab: AuthTab = one(params.tab) === 'create' ? 'create' : 'signin'
+  // Pre-launch tester mode: the forms appear only at the unlinked /auth?tester=1; everyone else sees the
+  // closed notice. The allowlist is still enforced on the server whatever this page shows.
+  const tester = one(params.tester) === '1'
+  const closed = ctx.state === 'disabled' || (testerMode() && !tester)
 
   return (
     <>
@@ -44,7 +48,7 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
         </div>
 
         <section className="rounded-3xl border border-border bg-card p-6 shadow-sm sm:p-8">
-          {ctx.state === 'disabled' ? (
+          {closed ? (
             <Notice title="Student accounts aren’t open yet">
               We’re finishing an age-eligibility, privacy and legal review before anyone can sign in and send us questions. Until then no information is collected. Every{' '}
               <Link href="/destinations" className="text-primary hover:underline">
@@ -69,9 +73,10 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
             <AuthTabs
               initialTab={initialTab}
               providers={getIdentityProviderStatus()}
-              signUpOpen={studentSignUpOpen()}
+              signUpOpen={newAccountsAllowed()}
+              tester={tester}
               emailCodes={emailOtpOpen()}
-              oauthError={oauthErrorMessage(one(params.error), studentSignUpOpen())}
+              oauthError={oauthErrorMessage(one(params.error), newAccountsAllowed())}
               next={next}
             />
           )}

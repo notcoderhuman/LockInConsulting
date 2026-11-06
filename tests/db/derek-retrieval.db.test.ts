@@ -21,6 +21,7 @@ const YEAR = Number(TODAY.slice(0, 4))
 const addDays = (n: number) => new Date(Date.parse(`${TODAY}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10)
 let src = 0
 let fxSrc = 0
+let draftSrc = 0
 
 const live = () => ({ publication_status: 'published', verification_status: 'verified', source_id: src, checked_at: TODAY, verified_at: `${TODAY} 00:00:00`, verified_by: 'u-reviewer', review_due_at: addDays(90) })
 async function insert(table: string, fields: Record<string, unknown>): Promise<number> {
@@ -60,6 +61,20 @@ beforeAll(async () => {
   ids.gbp = await insert('tuition_fees', { course_id: betaCourse, currency: 'GBP', billing_period: 'per_year', amount: '28000.00', academic_year: year, ...live() })
   ids.intake = await insert('course_intakes', { course_id: course, intake_month: 10, intake_year: YEAR + 1, application_deadline: `${YEAR + 1}-05-31`, ...live() })
   ids.noDeadline = await insert('course_intakes', { course_id: course, intake_month: 4, intake_year: YEAR + 1, application_deadline: null, ...live() })
+
+  // Draft records as the bulk import leaves them: draft/unverified, each with its own source.
+  draftSrc = await insert('sources', { url: 'https://delta.example/msc', title: 'MSc page (synthetic)', publisher: 'Delta University (synthetic)', source_type: 'university_official', retrieved_at: '2026-11-01' })
+  const feeSrc = await insert('sources', { url: 'https://delta.example/fees', title: 'Fees (synthetic)', publisher: 'Delta University (synthetic)', source_type: 'university_official', retrieved_at: '2026-11-02' })
+  const draft = { source_id: draftSrc }
+  ids.delta = await insert('universities', { destination_iso2: 'CA', name: 'Delta Draft University', slug: 'delta-draft-university', official_website: 'https://delta.example/', ...draft })
+  ids.deltaCourse = await insert('courses', { university_id: ids.delta, slug: 'msc-delta', name: 'MSc Delta Analytics', qualification: 'master', study_level: 'PG', course_url: 'https://delta.example/msc', entry_requirements: 'A bachelor degree in a related subject', ...draft })
+  ids.deltaFee = await insert('tuition_fees', { course_id: ids.deltaCourse, currency: 'CAD', billing_period: 'per_year', amount: '31234.00', academic_year: year, ...draft })
+  await insert('field_sources', { entity_type: 'tuition_fee', entity_id: ids.deltaFee, field_name: 'amount', source_id: feeSrc, accessed_on: '2026-11-02', method: 'official_page' })
+  ids.deltaIntake = await insert('course_intakes', { course_id: ids.deltaCourse, intake_month: 9, intake_year: YEAR + 1, application_deadline: `${YEAR + 1}-01-15`, ...draft })
+  // A withdrawn record never returns, even with a source.
+  await insert('universities', { destination_iso2: 'CA', name: 'Epsilon Withdrawn University', slug: 'epsilon-withdrawn-university', official_website: 'https://epsilon.example/', publication_status: 'unpublished', unpublished_reason: 'Synthetic: withdrawn', ...draft })
+  // A published university's own draft fee (not yet checked) is offered too, labelled.
+  ids.alphaDraftFee = await insert('tuition_fees', { course_id: course, fee_category: 'eu_eea', currency: 'EUR', billing_period: 'per_semester', amount: '1550.00', academic_year: year, ...draft })
 }, 240_000)
 
 afterAll(async () => {
@@ -132,6 +147,46 @@ describe('Derek retrieval from published data only', () => {
     const guidance = analyseQuestion(question, evidence)
     const r = await new MockProvider().generate({ question, history: [], evidence, instructions: DEREK_INSTRUCTIONS, guidance }, { signal: new AbortController().signal })
     expect(r.text).toContain('(official source: https://alpha.example/msc-data/fees, Alpha University (synthetic), checked')
+    expect(assessDraft(r.text, assessQuestion(question, evidence), evidence)).toEqual({ level: 'low', reasons: [] })
+  })
+})
+
+describe('Derek retrieval from draft records (unverified, labelled)', () => {
+  it('uses a draft university with every fact labelled UNVERIFIED and its own (or per-field) source', async () => {
+    const evidence = await loadEvidence(db, 'What are the fees and deadlines at Delta Draft University?', TODAY)
+    expect(evidence.map((e) => e.ref)).toEqual([`draft_university:${ids.delta}`, `draft_course:${ids.deltaCourse}`, `draft_course:${ids.deltaCourse}:requirements`, `draft_tuition_fee:${ids.deltaFee}`, `draft_course_intake:${ids.deltaIntake}`])
+    for (const e of evidence) expect(e).toMatchObject({ unverified: true, text: expect.stringMatching(/^UNVERIFIED, not yet checked by LockIn: /), publisher: 'Delta University (synthetic)' })
+    const fee = evidence.find((e) => e.ref.startsWith('draft_tuition_fee:'))!
+    expect(fee).toMatchObject({ text: expect.stringContaining('CAD 31234.00 per year'), sourceUrl: 'https://delta.example/fees', checkedAt: '2026-11-02' })
+    expect(evidence.find((e) => e.ref.startsWith('draft_course_intake:'))?.text).toContain(`application deadline ${YEAR + 1}-01-15`)
+    expect(evidence[0]).toMatchObject({ sourceUrl: 'https://delta.example/msc', checkedAt: '2026-11-01' })
+  })
+
+  it('never uses a withdrawn record or a draft without a source', async () => {
+    expect(await loadEvidence(db, 'Fees at Epsilon Withdrawn University?', TODAY)).toEqual([])
+    expect(JSON.stringify(await loadEvidence(db, 'Fees at Alpha Synthetic University?', TODAY))).not.toMatch(/99999|Hidden Draft/)
+  })
+
+  it('adds a published university’s draft fee after its verified facts, labelled, and never as verified', async () => {
+    const evidence = await loadEvidence(db, 'Fees at Alpha Synthetic University?', TODAY)
+    const draftFee = evidence.find((e) => e.ref === `draft_tuition_fee:${ids.alphaDraftFee}`)
+    expect(draftFee).toMatchObject({ unverified: true, text: expect.stringMatching(/^UNVERIFIED.*EUR 1550\.00 per semester/) })
+    expect(evidence.filter((e) => !e.unverified).every((e) => !e.text.includes('1550'))).toBe(true)
+    expect(evidence.findIndex((e) => e.unverified)).toBeGreaterThan(evidence.findIndex((e) => e.ref === `tuition_fee:${ids.fee}`))
+  })
+
+  it('lists draft universities for a broad destination question, labelled, after verified ones', async () => {
+    const evidence = await loadEvidence(db, 'Tell me about universities in Canada', TODAY)
+    expect(evidence).toEqual([expect.objectContaining({ ref: `draft_university:${ids.delta}`, unverified: true, text: expect.stringContaining("is in LockIn's draft records") })])
+  })
+
+  it('end to end: the mock answers under the unverified label, and that answer is low risk', async () => {
+    const question = 'What is the tuition fee at Delta Draft University?'
+    const evidence = await loadEvidence(db, question, TODAY)
+    const guidance = analyseQuestion(question, evidence)
+    const r = await new MockProvider().generate({ question, history: [], evidence, instructions: DEREK_INSTRUCTIONS, guidance }, { signal: new AbortController().signal })
+    expect(r.text).toContain('Not yet checked by LockIn (unverified):')
+    expect(r.text).not.toContain('From the LockIn directory:')
     expect(assessDraft(r.text, assessQuestion(question, evidence), evidence)).toEqual({ level: 'low', reasons: [] })
   })
 })

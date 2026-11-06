@@ -1,4 +1,4 @@
-import { DIRECTORY_LABEL, ProviderError, type AiProvider, type AutoReplyCapability, type DraftRequest, type DraftResult } from '../provider'
+import { citation, DIRECTORY_LABEL, ProviderError, UNVERIFIED_LABEL, type EvidenceItem, type AiProvider, type AutoReplyCapability, type DraftRequest, type DraftResult } from '../provider'
 
 // Deterministic, offline provider for development and automated tests. It never makes a network
 // call, costs nothing and sees only synthetic data. It is refused in production (lib/derek/config.ts).
@@ -41,12 +41,16 @@ export class MockProvider implements AiProvider {
 
 function contractAnswer(request: DraftRequest): { text: string; uncertain: boolean } {
   const g = request.guidance
-  const facts = request.evidence.slice(0, 5).map((e) => `- ${e.text} (official source: ${e.sourceUrl}, ${e.publisher}, checked ${e.checkedAt})`)
+  const top = request.evidence.slice(0, 5)
+  const facts = top.map((e) => `- ${e.text} ${citation(e)}`)
+  // Verified facts under the directory label; draft records only under the unverified one.
+  const block = (label: string, list: EvidenceItem[]) => (list.length ? [label, ...list.map((e) => `- ${e.text} ${citation(e)}`)] : [])
+  const sourcedBlock = [...block(DIRECTORY_LABEL, top.filter((e) => !e.unverified)), ...block(UNVERIFIED_LABEL, top.filter((e) => e.unverified))].join('\n')
   const followUp = g?.followUp ? `\n${g.followUp}` : ''
 
   // A specific fact with matching verified evidence: quote it, nothing else.
   if (g?.kind === 'specific_fact' && !g.askFollowUp && facts.length)
-    return { text: `${DIRECTORY_LABEL}\n${facts.join('\n')}\nDetails can change, so confirm on the official page before you apply.`, uncertain: false }
+    return { text: `${sourcedBlock}\nDetails can change, so confirm on the official page before you apply.`, uncertain: false }
 
   // A specific fact LockIn has not verified (or no guidance and no evidence at all).
   if (g?.kind === 'specific_fact' || (!g && !facts.length))
@@ -61,7 +65,7 @@ function contractAnswer(request: DraftRequest): { text: string; uncertain: boole
       ? `When you compare universities${where}, look at:\n- course content and structure\n- entry requirements for your level\n- total cost, including tuition and living costs\n- location and city life\n- application timelines and intakes\nThese differ between universities, so check each official course page.`
       : 'In general, this depends on the university and the course, so treat this as general guidance and check the official course page for the details.'
   const sourced = facts.length
-    ? `\n${DIRECTORY_LABEL}\n${facts.join('\n')}`
+    ? `\n${sourcedBlock}`
     : g && g.destinations.length > 1
       ? `\nLockIn has not verified university data for ${g.destinations.join(' or ')} yet, so no figures are given here.`
       : ''

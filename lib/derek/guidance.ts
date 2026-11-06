@@ -1,5 +1,5 @@
 import { DESTINATIONS, type Destination } from '@/lib/destinations'
-import type { EvidenceItem, QuestionGuidance } from './provider'
+import { DIRECTORY_LABEL, UNVERIFIED_LABEL, type EvidenceItem, type QuestionGuidance } from './provider'
 import { factTopicsIn } from './safeguards'
 
 // Per-question guidance for Derek. Pure and deterministic: it decides what kind of answer the
@@ -72,8 +72,10 @@ export function analyseQuestion(question: string, evidence: EvidenceItem[], earl
   // A fact about something named (a country, a university, "fees at X") needs verified evidence;
   // the same topic asked about in general gets a general answer without figures.
   const named = destinations.length > 0 || UNIVERSITY_WORD.test(question) || NAMED_TARGET.test(question) || (isFollowUp && UNIVERSITY_WORD.test(earlierStudentText))
-  const hasUniversityEvidence = evidence.some((e) => e.ref.startsWith('university:'))
-  const hasFactEvidence = evidence.some((e) => !e.ref.startsWith('university:') || /tuition|fee|rank|intake|deadline|acceptance|requirement/i.test(e.text))
+  // A university's identity line (verified or draft) is a listing, not a fact.
+  const isListing = (e: EvidenceItem) => /^(draft_)?university:/.test(e.ref)
+  const hasUniversityEvidence = evidence.some(isListing)
+  const hasFactEvidence = evidence.some((e) => !isListing(e) || /tuition|fee|rank|intake|deadline|acceptance|requirement/i.test(e.text))
   const knowsLevel = STUDY_LEVEL.test(all)
   const knowsSubject = SUBJECT.test(all)
 
@@ -119,16 +121,16 @@ export function analyseQuestion(question: string, evidence: EvidenceItem[], earl
   if (kind === 'broad_destination')
     notes.push(
       hasUniversityEvidence
-        ? 'Some verified LockIn directory listings are in EVIDENCE: you may name them on the "From the LockIn directory:" line, without adding facts that are not in EVIDENCE.'
-        : 'There are no verified LockIn directory listings for this, so do not name or recommend specific universities.',
+        ? `Some LockIn directory listings are in EVIDENCE: you may name verified ones on the "${DIRECTORY_LABEL}" line and UNVERIFIED ones only on the "${UNVERIFIED_LABEL}" line, without adding facts that are not in EVIDENCE.`
+        : 'There are no LockIn directory listings for this, so do not name or recommend specific universities.',
     )
   if (kind === 'specific_fact')
     notes.push(
       hasFactEvidence
-        ? `The student asks about ${topics.join(', ')}. Use ONLY the matching EVIDENCE lines for these facts, on the "From the LockIn directory:" line with the official source. Anything not in EVIDENCE is unknown.`
+        ? `The student asks about ${topics.join(', ')}. Use ONLY the matching EVIDENCE lines for these facts, with their sources: verified ones on the "${DIRECTORY_LABEL}" line, UNVERIFIED ones only on the "${UNVERIFIED_LABEL}" line. Anything not in EVIDENCE is unknown.`
         : `The student asks about ${topics.join(', ')}${where}, but LockIn has no verified record for it. Start with [UNCERTAIN]. Say in one sentence that LockIn has not verified this yet, give brief general guidance on where to check (the official university course page), and do not give any figure, date or range.`,
     )
-  const universities = new Set(evidence.filter((e) => e.ref.startsWith('university:')).map((e) => e.ref)).size
+  const universities = new Set(evidence.filter(isListing).map((e) => e.ref.replace(/^draft_/, ''))).size
   if (kind === 'specific_fact' && universities > 1)
     notes.push(`This compares ${universities} universities. Keep each fact with its own university and source; where one has a fact the other lacks, say LockIn has not verified it for that university. Never fill a gap with another university's figure.`)
   if (followUp) notes.push(`The student's goals are not clear yet. End with exactly this one follow-up question, or a close equivalent: "${followUp}"`)

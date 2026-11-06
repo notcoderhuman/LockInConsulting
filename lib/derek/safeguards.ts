@@ -1,4 +1,4 @@
-import { DIRECTORY_LABEL, type EvidenceItem } from './provider'
+import { DIRECTORY_LABEL, UNVERIFIED_LABEL, type EvidenceItem } from './provider'
 
 // Server-side checks on every question and every draft, independent of the model's own behaviour.
 //
@@ -135,6 +135,26 @@ export function unsupportedFigures(draft: string, evidence: EvidenceItem[]): str
   return [...unsupported]
 }
 
+/**
+ * A fact from a draft record (EvidenceItem.unverified) may appear only under UNVERIFIED_LABEL or on a
+ * line that itself says it is unverified. Anywhere else (including under the directory label) a
+ * figure or source link that only a draft record supports reads as verified.
+ */
+export function draftPresentedAsVerified(draft: string, evidence: EvidenceItem[]): boolean {
+  if (!evidence.some((e) => e.unverified)) return false
+  const verified = evidence.filter((e) => !e.unverified)
+  const verifiedUrls = evidenceUrls(verified)
+  const draftUrls = new Set([...evidenceUrls(evidence)].filter((u) => !verifiedUrls.has(u)))
+  let section: 'other' | 'unverified' = 'other'
+  for (const line of draft.split('\n')) {
+    if (line.includes(UNVERIFIED_LABEL)) section = 'unverified'
+    else if (line.includes(DIRECTORY_LABEL)) section = 'other'
+    else if (section !== 'unverified' && !/\bunverified\b|not yet checked/i.test(line))
+      if (urlsIn(line).some((u) => draftUrls.has(u)) || unsupportedFigures(line, verified).length) return true
+  }
+  return false
+}
+
 export function assessDraft(
   draft: string,
   question: RiskAssessment,
@@ -156,8 +176,11 @@ export function assessDraft(
     if (unsourcedLine || (sourced.trim() && !cites(sourced)) || (hasFigure(draft) && !cites(draft)))
       (level = worst(level, 'uncertain')), reasons.push('Directory facts without their official source reference')
   }
-  if (!evidence.length && (draft.includes(DIRECTORY_LABEL) || /\b(lockin|our directory) (has )?(verified|confirms?)\b|\bverified by lockin\b/i.test(draft)))
+  const verified = evidence.filter((e) => !e.unverified)
+  if (!verified.length && (draft.includes(DIRECTORY_LABEL) || /\b(lockin|our directory) (has )?(verified|confirms?)\b|\bverified by lockin\b/i.test(draft)))
     (level = worst(level, 'high')), reasons.push('Draft claims LockIn-verified information, but no verified evidence was provided')
+  if (draftPresentedAsVerified(draft, evidence))
+    (level = worst(level, 'high')), reasons.push('An unverified draft record is presented without its "not yet checked by LockIn" label')
   const invented = unsupportedFigures(draft, evidence)
   if (invented.length) {
     level = worst(level, 'high')

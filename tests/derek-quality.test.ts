@@ -48,7 +48,7 @@ describe('question analysis', () => {
     expect(g.note).toMatch(/course content and structure, entry requirements for their level, total cost .*location .*application timelines/)
     expect(g.note).toMatch(/do not name or recommend specific universities/)
     expect(analyseQuestion('Should I study in Canada or Germany?', []).destinations).toEqual(['Canada', 'Germany'])
-    expect(analyseQuestion('Tell me about UK universities', listing).note).toMatch(/may name them on the "From the LockIn directory:" line/)
+    expect(analyseQuestion('Tell me about UK universities', listing).note).toMatch(/may name verified ones on the "From the LockIn directory:" line and UNVERIFIED ones only on the "Not yet checked by LockIn \(unverified\):" line/)
     expect(analyseQuestion('Tell me about UK universities for a master’s in data science', []).askFollowUp).toBe(false)
   })
 

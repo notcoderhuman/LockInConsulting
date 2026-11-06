@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { autoReplyContentBlockers } from '@/lib/derek/auto-reply'
 import { analyseQuestion } from '@/lib/derek/guidance'
-import { DIRECTORY_LABEL, type EvidenceItem } from '@/lib/derek/provider'
+import { DIRECTORY_LABEL, UNVERIFIED_LABEL, type EvidenceItem } from '@/lib/derek/provider'
 import { MockProvider } from '@/lib/derek/providers/mock'
 import { assessDraft, assessQuestion } from '@/lib/derek/safeguards'
 import { DEREK_INSTRUCTIONS } from '@/lib/derek/provider'
@@ -70,5 +70,35 @@ describe('comparisons and links', () => {
   it('lets an unreviewed reply link the official course page named in evidence, nothing else', () => {
     expect(autoReplyContentBlockers('Apply on the course page: https://uni.example/msc-data.', [course])).toEqual([])
     expect(autoReplyContentBlockers('See https://made-up.example/apply', [course])).toContain('Contains a link that is not from verified evidence')
+  })
+})
+
+describe('draft (unverified) records are always labelled', () => {
+  const draftFee: EvidenceItem = { ref: 'draft_tuition_fee:9', text: 'UNVERIFIED, not yet checked by LockIn: MSc Draft tuition fee (international): GBP 27500.00 per year', publisher: 'Draft University (synthetic)', sourceUrl: 'https://draft.example/fees', checkedAt: '2026-11-01', unverified: true }
+  const risk = (text: string, evidence: EvidenceItem[]) => assessDraft(text, assessQuestion('What is the fee at Draft University?', evidence), evidence)
+  const cite = '(source: https://draft.example/fees, Draft University (synthetic), accessed 2026-11-01)'
+
+  it('accepts a draft fact under the unverified label, with its source', () => {
+    expect(risk(`${UNVERIFIED_LABEL}\n- MSc Draft tuition fee: GBP 27500.00 per year ${cite}\nConfirm it on the official page.`, [draftFee])).toEqual({ level: 'low', reasons: [] })
+  })
+  it('rejects the same fact under the directory label, in plain text, or called verified', () => {
+    expect(risk(`${DIRECTORY_LABEL}\n- MSc Draft tuition fee: GBP 27500.00 per year ${cite}`, [draftFee]).level).toBe('high')
+    expect(risk(`Tuition is GBP 27500.00 per year ${cite}.`, [draftFee]).reasons).toContain('An unverified draft record is presented without its "not yet checked by LockIn" label')
+    expect(risk(`LockIn has verified this. ${UNVERIFIED_LABEL}\n- GBP 27500.00 per year ${cite}`, [draftFee]).level).toBe('high')
+  })
+  it('allows a draft figure on a line that says it is unverified', () => {
+    expect(risk(`The unverified figure is GBP 27500.00 per year ${cite}.`, [draftFee]).level).toBe('low')
+  })
+  it('the mock keeps verified and unverified facts in separate, labelled sections', async () => {
+    const evidence = [fee, draftFee]
+    const question = 'What is the tuition fee at Example U?'
+    const guidance = analyseQuestion(question, evidence)
+    const r = await new MockProvider().generate({ question, history: [], evidence, instructions: DEREK_INSTRUCTIONS, guidance }, { signal: new AbortController().signal })
+    const [verifiedPart, draftPart] = r.text.split(UNVERIFIED_LABEL)
+    expect(verifiedPart).toContain(`${DIRECTORY_LABEL}\n- MSc Data`)
+    expect(verifiedPart).not.toContain('27500')
+    expect(draftPart).toContain('- UNVERIFIED, not yet checked by LockIn: MSc Draft tuition fee')
+    expect(draftPart).toContain('accessed 2026-11-01)')
+    expect(assessDraft(r.text, assessQuestion(question, evidence), evidence)).toEqual({ level: 'low', reasons: [] })
   })
 })

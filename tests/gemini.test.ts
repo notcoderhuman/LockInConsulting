@@ -4,7 +4,7 @@ import { inspect } from 'node:util'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { createProvider, derekMaxAttempts, getDerekStatus, readGeminiApiKey } from '@/lib/derek/config'
 import { DEREK_INSTRUCTIONS, ProviderError, type DraftRequest, type EvidenceItem } from '@/lib/derek/provider'
-import { buildGeminiRequest, GEMINI_ENDPOINT, GEMINI_MAX_OUTPUT_TOKENS, GEMINI_MODEL, GeminiProvider, parseGeminiResponse } from '@/lib/derek/providers/gemini'
+import { buildGeminiRequest, GEMINI_ENDPOINT, GEMINI_MAX_OUTPUT_TOKENS, GEMINI_MODEL, GeminiProvider, parseGeminiResponse, vertexEndpoint } from '@/lib/derek/providers/gemini'
 import { callProvider } from '@/lib/derek/runtime'
 import { assessDraft, assessQuestion } from '@/lib/derek/safeguards'
 
@@ -313,5 +313,45 @@ describe('Gemini configuration', () => {
     expect(createProvider(getDerekStatus(base), { ...base, DEREK_GEMINI_DAILY_DRAFT_LIMIT: '5' })?.policy?.dailyDraftLimit).toBe(5)
     expect(createProvider(getDerekStatus(base), { ...base, DEREK_GEMINI_DAILY_DRAFT_LIMIT: '999999' })?.policy?.dailyDraftLimit).toBe(2000)
     expect(createProvider(getDerekStatus(base), { ...base, DEREK_GEMINI_DAILY_DRAFT_LIMIT: '-1' })?.policy?.dailyDraftLimit).toBe(100)
+  })
+})
+
+describe('Gemini on Vertex AI (same adapter, Google Cloud terms)', () => {
+  const vertex = { DEREK_AI_ENABLED: 'true', DEREK_PROVIDER: 'vertex', VERTEX_API_KEY: KEY, VERTEX_PROJECT_ID: 'lockin-derek-test' }
+
+  it('builds the endpoint only from a valid project ID and region', () => {
+    expect(vertexEndpoint('lockin-derek-test', 'global')).toBe('https://aiplatform.googleapis.com/v1/projects/lockin-derek-test/locations/global/publishers/google/models/gemini-3.5-flash-lite:generateContent')
+    expect(vertexEndpoint('lockin-derek-test', 'asia-south1')).toBe('https://asia-south1-aiplatform.googleapis.com/v1/projects/lockin-derek-test/locations/asia-south1/publishers/google/models/gemini-3.5-flash-lite:generateContent')
+    for (const [project, location] of [['evil.example/x', 'global'], ['lockin-derek-test', 'x.evil.example'], ['', 'global'], ['lockin-derek-test', 'asia-south1/../x']])
+      expect(vertexEndpoint(project, location)).toBeNull()
+  })
+
+  it('is ready with key and project, sends the key only in the header to the Vertex URL, and keeps every policy', async () => {
+    const status = getDerekStatus(vertex)
+    expect(status).toMatchObject({ state: 'ready', providerId: 'vertex' })
+    const p = createProvider(status, vertex)!
+    expect(p).toMatchObject({ id: 'vertex', model: 'gemini-3.5-flash-lite', policy: { external: true, requiresAdultStudent: true, dailyDraftLimit: 100 } })
+    const { impl, calls } = fakeFetch(jsonResponse(geminiBody('A conditional offer is…')))
+    const adapter = new GeminiProvider({ apiKey: KEY, provider: 'vertex', url: vertexEndpoint('lockin-derek-test', 'global')!, dailyDraftLimit: 10, fetchImpl: impl })
+    expect((await adapter.generate(request, { signal: signal() })).text).toBe('A conditional offer is…')
+    expect(calls[0].url).toBe(vertexEndpoint('lockin-derek-test', 'global'))
+    expect(calls[0].url).not.toContain(KEY)
+    expect((calls[0].init.headers as Record<string, string>)['x-goog-api-key']).toBe(KEY)
+    expect(JSON.stringify(status)).not.toContain(KEY)
+  })
+
+  it('is blocked without key or project, with another model, and in production until approved for vertex', () => {
+    expect(getDerekStatus({ ...vertex, VERTEX_API_KEY: '' })).toMatchObject({ state: 'blocked', reasons: ['VERTEX_API_KEY is not set.'] })
+    expect(getDerekStatus({ ...vertex, VERTEX_PROJECT_ID: '' })).toMatchObject({ state: 'blocked' })
+    expect(getDerekStatus({ ...vertex, DEREK_GEMINI_MODEL: 'gemini-3.8-flash' })).toMatchObject({ state: 'blocked' })
+    expect(getDerekStatus({ ...vertex, NODE_ENV: 'production', DEREK_PROVIDER_APPROVED: 'gemini' })).toMatchObject({ state: 'blocked' })
+    // Cloud billing and the Cloud no-training terms replace GEMINI_PAID_TIER for Vertex.
+    expect(getDerekStatus({ ...vertex, NODE_ENV: 'production', DEREK_PROVIDER_APPROVED: 'vertex' })).toMatchObject({ state: 'ready', providerId: 'vertex' })
+    expect(createProvider(getDerekStatus({ ...vertex, VERTEX_API_KEY: '' }), vertex)).toBeNull()
+  })
+
+  it('auto-replies only when cleared for vertex itself', () => {
+    expect(getDerekStatus({ ...vertex, DEREK_AUTO_REPLY_CLEARED: 'gemini' }).autoReply.permitted).toBe(false)
+    expect(getDerekStatus({ ...vertex, DEREK_AUTO_REPLY_CLEARED: 'vertex' }).autoReply.permitted).toBe(true)
   })
 })

@@ -476,6 +476,18 @@ describe('authentication and authorisation', () => {
     expect(await resolveAdminContext(new Headers({ cookie }))).toEqual({ state: 'signed_out' })
   })
 
+  it('ends a staff session 8 hours after sign-in, although student sessions last 30 days', async () => {
+    const cookie = await signIn('editor@test.example')
+    const token = decodeURIComponent(cookie.split('=')[1]).split('.')[0]
+    const [s] = await rows<{ hours: number }>('SELECT TIMESTAMPDIFF(HOUR, createdAt, expiresAt) AS hours FROM auth_session WHERE token = ?', [token])
+    expect(Number(s.hours)).toBeGreaterThanOrEqual(24 * 30 - 1) // Better Auth's lifetime is the students'
+    await db.query('UPDATE auth_session SET createdAt = UTC_TIMESTAMP(3) - INTERVAL 7 HOUR WHERE token = ?', [token])
+    expect((await resolveAdminContext(new Headers({ cookie }))).state).toBe('ok')
+    await db.query('UPDATE auth_session SET createdAt = UTC_TIMESTAMP(3) - INTERVAL 481 MINUTE WHERE token = ?', [token])
+    expect(await resolveAdminContext(new Headers({ cookie }))).toEqual({ state: 'signed_out' })
+    expect(await rows('SELECT id FROM auth_session WHERE token = ?', [token])).toHaveLength(0)
+  })
+
   it('revoking a member blocks them immediately and ends their sessions', async () => {
     const cookie = await signIn('former@test.example')
     expect((await resolveAdminContext(new Headers({ cookie }))).state).toBe('ok')

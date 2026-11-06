@@ -146,6 +146,35 @@ describe('Google sign-in (students only)', () => {
     expect(staging.url?.searchParams.get('redirect_uri')).toBe('https://staging.lockin.example/api/auth/callback/google')
   })
 
+  it('uses the production callback with BETTER_AUTH_URL=https://lockinconsulting.com, identity scopes only, and secure state cookies', async () => {
+    const PROD = 'https://lockinconsulting.com'
+    const auth = createAuth(PROD)
+    const res = await auth.handler(
+      new Request(`${PROD}/api/auth/sign-in/social`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', origin: PROD },
+        body: JSON.stringify({ provider: 'google', callbackURL: '/chat', errorCallbackURL: '/auth', requestSignUp: false }),
+      }),
+    )
+    expect(res.status).toBe(200)
+    const url = new URL(((await res.json()) as { url: string }).url)
+    expect(url.origin + url.pathname).toBe('https://accounts.google.com/o/oauth2/v2/auth')
+    expect(url.searchParams.get('redirect_uri')).toBe('https://lockinconsulting.com/api/auth/callback/google')
+    expect(url.searchParams.get('scope')?.split(' ').sort()).toEqual(['email', 'openid', 'profile'])
+    expect(url.searchParams.get('response_type')).toBe('code')
+    expect(url.searchParams.get('code_challenge_method')).toBe('S256')
+    expect(url.searchParams.get('prompt')).toBe('select_account')
+    expect(url.searchParams.has('access_type')).toBe(false)
+    // The state/PKCE cookies for the round trip: HttpOnly, Secure on https, SameSite=Lax (sent on Google's top-level redirect back).
+    const cookies = res.headers.getSetCookie()
+    expect(cookies.length).toBeGreaterThan(0)
+    for (const c of cookies) {
+      expect(c, c).toMatch(/;\s*HttpOnly/i)
+      expect(c, c).toMatch(/;\s*Secure/i)
+      expect(c, c).toMatch(/;\s*SameSite=Lax/i)
+    }
+  })
+
   it('refuses a sign-in request that asks Google for extra scopes', async () => {
     for (const body of [{ provider: 'google', callbackURL: '/chat', scopes: ['https://www.googleapis.com/auth/drive'] }, { provider: 'google', callbackURL: '/chat', scopes: [] }]) {
       const res = await authRoute.POST(

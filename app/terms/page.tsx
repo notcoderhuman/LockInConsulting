@@ -1,11 +1,12 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { LegalPage, OwnerToComplete } from '@/components/legal/legal-page'
+import { Fact, LegalPage, OwnerToComplete } from '@/components/legal/legal-page'
+import { BUSINESS, LEGAL_REVIEWED } from '@/lib/legal/notice'
 
 export const metadata: Metadata = {
   title: 'Terms of use (draft) · LockIn Consulting',
   description: 'Terms for using lockinconsulting.com and the student chat. Draft pending legal review.',
-  robots: { index: false, follow: true },
+  robots: { index: LEGAL_REVIEWED, follow: true },
 }
 
 const TERMS_VERSION = 'terms-2026-11-draft'
@@ -18,7 +19,7 @@ export default function TermsPage() {
       <section className="flex flex-col gap-3">
         <h2>About these terms</h2>
         <p>
-          These terms apply to lockinconsulting.com and its student chat, run by LockIn Consulting (“LockIn”). <OwnerToComplete>registered legal name, form of entity and address</OwnerToComplete>
+          These terms apply to lockinconsulting.com and its student chat, run by LockIn Consulting (“LockIn”). Operator: <Fact value={BUSINESS.legalName} missing="registered legal name and form of entity" />, <Fact value={BUSINESS.address} missing="address" />.
           By creating a student account you accept them. How we handle personal data is set out in the <Link href="/privacy">privacy notice</Link>.
         </p>
       </section>
@@ -85,7 +86,7 @@ export default function TermsPage() {
       <section className="flex flex-col gap-3">
         <h2>Complaints and contact</h2>
         <p>
-          Contact: <OwnerToComplete>contact email and phone number</OwnerToComplete>. Grievances about personal data are handled as described in the{' '}
+          Contact: <Fact value={BUSINESS.contactEmail} missing="contact email" />, <Fact value={BUSINESS.contactPhone} missing="phone number" />. Grievances about personal data are handled as described in the{' '}
           <Link href="/privacy#rights">privacy notice</Link>.
         </p>
       </section>

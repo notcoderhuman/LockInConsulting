@@ -1,13 +1,14 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { LegalPage, OwnerToComplete } from '@/components/legal/legal-page'
+import { Fact, LegalPage, OwnerToComplete } from '@/components/legal/legal-page'
+import { BUSINESS, LEGAL_REVIEWED } from '@/lib/legal/notice'
 import { PRIVACY_NOTICE_VERSION } from '@/lib/student/onboarding'
 
 export const metadata: Metadata = {
   title: 'Privacy notice (draft) · LockIn Consulting',
   description: 'How LockIn Consulting handles personal data of students who use the student chat. Draft pending legal review.',
   // Draft: kept out of search until the reviewed version is published.
-  robots: { index: false, follow: true },
+  robots: { index: LEGAL_REVIEWED, follow: true },
 }
 
 // Draft student privacy notice. Structure follows DPDP Act 2023 s.5 and DPDP Rules 2025 r.3
@@ -24,13 +25,13 @@ export default function PrivacyPage() {
         </p>
         <ul>
           <li>
-            Legal name and form of the business: <OwnerToComplete>registered legal name and type of entity</OwnerToComplete>
+            Legal name and form of the business: <Fact value={BUSINESS.legalName} missing="registered legal name and type of entity" />
           </li>
           <li>
-            Registered address: <OwnerToComplete>postal address</OwnerToComplete>
+            Registered address: <Fact value={BUSINESS.address} missing="postal address" />
           </li>
           <li>
-            Person who answers questions about your personal data (Act s.8(9), Rules r.9): <OwnerToComplete>name or role, email address and phone number</OwnerToComplete>
+            Person who answers questions about your personal data (Act s.8(9), Rules r.9): <Fact value={BUSINESS.contactPerson} missing="name or role" />, <Fact value={BUSINESS.contactEmail} missing="email address" />, <Fact value={BUSINESS.contactPhone} missing="phone number" />
           </li>
         </ul>
         <p>This notice covers the student chat and student accounts. Browsing the public pages does not need an account, and LockIn does not use analytics or advertising cookies.</p>
@@ -182,7 +183,7 @@ export default function PrivacyPage() {
           </li>
         </ul>
         <p>
-          To make a request, write from the email address on your account to <OwnerToComplete>contact email for privacy requests</OwnerToComplete>. That email address is the
+          To make a request, write from the email address on your account to <Fact value={BUSINESS.contactEmail} missing="contact email for privacy requests" />. That email address is the
           identifier we use to find your account (Rules r.14).
         </p>
         <p>

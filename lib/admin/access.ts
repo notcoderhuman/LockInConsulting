@@ -3,7 +3,8 @@ import type { RowDataPacket } from 'mysql2/promise'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { getAuth } from '@/lib/auth'
-import { getAdminPool } from '@/lib/db/pool'
+import { STAFF_SESSION_SECONDS } from '@/lib/auth-options.mjs'
+import { getAdminPool, getAuthPool } from '@/lib/db/pool'
 import { REQUIRED_MIGRATIONS } from '@/lib/db/schema-version'
 import { ADMIN_ROLES, actorCan, type AdminActor, type AdminRole, type Permission } from './roles'
 
@@ -46,6 +47,11 @@ export async function resolveAdminContext(requestHeaders: Headers): Promise<Admi
     const role = rows[0]?.role as AdminRole | undefined
     if (!role || !ADMIN_ROLES.includes(role) || Number(rows[0].student_profiles) > 0 || Number(rows[0].other_logins) > 0)
       return { state: 'forbidden', email: session.user.email }
+    // Staff sessions last STAFF_SESSION_SECONDS from sign-in (Better Auth's lifetime is the students').
+    if (Date.now() - new Date(session.session.createdAt).getTime() > STAFF_SESSION_SECONDS * 1000) {
+      await getAuthPool().query('DELETE FROM auth_session WHERE id = ?', [session.session.id])
+      return { state: 'signed_out' }
+    }
     return {
       state: 'ok',
       actor: { userId: session.user.id, name: session.user.name, email: session.user.email, role, supportEnabled: Boolean(Number(rows[0].support_enabled)) },

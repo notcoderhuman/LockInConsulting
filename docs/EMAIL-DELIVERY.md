@@ -32,6 +32,7 @@ move to ZeptoMail or SES if limits or deliverability become a problem.
    - **SPF**: one TXT record on the root, e.g. `v=spf1 include:_spf.mail.hostinger.com ~all` (plus the provider's include if another is used). Only one SPF record may exist.
    - **DKIM**: enable in Hostinger Email (or the provider) and publish the CNAME/TXT records it shows.
    - **DMARC**: start with `_dmarc` TXT `v=DMARC1; p=none; rua=mailto:<owner mailbox>`; move to `p=quarantine` after two clean weeks of reports.
+4a. One real message, from a trusted machine with the `SMTP_*`/`MAIL_FROM` values set in that shell only: `pnpm test:smtp-live you@your-mailbox.example`. It logs in, sends one email and prints the server answer, never the user name or password.
 4. Delivery test (local build with the production mail settings, not production switches): send a code to Gmail, Outlook and Yahoo test
    inboxes; check it arrives in the inbox, and that the headers show `spf=pass`, `dkim=pass`, `dmarc=pass`.
 5. If Apple sign-in is used: register the sending domain for Apple's private email relay (`docs/AUTH-PROVIDERS.md`).

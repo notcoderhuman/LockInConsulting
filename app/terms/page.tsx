@@ -4,8 +4,8 @@ import { Fact, LegalPage } from '@/components/legal/legal-page'
 import { BUSINESS, LEGAL_REVIEWED } from '@/lib/legal/notice'
 
 export const metadata: Metadata = {
-  title: 'Terms of use (draft) · LockIn Consulting',
-  description: 'Terms for using lockinconsulting.com and the student chat. Draft pending legal review.',
+  title: 'Terms of use · LockIn Consulting',
+  description: 'Terms for using lockinconsulting.com and the student chat.',
   robots: { index: LEGAL_REVIEWED, follow: true },
 }
 

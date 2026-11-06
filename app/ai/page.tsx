@@ -5,8 +5,8 @@ import { LEGAL_REVIEWED } from '@/lib/legal/notice'
 import { AUTO_REPLY_LIMITS } from '@/lib/derek/auto-reply'
 
 export const metadata: Metadata = {
-  title: 'AI disclosure (draft) · LockIn Consulting',
-  description: 'How Derek, LockIn’s AI assistant, is used in the student chat. Draft pending legal review.',
+  title: 'AI disclosure · LockIn Consulting',
+  description: 'How Derek, LockIn’s AI assistant, is used in the student chat.',
   robots: { index: LEGAL_REVIEWED, follow: true },
 }
 
@@ -18,7 +18,7 @@ export default function AiDisclosurePage() {
       <section className="flex flex-col gap-3">
         <h2>What Derek does</h2>
         <p>
-          Derek drafts answers to questions in the student chat about universities, courses, fees and admissions, using the information published on this site. It does not make
+          Once switched on, Derek drafts answers to questions in the student chat about universities, courses, fees and admissions, using the information published on this site. It does not make
           decisions about you, assess your chances, or give legal, immigration or financial advice.
         </p>
       </section>

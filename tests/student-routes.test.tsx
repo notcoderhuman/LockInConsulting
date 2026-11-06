@@ -1,4 +1,4 @@
-// Homepage → Chat Now → /auth (Sign in | Create account) → /chat, and the presence label the chat
+// Homepage → Chat Now → /auth (Continue with Email | Continue with Google) → /chat, and the presence label the chat
 // shows. Rendering only; the database-backed parts are in tests/db/support.db.test.ts.
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
@@ -8,8 +8,8 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: vi.fn(), refresh: vi.fn() }) }))
 
 const { ChatCta, CHAT_NOW_HREF } = await import('@/components/home/chat-cta')
-const { AuthTabs } = await import('@/components/support/auth-tabs')
-const { AgeConfirm } = await import('@/components/support/age-confirm')
+const { AuthPanel } = await import('@/components/support/auth-panel')
+const { StudentOnboarding } = await import('@/components/support/student-onboarding')
 const { presenceText } = await import('@/components/support/team-presence')
 const { authPathFor, safeNextPath } = await import('@/lib/student/next-path')
 const { getIdentityProviderStatus } = await import('@/lib/identity/policy')
@@ -23,7 +23,7 @@ describe('homepage', () => {
     const order = ['<HeroExplorer />', '<ChatCta />', '<HowItWorks />', '<TeamSection />'].map((tag) => page.indexOf(tag))
     expect(order.every((i) => i > 0)).toBe(true)
     expect([...order].sort((a, b) => a - b)).toEqual(order)
-    for (const embedded of ['StudentSignIn', 'StudentChat', 'AuthTabs', 'HomeChat', 'getStudentPageContext']) expect(page, embedded).not.toContain(embedded)
+    for (const embedded of ['AuthPanel', 'StudentChat', 'HomeChat', 'getStudentPageContext']) expect(page, embedded).not.toContain(embedded)
 
     const html = renderToStaticMarkup(<ChatCta />)
     expect(html).toContain('Have a question about studying abroad?')
@@ -36,60 +36,51 @@ describe('homepage', () => {
   })
 })
 
-describe('/auth tabs', () => {
+describe('/auth', () => {
   const closed = getIdentityProviderStatus({})
   const google = getIdentityProviderStatus({ GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 'secret', STUDENT_ACCOUNTS_ENABLED: 'true' })
   const googleClosed = getIdentityProviderStatus({ GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 'secret' })
-  const render = (props: Partial<Parameters<typeof AuthTabs>[0]>) =>
-    renderToStaticMarkup(<AuthTabs initialTab="signin" providers={closed} signUpOpen={false} oauthError={null} next="/chat" {...props} />)
+  const render = (props: Partial<Parameters<typeof AuthPanel>[0]>) =>
+    renderToStaticMarkup(<AuthPanel providers={google} emailCodes signUpOpen oauthError={null} next="/chat" {...props} />)
 
-  it('shows two labelled tabs and only the active flow', () => {
-    const signIn = render({})
-    expect(signIn).toContain('role="tablist"')
-    expect(signIn.match(/role="tab"/g)).toHaveLength(2)
-    expect(signIn).toMatch(/aria-selected="true"[^>]*>Sign in</)
-    expect(signIn).toMatch(/aria-selected="false"[^>]*>Create account</)
-    expect(signIn).toContain('type="password"')
-    expect(signIn).not.toContain('New student accounts aren’t open yet')
-
-    const create = render({ initialTab: 'create' })
-    expect(create).toMatch(/aria-selected="true"[^>]*>Create account</)
-    expect(create).not.toContain('type="password"') // the sign-in form is not mixed in
+  it('offers exactly two methods, email and Google, and no password anywhere', () => {
+    const html = render({})
+    expect(html).toContain('Continue with Email')
+    expect(html).toContain('Continue with Google')
+    expect(html).not.toMatch(/type="password"|current-password|new-password|Forgot|password/i)
+    expect(html).not.toContain('role="tab"')
+    expect(html).not.toContain('tester')
+    expect(html).not.toContain('New student accounts aren’t open yet')
   })
 
-  it('says plainly that sign-up is closed while STUDENT_SELF_SIGNUP_ENABLED is off, even with Google configured', () => {
-    for (const providers of [closed, google]) {
-      const html = render({ initialTab: 'create', providers, signUpOpen: false })
-      expect(html).toContain('New student accounts aren’t open yet.')
-      expect(html).not.toContain('Continue with Google')
-    }
-    // Open: Create account goes to the 18+ confirmation first, never straight to Google (D-045).
-    const open = render({ initialTab: 'create', providers: google, signUpOpen: true })
-    expect(open).toContain('href="/age-confirm?next=%2Fchat"')
-    expect(open).not.toContain('Continue with Google')
-    expect(open).toMatch(/Confirm you’re 18 or older/)
-    // With email codes the steps name the code and the password.
-    const withCodes = render({ initialTab: 'create', providers: closed, signUpOpen: true, emailCodes: true })
-    expect(withCodes).toContain('Verify your email with a 6-digit code.')
-    expect(withCodes).toContain('Choose a password')
+  it('shows only methods that work: no Google button until it is configured and open, no email button without mail', () => {
+    expect(render({ providers: googleClosed })).not.toContain('Continue with Google')
+    expect(render({ providers: closed })).not.toContain('Continue with Google')
+    expect(render({ emailCodes: false })).not.toContain('Continue with Email')
+    expect(render({ providers: closed, emailCodes: false })).toContain('Sign-in isn’t available right now')
   })
 
-  it('shows only sign-in methods that work: no button for a provider that is closed or not set up', () => {
-    expect(render({ providers: google })).toContain('Continue with Google')
-    const closedHtml = render({ providers: googleClosed })
-    expect(closedHtml).not.toContain('Continue with Google')
-    expect(closedHtml).not.toMatch(/disabled=""[^>]*>Continue with/)
-    expect(closedHtml).not.toContain('STUDENT_ACCOUNTS_ENABLED')
-    // Email and password always; the emailed code only when mail is configured.
-    expect(closedHtml).toContain('"current-password"')
-    expect(closedHtml).not.toContain('Email me a sign-in code')
-    expect(render({ providers: googleClosed, emailCodes: true })).toContain('Sign in with an emailed code instead')
+  it('says plainly that new accounts are closed while the sign-up gate is shut, without hiding sign-in', () => {
+    const html = render({ signUpOpen: false })
+    expect(html).toContain('New student accounts aren’t open yet.')
+    expect(html).toContain('Continue with Email')
+    expect(html).toContain('Continue with Google')
   })
 
   it('shows a readable OAuth error and never echoes the raw code', () => {
     const html = render({ oauthError: 'Google sign-in was cancelled. You can try again whenever you’re ready.' })
     expect(html).toContain('role="alert"')
     expect(html).toContain('Google sign-in was cancelled.')
+  })
+})
+
+describe('first-time onboarding', () => {
+  it('asks for name, 18+ and consent, and never for a password', () => {
+    const html = renderToStaticMarkup(<StudentOnboarding name="" />)
+    expect(html).toContain('Your full name')
+    expect(html).toContain('I am 18 or older.')
+    expect(html).toMatch(/name="privacy"/)
+    expect(html).not.toMatch(/password/i)
   })
 })
 
@@ -113,29 +104,5 @@ describe('team presence label', () => {
     expect(presenceText({ state: 'offline', name: 'Dev', derekAvailable: true })).toMatchObject({ tone: 'grey', label: 'Dev is offline', detail: expect.stringMatching(/Derek/) })
     // When Derek cannot really answer, nothing pretends he will.
     expect(presenceText({ state: 'offline', name: 'Dev', derekAvailable: false }).detail).toBe('Leave your question here: the team will reply when they are back.')
-  })
-})
-
-describe('/age-confirm (D-045)', () => {
-  const render = (privacyUrl: string | null = null) => renderToStaticMarkup(<AgeConfirm next="/chat" back="/auth?tab=create&next=%2Fchat" privacyUrl={privacyUrl} />)
-  it('starts unchecked with the continue button disabled, and asks for nothing but the tick', () => {
-    const html = render()
-    expect(html).toContain('I confirm that I am 18 years of age or older.')
-    expect(html).toMatch(/<input[^>]*type="checkbox"/)
-    expect(html).not.toMatch(/<input[^>]*checked=""/)
-    expect(html).toMatch(/<button[^>]*type="submit"[^>]*disabled=""[^>]*>Confirm and continue</)
-    expect(html).toMatch(/<button[^>]*type="button"[^>]*>Back</)
-    // Only the name and the one checkbox: no date of birth, document or upload field.
-    expect(html.match(/<input/g)).toHaveLength(2)
-    expect(html).toContain('Your full name')
-    expect(html).toMatch(/<input[^>]*autoComplete="name"/i)
-    expect(html).not.toMatch(/verif(y|ied|ication) your age/i)
-    expect(html).toContain('doesn’t check your age or identity')
-  })
-  it('links the privacy notice only when one is published', () => {
-    expect(render()).not.toContain('privacy notice')
-    const html = render('https://lockin.example/privacy')
-    expect(html).toContain('href="https://lockin.example/privacy"')
-    expect(html).toContain('(opens in a new tab)')
   })
 })

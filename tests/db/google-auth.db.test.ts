@@ -328,14 +328,22 @@ describe('18+ confirmation before a new student account (D-045)', () => {
     expect(await rows('SELECT id FROM student_age_attestations WHERE token_sha256 = ?', [ok.cookie.split('=')[1]])).toHaveLength(0)
   })
 
-  it('refuses a direct Google sign-up with no confirmation, a forged token or a client-side flag', async () => {
+  it('refuses a forged or stale confirmation, and makes a no-access account when none is presented', async () => {
     process.env.STUDENT_SELF_SIGNUP_ENABLED = 'true'
-    for (const [i, cookie] of ['', 'lockin_age=' + 'A'.repeat(43), 'lockin_age=true', 'age_confirmed=true'].entries()) {
+    // A confirmation that is presented must be real and unspent.
+    for (const [i, cookie] of ['lockin_age=' + 'A'.repeat(43)].entries()) {
       const out = await signUp(`bypass${i}@test.example`, cookie)
       expect(errorOf(out.location), cookie).toBe('unable_to_create_user')
       expect(await users(`bypass${i}@test.example`)).toHaveLength(0)
     }
     expect(oauthErrorMessage('unable_to_create_user')).toMatch(/confirm that you’re 18 or older/)
+    // Passwordless sign-up: with none, the account starts verified but with NO student profile: the 18+ and
+    // consent step on /chat comes next, and nothing student-facing is reachable before it.
+    const out = await signUp('noconfirm@test.example', '')
+    expect(out.location).toMatch(/\/chat$/)
+    const [user] = await users('noconfirm@test.example')
+    expect(await rows('SELECT id FROM student_profiles WHERE user_id = ?', [user.id])).toHaveLength(0)
+    expect(await resolveStudentContext(new Headers({ cookie: out.cookies }))).toMatchObject({ state: 'needs_profile' })
   })
 
   it('creates the account with a valid confirmation, spends it, and records it on the profile', async () => {

@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useId, useState, type FormEvent } from 'react'
 import { controlClass, Field } from '@/components/admin/form-controls'
 import { Button } from '@/components/ui/button'
-import { PasswordInput } from '@/components/ui/password-input'
 import { authClient } from '@/lib/auth-client'
 import { DeleteAccount } from './delete-account'
 import type { ProviderId } from '@/lib/identity/policy'
@@ -166,16 +165,6 @@ export function StudentAccount({ displayName, providers }: { displayName: string
         </div>
       </Section>
 
-      <Section title="Password">
-        <PasswordForm
-          hasPassword={methods.includes('credential')}
-          onDone={(text) => {
-            setStatus({ ok: true, text })
-            void load()
-          }}
-        />
-      </Section>
-
       <Section title="Your data">
         <p className="text-sm leading-relaxed text-muted-foreground">
           Download everything LockIn holds about you (your account, sign-in methods, devices and every conversation) as a file, and who processes it. See the{' '}
@@ -209,55 +198,3 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
-/** Set a first password (right after signing in) or change it (needs the current one). Other devices are signed out. */
-function PasswordForm({ hasPassword, onDone }: { hasPassword: boolean; onDone: (text: string) => void }) {
-  const id = useId()
-  const [pending, setPending] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const form = event.currentTarget
-    const data = new FormData(form)
-    setPending(true)
-    setError(null)
-    try {
-      const res = await fetch('/api/student/password', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ currentPassword: String(data.get('current') ?? ''), newPassword: String(data.get('new') ?? '') }),
-      })
-      const body = (await res.json().catch(() => ({}))) as { error?: string }
-      if (!res.ok) return setError(body.error ?? 'Your password was not changed. Please try again.')
-      form.reset()
-      onDone(hasPassword ? 'Password changed. Every other device has been signed out.' : 'Password set. Every other device has been signed out.')
-    } catch {
-      setError('Check your connection and try again.')
-    } finally {
-      setPending(false)
-    }
-  }
-
-  return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      {hasPassword ? (
-        <Field id={`${id}-current`} label="Current password">
-          <PasswordInput id={`${id}-current`} name="current" autoComplete="current-password" required className={`${controlClass} min-h-11`} />
-        </Field>
-      ) : (
-        <p className="text-sm leading-relaxed text-muted-foreground">Add a password to sign in with your email and password. For your security this works only shortly after you sign in.</p>
-      )}
-      <Field id={`${id}-new`} label={hasPassword ? 'New password' : 'Password'} help="At least 12 characters.">
-        <PasswordInput id={`${id}-new`} name="new" autoComplete="new-password" required minLength={12} maxLength={128} aria-describedby={`${id}-new-help`} className={`${controlClass} min-h-11`} />
-      </Field>
-      {error ? (
-        <p role="alert" className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-foreground">
-          {error}
-        </p>
-      ) : null}
-      <Button type="submit" disabled={pending} className="self-start">
-        {pending ? 'Saving…' : hasPassword ? 'Change password' : 'Set password'}
-      </Button>
-    </form>
-  )
-}

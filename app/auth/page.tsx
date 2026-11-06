@@ -6,22 +6,22 @@ import { SignOutButton } from '@/components/admin/sign-out-button'
 import { SiteFooter } from '@/components/site/site-footer'
 import { SiteHeader } from '@/components/site/site-header'
 import { SkipLink } from '@/components/site/skip-link'
-import { AuthTabs, type AuthTab } from '@/components/support/auth-tabs'
+import { AuthPanel } from '@/components/support/auth-panel'
 import { oauthErrorMessage } from '@/lib/identity/oauth-errors'
-import { emailOtpOpen, getIdentityProviderStatus, newAccountsAllowed, testerMode } from '@/lib/identity/policy'
+import { emailOtpOpen, getIdentityProviderStatus, newAccountsAllowed } from '@/lib/identity/policy'
 import { getStudentPageContext } from '@/lib/student/access'
 import { ageTokenFrom, revokeAgeAttestation } from '@/lib/student/age-attestation'
 import { safeNextPath } from '@/lib/student/next-path'
 
 export const metadata: Metadata = {
   title: 'Sign in · LockIn Consulting',
-  description: 'Sign in or create a student account to chat with the LockIn team.',
+  description: 'Continue with your email or Google to chat with the LockIn team.',
   robots: { index: false, follow: false },
 }
 
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)
 
-// Student sign-in and sign-up only. Team members use /admin, which has its own sign-in.
+// Student sign-in and sign-up in one place: Continue with Email or Continue with Google. Team members use /admin, which has its own sign-in.
 export default async function AuthPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = await searchParams
   const next = safeNextPath(one(params.next))
@@ -30,12 +30,6 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
   const ctx = await getStudentPageContext()
   // Already signed in (or only the 18+/privacy step left, which /chat shows): go straight to the chat.
   if (ctx.state === 'ok' || ctx.state === 'needs_profile' || ctx.state === 'needs_consent') redirect(next)
-  const initialTab: AuthTab = one(params.tab) === 'create' ? 'create' : 'signin'
-  // Pre-launch tester mode: the forms appear only at the unlinked /auth?tester=1; everyone else sees the
-  // closed notice. The allowlist is still enforced on the server whatever this page shows.
-  const tester = one(params.tester) === '1'
-  const closed = ctx.state === 'disabled' || (testerMode() && !tester)
-
   return (
     <>
       <SkipLink />
@@ -48,7 +42,7 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
         </div>
 
         <section className="rounded-3xl border border-border bg-card p-6 shadow-sm sm:p-8">
-          {closed ? (
+          {ctx.state === 'disabled' ? (
             <Notice title="Student accounts aren’t open yet">
               We’re finishing an age-eligibility, privacy and legal review before anyone can sign in and send us questions. Until then no information is collected. Every{' '}
               <Link href="/destinations" className="text-primary hover:underline">
@@ -70,12 +64,10 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
               </span>
             </Notice>
           ) : (
-            <AuthTabs
-              initialTab={initialTab}
+            <AuthPanel
               providers={getIdentityProviderStatus()}
-              signUpOpen={newAccountsAllowed()}
-              tester={tester}
               emailCodes={emailOtpOpen()}
+              signUpOpen={newAccountsAllowed()}
               oauthError={oauthErrorMessage(one(params.error), newAccountsAllowed())}
               next={next}
             />

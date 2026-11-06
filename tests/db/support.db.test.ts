@@ -165,13 +165,14 @@ describe('identity separation', () => {
   beforeAll(async () => {
     // A student account: a credential user with a student profile and no admin membership.
     const stu = await cli(['create', '--email', 'student-login@test.example', '--name', 'Login Student', '--role', 'editor'])
+    // Students have no password sign-in, so the fixture session is opened while the account is still a staff one.
+    studentCookie = await signIn('student-login@test.example')
     await db.query('DELETE FROM admin_members WHERE user_id = ?', [stu.userId])
     await db.query("INSERT INTO student_profiles (user_id, display_name, age_confirmed_at) VALUES (?, 'Login Student', UTC_TIMESTAMP(3))", [stu.userId])
     await cli(['create', '--email', 'staff-login@test.example', '--name', 'Staff Login', '--role', 'reviewer'])
     // A misconfigured account holding both: must be refused on both sides.
     const dual = await cli(['create', '--email', 'dual@test.example', '--name', 'Dual Account', '--role', 'owner'])
     await db.query("INSERT INTO student_profiles (user_id, display_name, age_confirmed_at) VALUES (?, 'Dual Account', UTC_TIMESTAMP(3))", [dual.userId])
-    studentCookie = await signIn('student-login@test.example')
     staffCookie = await signIn('staff-login@test.example')
     dualCookie = await signIn('dual@test.example')
   })
@@ -346,7 +347,7 @@ describe('identity separation', () => {
   it('ends student access when the session expires', async () => {
     process.env.STUDENT_ACCOUNTS_ENABLED = 'true'
     try {
-      const cookie = await signIn('student-login@test.example')
+      const cookie = studentCookie // opened in beforeAll: students have no password sign-in
       expect((await resolveStudentContext(new Headers({ cookie }))).state).toBe('ok')
       const token = decodeURIComponent(cookie.split('=')[1]).split('.')[0]
       await db.query('UPDATE auth_session SET expiresAt = UTC_TIMESTAMP(3) - INTERVAL 1 MINUTE WHERE token = ?', [token])

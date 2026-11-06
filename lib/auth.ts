@@ -6,7 +6,7 @@ import { getAuthPool } from '@/lib/db/pool'
 import { AUTH_MODELS, DISABLED_AUTH_PATHS, PASSWORD_POLICY, RATE_LIMIT } from '@/lib/auth-options.mjs'
 import { OTP_ALLOWED_ATTEMPTS, OTP_TTL_SECONDS, otpHasher } from '@/lib/auth-otp'
 import { authIpAddressOptions } from '@/lib/auth-throttle'
-import { emailOtpOpen, newAccountsAllowed, providerSignInOpen, studentEmailAllowed, testerMode } from '@/lib/identity/policy'
+import { emailOtpOpen, newAccountsAllowed, providerSignInOpen } from '@/lib/identity/policy'
 import { mailer, otpMessage } from '@/lib/mail'
 import { AGE_COOKIE, ageTokenFrom, bindAgeAttestation, consumeAgeAttestation, revokeAgeAttestation } from '@/lib/student/age-attestation'
 
@@ -18,9 +18,9 @@ const socialCommon = () => ({
   disableSignUp: !newAccountsAllowed(),
 })
 
-async function emailOf(userId: string): Promise<string | null> {
-  const [rows] = await getAuthPool().query('SELECT email FROM auth_user WHERE id = ?', [userId])
-  return (rows as { email: string }[])[0]?.email ?? null
+async function isStudent(userId: string): Promise<boolean> {
+  const [rows] = await getAuthPool().query('SELECT 1 FROM student_profiles WHERE user_id = ? LIMIT 1', [userId])
+  return (rows as unknown[]).length > 0
 }
 
 async function isStaff(userId: string): Promise<boolean> {
@@ -156,14 +156,15 @@ export function createAuth(baseURL = resolveAuthBaseUrl()) {
           before: async (user, ctx) => {
             const token = ageTokenFrom(ctx?.headers?.get('cookie'))
             // Better Auth inserts the user BEFORE it applies requireEmailVerification, so an unverified
-            // provider identity would leave an auth_user row behind. Refuse it here instead, and spend
-            // the confirmation so the failed attempt cannot be replayed.
-            // Pre-launch tester mode: only listed addresses may get an account (lib/identity/policy.ts).
-            if (user.emailVerified !== true || !studentEmailAllowed(user.email)) {
+            // provider identity would leave an auth_user row behind. Refuse it here instead.
+            if (user.emailVerified !== true) {
               await revokeAgeAttestation(token)
               return false
             }
-            return consumeAgeAttestation(token)
+            // Passwordless sign-up: the account starts with a verified email and NO access. Name, 18+ and
+            // the privacy consent come right after sign-in (lib/student/onboarding.ts); until then there is
+            // no student profile. A confirmation presented with the request (older /age-confirm flow) must still be valid.
+            return token ? consumeAgeAttestation(token) : true
           },
           after: async (user, ctx) => {
             await bindAgeAttestation(ageTokenFrom(ctx?.headers?.get('cookie')), user.id)
@@ -183,8 +184,8 @@ export function createAuth(baseURL = resolveAuthBaseUrl()) {
           before: async (session, ctx) => {
             const staff = await isStaff(session.userId)
             if (staff && isStudentOnlyPath(ctx?.path)) return false
-            // Tester mode: no session at all for an unlisted student, whichever way they sign in.
-            if (!staff && testerMode() && !studentEmailAllowed(await emailOf(session.userId))) return false
+            // Students never use passwords (an older account may still hold a hash, which is kept but unusable).
+            if (!staff && ctx?.path === '/sign-in/email' && (await isStudent(session.userId))) return false
             return undefined
           },
         },

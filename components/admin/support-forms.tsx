@@ -13,6 +13,7 @@ import {
   requestDraftAction,
   returnToDerekAction,
   revokeMemberAction,
+  sendTestEmailAction,
   setStatusAction,
   setSupportAccessAction,
   syncReviewNoticesAction,
@@ -295,4 +296,17 @@ export function SyncReviewNotices() {
     void syncReviewNoticesAction(null, new FormData())
   }, [])
   return null
+}
+
+export function TestEmailForm({ email }: { email: string }) {
+  const { state, pending, onSubmit } = useFormAction(sendTestEmailAction)
+  return (
+    <form onSubmit={onSubmit} className="flex flex-col gap-3">
+      <p className="text-sm leading-relaxed text-muted-foreground">Sends one plain test email to your own address, {email}, through the configured SMTP server.</p>
+      <FormMessage state={state} />
+      <Button type="submit" variant="outline" disabled={pending} className="self-start">
+        {pending ? 'Sending…' : 'Send test email'}
+      </Button>
+    </form>
+  )
 }

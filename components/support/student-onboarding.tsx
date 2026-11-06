@@ -4,21 +4,17 @@ import { useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
 import { controlClass, Field } from '@/components/admin/form-controls'
 import { Button } from '@/components/ui/button'
-import { PasswordInput } from '@/components/ui/password-input'
 
-// Shown once, after the first sign-in (emailed code or provider). The server records the confirmation
-// on the profile and sets the password (lib/student/onboarding.ts); nothing here is trusted beyond
-// "the person ticked both". A password is required when the account has no sign-in provider.
+// Shown once, after the first sign-in (emailed code or Google): name, 18+ and consent. The server records them
+// on the profile (lib/student/onboarding.ts); nothing here is trusted beyond "the person ticked both".
 export function StudentOnboarding({
   name,
   privacyUrl = null,
   ageAttested = false,
-  needsPassword = false,
 }: {
   name: string
   privacyUrl?: string | null
   ageAttested?: boolean
-  needsPassword?: boolean
 }) {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
@@ -47,7 +43,6 @@ export function StudentOnboarding({
       ageConfirmed: form.get('age') === 'on',
       privacyAccepted: form.get('privacy') === 'on',
       displayName: String(form.get('displayName') ?? ''),
-      password: String(form.get('password') ?? ''),
     })
   }
 
@@ -58,11 +53,6 @@ export function StudentOnboarding({
       <Field id="onboarding-name" label="Your full name" help="The name the LockIn team will use for you.">
         <input id="onboarding-name" name="displayName" defaultValue={name} autoComplete="name" required maxLength={120} aria-describedby="onboarding-name-help" className={input} />
       </Field>
-      {needsPassword ? (
-        <Field id="onboarding-password" label="Choose a password" help="At least 12 characters. Next time, sign in with your email and this password.">
-          <PasswordInput id="onboarding-password" name="password" autoComplete="new-password" required minLength={12} maxLength={128} aria-describedby="onboarding-password-help" className={input} />
-        </Field>
-      ) : null}
       {/* Already confirmed on /age-confirm before this account was created (D-045). */}
       {ageAttested ? null : (
         <label className="flex items-start gap-3 text-foreground">

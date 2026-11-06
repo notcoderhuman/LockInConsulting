@@ -13,7 +13,6 @@ import { TeamPresence } from '@/components/support/team-presence'
 import { privacyNoticeUrl } from '@/lib/identity/policy'
 import { getStudentPageContext } from '@/lib/student/access'
 import { ageAttestation } from '@/lib/student/age-attestation'
-import { needsPassword } from '@/lib/student/onboarding'
 import { authPathFor, CHAT_PATH } from '@/lib/student/next-path'
 
 export const metadata: Metadata = {
@@ -31,7 +30,6 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
   const ctx = await getStudentPageContext()
   if (ctx.state === 'signed_out') redirect(authPathFor(initial ? `${CHAT_PATH}?c=${initial}` : CHAT_PATH))
   const attestation = ctx.state === 'needs_profile' ? await ageAttestation(ctx.userId).catch(() => null) : null
-  const askPassword = ctx.state === 'needs_profile' ? await needsPassword(ctx.userId).catch(() => true) : false
 
   return (
     <>
@@ -89,7 +87,7 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
           </Card>
         ) : ctx.state === 'needs_profile' ? (
           <Card title="Finish setting up your account">
-            <StudentOnboarding name={attestation?.fullName ?? ctx.name} privacyUrl={privacyNoticeUrl()} ageAttested={attestation !== null} needsPassword={askPassword} />
+            <StudentOnboarding name={attestation?.fullName ?? ctx.name} privacyUrl={privacyNoticeUrl()} ageAttested={attestation !== null} />
           </Card>
         ) : ctx.state === 'needs_consent' ? (
           <Card title="We’ve updated our privacy notice">

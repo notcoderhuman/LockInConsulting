@@ -93,10 +93,12 @@ beforeAll(async () => {
   await cli(['create', '--email', 'fix-owner@test.example', '--name', 'Fix Owner', '--role', 'owner'])
   await cli(['create', '--email', 'fix-editor@test.example', '--name', 'Fix Editor', '--role', 'editor'])
   const stu = await cli(['create', '--email', 'fix-student@test.example', '--name', 'Fix Student', '--role', 'editor'])
+  // Students have no password sign-in: open the fixture session while the account is still a staff one.
+  cookies.student = await signIn('fix-student@test.example')
   await db.query('DELETE FROM admin_members WHERE user_id = ?', [stu.userId])
   const [res] = await db.query("INSERT INTO student_profiles (user_id, display_name, age_confirmed_at) VALUES (?, 'Fix Student', UTC_TIMESTAMP(3))", [stu.userId])
   student = { userId: stu.userId, profileId: Number((res as { insertId: number }).insertId), displayName: 'Fix Student' }
-  for (const who of ['reviewer', 'owner', 'editor', 'student']) cookies[who] = await signIn(`fix-${who}@test.example`)
+  for (const who of ['reviewer', 'owner', 'editor']) cookies[who] = await signIn(`fix-${who}@test.example`)
 }, 240_000)
 
 afterAll(async () => {

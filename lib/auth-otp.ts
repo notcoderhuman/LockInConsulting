@@ -1,6 +1,5 @@
 import { createHash, createHmac, randomUUID } from 'node:crypto'
 import type { Pool } from 'mysql2/promise'
-import { studentEmailAllowed } from '@/lib/identity/policy'
 import { clientIpHeader, clock, giveTokenBack, maybeCleanup, takeToken } from '@/lib/auth-throttle'
 
 // Email one-time codes (Better Auth's emailOTP plugin, wired in lib/auth.ts) with the limits the
@@ -37,8 +36,8 @@ export const OTP_LIMITS = {
 }
 const HOUR = 60 * 60 * 1000
 
-export const OTP_SEND_PATHS = ['/email-otp/send-verification-otp', '/email-otp/request-password-reset']
-export const OTP_VERIFY_PATHS = ['/sign-in/email-otp', '/email-otp/reset-password']
+export const OTP_SEND_PATHS = ['/email-otp/send-verification-otp']
+export const OTP_VERIFY_PATHS = ['/sign-in/email-otp']
 // The rest of the plugin is switched off in DISABLED_AUTH_PATHS (lib/auth-options.mjs).
 
 const NO_STORE = { 'Cache-Control': 'no-store' }
@@ -104,18 +103,18 @@ export async function guardEmailOtp(request: Request, handle: (request: Request)
     const wait = await hitWindow(db, keys.verify, HOUR, OTP_LIMITS.verifiesPerHour, now)
     if (wait > 0) return tooMany(wait)
     const response = await forward()
-    // Better Auth 1.7.8 throws (500) when user.create.before refuses a new account, e.g. without an
-    // 18+ confirmation (lib/auth.ts). Nothing was created: say so instead of reporting a server error.
+    // Better Auth 1.7.8 throws (500) when user.create.before refuses a new account (sign-up closed, or an
+    // address that may not sign up). Nothing was created: say so instead of reporting a server error.
     if (response.status >= 500 && path.endsWith('/sign-in/email-otp')) {
       const [rows] = await db.query('SELECT 1 FROM auth_user WHERE email = ? LIMIT 1', [email])
       if (!(rows as unknown[]).length)
-        return Response.json({ code: 'FAILED_TO_CREATE_USER', message: 'Account not created. Confirm that you are 18 or older first.' }, { status: 422, headers: NO_STORE })
+        return Response.json({ code: 'FAILED_TO_CREATE_USER', message: 'Account not created.' }, { status: 422, headers: NO_STORE })
     }
     return response
   }
 
-  const type = path.endsWith('/request-password-reset') ? 'forget-password' : body.type
-  if (type !== 'sign-in' && type !== 'forget-password') return bad()
+  const type = body.type
+  if (type !== 'sign-in') return bad()
   const ipHeader = clientIpHeader()
   if (ipHeader) {
     const ipWait = takeToken(`otp-ip:${(request.headers.get(ipHeader) ?? '').trim().slice(0, 64) || 'missing'}`, OTP_LIMITS.perIpSend, now)
@@ -129,8 +128,7 @@ export async function guardEmailOtp(request: Request, handle: (request: Request)
     return tooMany(wait)
   }
   // Same answer as a real send, so the form cannot tell anyone which emails belong to staff.
-  // Pre-launch tester mode: only listed addresses get a code (lib/identity/policy.ts). Same answer either way.
-  if ((await isStaffEmail(db, email)) || !studentEmailAllowed(email)) return Response.json({ success: true }, { headers: NO_STORE })
+  if (await isStaffEmail(db, email)) return Response.json({ success: true }, { headers: NO_STORE })
   // One live code per email and purpose: a resend makes every earlier code useless.
   await db.query('DELETE FROM auth_verification WHERE identifier = ?', [`${type}-otp-${email}`])
   return forward()

@@ -4,7 +4,7 @@ import { headers } from 'next/headers'
 import { getAuth } from '@/lib/auth'
 import { getAdminPool } from '@/lib/db/pool'
 import { REQUIRED_MIGRATIONS } from '@/lib/db/schema-version'
-import { getStudentAreaStatus, studentEmailAllowed } from '@/lib/identity/policy'
+import { getStudentAreaStatus } from '@/lib/identity/policy'
 import { canStartStudentProfile, PRIVACY_NOTICE_VERSION } from '@/lib/student/onboarding'
 
 // Server-side identity for the student chat. Every student route handler calls requireStudentApi,
@@ -41,8 +41,6 @@ export async function resolveStudentContext(requestHeaders: Headers): Promise<St
     if (!REQUIRED_MIGRATIONS.every((m) => names.has(m))) return { state: 'error' }
     const session = await auth.api.getSession({ headers: requestHeaders })
     if (!session?.user) return { state: 'signed_out' }
-    // Pre-launch tester mode: anyone not listed sees the student area as closed (lib/identity/policy.ts).
-    if (!studentEmailAllowed(session.user.email)) return { state: 'disabled' }
     const [rows] = await getAdminPool().query<RowDataPacket[]>(
       `SELECT s.id, s.display_name, s.privacy_notice_version, (SELECT COUNT(*) FROM admin_members m WHERE m.user_id = s.user_id) AS memberships
          FROM student_profiles s WHERE s.user_id = ? AND s.status = 'active'`,

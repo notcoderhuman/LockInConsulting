@@ -45,6 +45,6 @@ export async function POST(request: Request) {
     return json({ ok: true, version: PRIVACY_NOTICE_VERSION })
   }
   if (ctx.state !== 'needs_profile') return jsonError(409, 'This account already has its access settled.')
-  const result = body.action === 'discard' ? await discardUnfinishedAccount(ctx.userId) : await createStudentProfile(ctx.userId, body, request.headers)
+  const result = body.action === 'discard' ? await discardUnfinishedAccount(ctx.userId) : await createStudentProfile(ctx.userId, body)
   return result.ok ? json({ ok: true }) : jsonError(result.status, result.error)
 }

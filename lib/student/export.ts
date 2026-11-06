@@ -14,8 +14,8 @@ type Db = Pick<ReturnType<typeof getAdminPool>, 'query'>
 export const PROCESSORS = [
   { name: 'Hostinger', role: 'Hosts the website and database' },
   { name: 'Google (Gemini API)', role: 'Drafts replies labelled as Derek’s, when Derek is switched on' },
-  { name: 'Your sign-in provider (Google, Microsoft, Apple or Yahoo), if you use one', role: 'Confirms who you are when you sign in' },
-  { name: 'LockIn’s email delivery provider', role: 'Sends sign-in and password-reset codes' },
+  { name: 'Google, if you sign in with it', role: 'Confirms who you are when you sign in' },
+  { name: 'LockIn’s email delivery provider', role: 'Sends your sign-in codes' },
 ]
 
 const s = (v: unknown) => (v == null ? null : String(v))

@@ -15,7 +15,11 @@ import { MockProvider } from './providers/mock'
 //                                  and the data-handling review is done. Required in production before that
 //                                  provider may see any real student message, drafts included. Neither
 //                                  DEREK_AUTO_REPLY_CLEARED nor a student's 18+ checkbox counts as this.
-//   GEMINI_PAID_TIER=true          required for gemini in production: unpaid-tier inputs may be
+//   GEMINI_FREE_TIER_ACCEPTED=true the Owner's recorded acceptance that Google's free (unpaid) Gemini service may store,
+//                                  human-review and learn from what it receives. With it (and GEMINI_PAID_TIER unset)
+//                                  Derek runs in free-tier mode (lib/derek/free-tier.ts): only screened, general
+//                                  public-information questions are sent. Never set GEMINI_PAID_TIER for a free key.
+//   GEMINI_PAID_TIER=true          required for gemini in production unless free-tier mode is accepted: unpaid-tier inputs may be
 //                                  read by human reviewers and used to improve Google's products
 //   DEREK_PROVIDER=vertex         Gemini on Vertex AI (Google Cloud terms, docs/DEREK-PROVIDER-TERMS.md):
 //   VERTEX_API_KEY=…               server-side only; a Google Cloud API key restricted to Vertex AI
@@ -44,7 +48,7 @@ type Env = Record<string, string | undefined>
 export type DerekStatus =
   | { state: 'disabled'; reasons: string[]; autoReply: AutoReplyStatus }
   | { state: 'blocked'; providerId: string; reasons: string[]; autoReply: AutoReplyStatus }
-  | { state: 'ready'; providerId: string; notes: string[]; autoReply: AutoReplyStatus }
+  | { state: 'ready'; providerId: string; notes: string[]; autoReply: AutoReplyStatus; freeTier?: boolean }
 
 export type AutoReplyStatus = { permitted: true } | { permitted: false; blockers: string[] }
 
@@ -143,16 +147,19 @@ export function getDerekStatus(env: Env = process.env): DerekStatus {
         'gemini',
         'Gemini may not process real student messages: approval of its terms for this student-facing service (consumer-use and under-18 restrictions) and the data-handling review are not recorded (DEREK_PROVIDER_APPROVED).',
       )
-    if (production && env.GEMINI_PAID_TIER !== 'true')
+    const freeTier = env.GEMINI_PAID_TIER !== 'true' && env.GEMINI_FREE_TIER_ACCEPTED === 'true'
+    if (production && env.GEMINI_PAID_TIER !== 'true' && !freeTier)
       return blocked('gemini', 'GEMINI_PAID_TIER=true is required in production: unpaid-tier prompts may be read by human reviewers and used to improve Google products.')
     return {
       state: 'ready',
       providerId,
+      freeTier,
       notes: [
+        ...(freeTier ? ['Free tier: Google may store, review and use what it receives. Only screened, general public-information questions are sent (no history, names, contact details or documents); anything personal goes to a person.'] : []),
         `Model ${GEMINI_MODEL}. Automatic replies only with DEREK_AUTO_REPLY_CLEARED=gemini, and only for low-risk questions while the team is offline.`,
         'Drafts are prepared only for students with a recorded 18+ confirmation (Gemini API terms).',
         `Cost cap: ${geminiDailyDraftLimit(env)} drafts per rolling 24 hours.`,
-        ...(env.GEMINI_PAID_TIER === 'true' ? [] : ['Unpaid tier: synthetic test data only. Never real student messages.']),
+        ...(env.GEMINI_PAID_TIER === 'true' || freeTier ? [] : ['Unpaid tier: synthetic test data only. Never real student messages.']),
         ...(env.DEREK_PROVIDER_APPROVED === 'gemini' ? [] : ['Provider terms not approved for this service: synthetic local testing only (blocked in production).']),
       ],
       autoReply: autoReplyFor('gemini', GeminiProvider.autoReply, env),

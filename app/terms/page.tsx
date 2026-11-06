@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   robots: { index: LEGAL_REVIEWED, follow: true },
 }
 
-const TERMS_VERSION = 'terms-2026-11-07'
+const TERMS_VERSION = 'terms-2026-11-07b'
 
 // Terms of use (no legal review yet). Open questions (governing law, liability, paid services and the Consumer
 // Protection (E-Commerce) Rules, 2020): docs/LEGAL-DRAFTS.md.
@@ -63,7 +63,7 @@ export default function TermsPage() {
       <section className="flex flex-col gap-3">
         <h2>AI-assisted replies</h2>
         <p>
-          Replies may be drafted or sent by Derek, LockIn’s AI assistant, once it is switched on (it is not at the moment), and are labelled as such. AI replies can be wrong. Treat them as general information and check
+          Replies may be drafted or sent by Derek, LockIn’s AI assistant, and are labelled as such. Derek uses Google’s free Gemini service, so it is not offered to people in the European Economic Area, Switzerland or the United Kingdom, and it only ever sees general questions without personal details. AI replies can be wrong. Treat them as general information and check
           important facts with the official source. See the <Link href="/ai">AI disclosure</Link>.
         </p>
       </section>

@@ -42,7 +42,7 @@ export function Reconsent({ privacyUrl }: { privacyUrl: string }) {
         </p>
         <label className="flex items-start gap-3 text-foreground">
           <input type="checkbox" name="privacy" className="mt-1 size-4 accent-[var(--primary)]" />
-          <span>I have read the updated privacy notice and agree to it.</span>
+          <span>I have read the updated privacy notice and agree to it, including that Derek uses Google’s free Gemini service for general questions, and that I am not in the European Economic Area, Switzerland or the United Kingdom.</span>
         </label>
         {error ? (
           <p role="alert" className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-foreground">

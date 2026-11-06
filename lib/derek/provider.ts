@@ -57,6 +57,7 @@ export type ProviderErrorCode =
   | 'provider_error'
   | 'blocked'
   | 'auth_failed' // key rejected or not permitted for this model
+  | 'withheld_private' // free-tier screening kept a personal-looking question away from the provider
   | 'safety_blocked' // the provider refused the prompt or the answer (safety, recitation, PII…)
   | 'quota_exhausted' // prepaid credit or billing exhausted (HTTP 402): no retry until the owner tops up
 

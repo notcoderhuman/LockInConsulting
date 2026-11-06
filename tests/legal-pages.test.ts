@@ -45,12 +45,13 @@ describe('legal drafts', () => {
     // No invented registration type or numbers anywhere in the pages or the config.
     for (const text of [read('app/privacy/page.tsx'), read('app/terms/page.tsx'), notice]) expect(text).not.toMatch(/\b(CIN|GSTIN|GST number|PAN)\b\s*[:=]|proprietorship\)|private limited|\bLLP\b/i)
     // The AI pages say what is true today: Derek is off and nothing goes to an AI service.
-    expect(read('app/privacy/page.tsx')).toContain('At the moment Derek is not switched on')
+    expect(read('app/privacy/page.tsx')).toContain('free service')
+    expect(read('app/privacy/page.tsx')).toContain('only the text of your current question')
     expect(read('app/ai/page.tsx')).not.toContain('paid account')
   })
 
   it('records which notice version a student accepted, and the footer links all three pages', () => {
-    expect(read('lib/student/onboarding.ts')).toMatch(/PRIVACY_NOTICE_VERSION = 'student-2026-11-07'/)
+    expect(read('lib/student/onboarding.ts')).toMatch(/PRIVACY_NOTICE_VERSION = 'student-2026-11-07b'/)
     expect(read('app/privacy/page.tsx')).toContain('version={PRIVACY_NOTICE_VERSION}')
     const footer = read('components/site/site-footer.tsx')
     for (const href of ['/privacy', '/terms', '/ai']) expect(footer).toContain(`href="${href}"`)

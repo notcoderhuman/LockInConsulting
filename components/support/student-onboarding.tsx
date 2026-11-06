@@ -63,8 +63,9 @@ export function StudentOnboarding({
       <label className="flex items-start gap-3 text-foreground">
         <input type="checkbox" name="privacy" required className="mt-1 size-4 accent-[var(--primary)]" />
         <span>
-          I agree that LockIn uses my name, email address and the messages I send to answer my study-abroad questions. Derek, LockIn’s AI assistant, is not switched on at the
-          moment, so my messages are not sent to any AI service; if that changes, LockIn will ask me again first. I can withdraw this consent at any time by deleting my account.
+          I agree that LockIn uses my name, email address and the messages I send to answer my study-abroad questions. Derek, LockIn’s AI assistant, answers general questions using Google’s free
+          Gemini service, which may store, review and learn from what it receives: LockIn sends it only my question’s text, never my name, contact details or earlier messages, and keeps personal
+          questions for the team. I am not in the European Economic Area, Switzerland or the United Kingdom. I can withdraw this consent at any time by deleting my account.
           {privacyUrl ? (
             <>
               {' '}

@@ -30,7 +30,7 @@ const ITEMS: { href: string; label: string; icon: typeof Inbox; match: (p: strin
   { href: '/admin/settings', label: 'Settings', icon: Settings, match: (p) => p.startsWith('/admin/settings') },
 ]
 
-const POLL_MS = 15_000
+const POLL_MS = 5_000
 
 /** Unread counts for the badges, polled (D-009). Failures just hide the badges. */
 function useBadgeCounts(): Record<Badge, number | null> {

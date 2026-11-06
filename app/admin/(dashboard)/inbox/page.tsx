@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { LiveRefresh } from '@/components/admin/live-refresh'
 import { buttonVariants } from '@/components/ui/button'
 import { ConversationBadge } from '@/components/admin/conversation-badge'
 import { EmptyState, PageHeader } from '@/components/admin/page-header'
@@ -48,6 +49,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Search
 
   return (
     <>
+      <LiveRefresh />
       <PageHeader
         title="Live Inbox"
         description="Student questions, newest activity first. Replies you send are labelled with your name. Routine questions Derek can answer safely are replied to automatically and labelled as unreviewed; only risky, uncertain or failed ones wait here for a person. Notifications are in-site only: held and escalated questions wait here until someone signs in."

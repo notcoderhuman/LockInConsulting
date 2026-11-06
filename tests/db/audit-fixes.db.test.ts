@@ -720,3 +720,74 @@ describe('Gemini free tier: what Derek sends to the provider', () => {
     await accept(null)
   })
 })
+
+const pulseRoute = await import('@/app/api/admin/inbox/pulse/route')
+const { touchPresence } = await import('@/lib/support/presence')
+
+describe('live chat: cursor polling and the Live Inbox pulse', () => {
+  // Earlier tests used up this student's daily conversation allowance; start from a clean slate.
+  beforeAll(async () => {
+    await db.query('DELETE FROM conversations WHERE student_profile_id = ?', [student.profileId])
+  })
+  const asStudent = (id: number, query = '') =>
+    studentMessages.GET(new Request(`${ORIGIN}/api/student/conversations/${id}/messages${query}`, { headers: { cookie: cookies.student } }), { params: Promise.resolve({ id: String(id) }) })
+  const pulse = async (cookie: string, query = '') => pulseRoute.GET(new Request(`${ORIGIN}/api/admin/inbox/pulse${query}`, { headers: cookie ? { cookie } : {} }))
+  const idsOf = async (res: Response) => ((await res.json()) as { messages: { id: number }[] }).messages.map((m) => m.id)
+
+  it('returns only messages newer than the cursor, oldest first, from every author, without repeats', async () => {
+    await touchPresence(pool(), reviewer.userId) // the team is online, so Derek's offline handoff stays out of this test
+    const first = await C.createConversation(pool(), student, { body: 'First question about fees', clientRequestId: rid() })
+    const all = await idsOf(await asStudent(first.conversationId))
+    expect(all).toHaveLength(1)
+    expect(((await (await asStudent(first.conversationId, `?after=${all[0]}`)).json()) as { messages: unknown[] }).messages).toEqual([]) // quiet conversation: nothing new
+
+    // Dev replies, then two quick follow-ups arrive: a poll from the old cursor gets all three, in order.
+    const reply = await C.staffReply(pool(), reviewer, first.conversationId, { body: 'A person answered.', clientRequestId: rid() })
+    const a = await C.sendStudentMessage(pool(), student, first.conversationId, { body: 'Thanks, one more thing', clientRequestId: rid() })
+    const b = await C.sendStudentMessage(pool(), student, first.conversationId, { body: 'And another', clientRequestId: rid() })
+    const fresh = await idsOf(await asStudent(first.conversationId, `?after=${all[0]}`))
+    expect(fresh).toEqual([reply.messageId, a.messageId, b.messageId].sort((x, y) => x - y))
+    // Polling again from the newest id returns nothing, so the same message is never delivered twice.
+    expect(await idsOf(await asStudent(first.conversationId, `?after=${fresh.at(-1)}`))).toEqual([])
+    // Derek's replies come through the same cursor.
+    await D.prepareDerekDraft(pool(), first.conversationId, b.triggerMessageId!, { status: READY, provider: new MockProvider() })
+    const [draft] = (await D.listDrafts(pool(), reviewer, first.conversationId)).filter((d) => d.status === 'ready')
+    await D.approveAndSendDraft(pool(), reviewer, draft.id, { revision: draft.revision, bodySha256: draft.bodySha256 })
+    const derek = await asStudent(first.conversationId, `?after=${fresh.at(-1)}`)
+    expect(((await derek.json()) as { messages: { authorKind: string }[] }).messages.map((m) => m.authorKind)).toEqual(['derek'])
+  })
+
+  it('keeps conversations isolated: a student cannot poll another student’s conversation', async () => {
+    const otherUser = randomUUID()
+    await db.query('INSERT INTO auth_user (id, name, email, emailVerified, updatedAt) VALUES (?, ?, ?, 1, UTC_TIMESTAMP(3))', [otherUser, 'Other Student', 'other-live@test.example'])
+    const [res] = await db.query("INSERT INTO student_profiles (user_id, display_name, age_confirmed_at) VALUES (?, 'Other Student', UTC_TIMESTAMP(3))", [otherUser])
+    const other = { userId: otherUser, profileId: Number((res as { insertId: number }).insertId), displayName: 'Other Student' }
+    const theirs = await C.createConversation(pool(), other, { body: 'Private question from the other student', clientRequestId: rid() })
+    for (const query of ['', '?after=1', '?after=0&limit=50', `?before=${theirs.messageId + 1}`]) {
+      const denied = await asStudent(theirs.conversationId, query)
+      expect(denied.status, query).toBe(404)
+      expect(await denied.text()).not.toContain('Private question')
+    }
+  })
+
+  it('gives the Live Inbox one small change token that moves with new messages, replies and status changes', async () => {
+    expect((await pulse('')).status).toBe(401)
+    expect((await pulse(cookies.student)).status).toBeGreaterThanOrEqual(401) // a student is not staff
+    const q = await C.createConversation(pool(), student, { body: 'Pulse question', clientRequestId: rid() })
+    const token = async (query = '') => ((await (await pulse(cookies.reviewer, query)).json()) as { token: string }).token
+    const scoped = `?c=${q.conversationId}`
+    const t0 = await token(scoped), g0 = await token()
+    expect(await token(scoped)).toBe(t0) // nothing changed: same token, so no reload
+    await C.sendStudentMessage(pool(), student, q.conversationId, { body: 'A newer student message', clientRequestId: rid() })
+    const t1 = await token(scoped)
+    expect(t1).not.toBe(t0)
+    expect(await token()).not.toBe(g0)
+    await C.staffReply(pool(), reviewer, q.conversationId, { body: 'Dev replies', clientRequestId: rid() })
+    const t2 = await token(scoped)
+    expect(t2).not.toBe(t1)
+    await db.query("UPDATE conversations SET status = 'resolved' WHERE id = ?", [q.conversationId])
+    expect(await token(scoped)).not.toBe(t2)
+    // The token never carries message text or names.
+    expect(t2).toMatch(/^\d+\.\d+\.\d+\.\d+$/)
+  })
+})

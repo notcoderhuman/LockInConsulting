@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import { controlClass } from '@/components/admin/form-controls'
 import { DESTINATIONS } from '@/lib/destinations'
+import { lastId, mergeNew, nextDelay, POLL_MS as THREAD_POLL_MS } from '@/lib/support/live'
 import { COURSE_MAX, contextSubject, INSTAGRAM_HANDLE } from '@/lib/support/validation'
 import { cn } from '@/lib/utils'
 
@@ -39,9 +40,8 @@ interface Pending {
 
 type Load = 'loading' | 'ready' | 'error' | 'unavailable' | 'signed_out'
 
+/** The conversation list (previews, unread counts) is polled more slowly than the open thread (lib/support/live.ts). */
 const POLL_MS = 15_000
-/** While Derek is writing a reply that may be sent automatically. */
-const FAST_POLL_MS = 2_000
 const MAX = 4000
 
 const newKey = () => (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`)
@@ -98,6 +98,9 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
   const [instagram, setInstagram] = useState('')
   const [contextError, setContextError] = useState<string | null>(null)
   const threadRef = useRef<HTMLDivElement>(null)
+  // What is on screen, for the polling cursor, and whether the reader is at the bottom (so new messages follow them down).
+  const messagesRef = useRef<Message[]>([])
+  const nearBottom = useRef(true)
 
   const open = (id: number | null) => {
     window.history.replaceState(null, '', id == null ? '/chat' : `/chat?c=${id}`)
@@ -111,28 +114,34 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
     setListState('ready')
   }, [])
 
-  const loadThread = useCallback(async (id: number, { quiet = false } = {}) => {
+  // Returns whether the request worked, so the poller can back off. A quiet load asks only for messages newer than
+  // the last one shown (?after=<id>); an opening load takes the latest page.
+  const loadThread = useCallback(async (id: number, { quiet = false } = {}): Promise<boolean> => {
     if (!quiet) setThreadState('loading')
-    const r = await api(`/api/student/conversations/${id}/messages?limit=30`)
+    const after = quiet ? lastId(messagesRef.current) : 0
+    const r = await api(`/api/student/conversations/${id}/messages?limit=${after ? 50 : 30}${after ? `&after=${after}` : ''}`)
     if (!r.ok) {
       if (!quiet) setThreadState(r.status === 404 ? 'error' : stateFor(r.status))
-      return
+      if (r.status === 401) setListState('signed_out')
+      return false
     }
     const conv = r.data.conversation as { subject: string; statusLabel: string; acknowledgement?: string | null; replyPending?: boolean }
     setSubject(conv.subject)
     setStatusLabel(conv.statusLabel)
     setAcknowledgement(conv.acknowledgement ?? null)
     setReplyPending(conv.replyPending === true)
-    setMessages((prev) => {
-      const latest = r.data.messages as Message[]
-      // Keep older pages the student already loaded.
-      const oldest = latest[0]?.id ?? Infinity
-      return [...prev.filter((m) => m.id < oldest), ...latest]
-    })
+    const incoming = r.data.messages as Message[]
+    // Never shows a message twice (a send's own reload and a poll can both return it) and keeps id order.
+    const fresh = incoming.filter((m) => !messagesRef.current.some((s) => s.id === m.id))
+    setMessages((prev) => mergeNew(prev, incoming))
     if (!quiet) setHasMore(Boolean(r.data.hasMore))
     setThreadState('ready')
-    void api(`/api/student/conversations/${id}/read`, { method: 'POST', body: {} })
-  }, [])
+    if (!quiet || fresh.length) {
+      void api(`/api/student/conversations/${id}/read`, { method: 'POST', body: {} })
+      if (quiet) void loadList()
+    }
+    return true
+  }, [loadList])
 
   useEffect(() => {
     void loadList()
@@ -142,25 +151,51 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
 
   useEffect(() => {
     setMessages([])
+    messagesRef.current = []
+    nearBottom.current = true
     setPending([])
     setAcknowledgement(null)
     setReplyPending(false)
     if (selected == null) return
-    void loadThread(selected)
-    const t = setInterval(() => document.visibilityState !== 'hidden' && loadThread(selected, { quiet: true }), POLL_MS)
-    return () => clearInterval(t)
+    // Live updates: every few seconds while the tab is visible, asking only for newer messages. Pauses while the
+    // tab is hidden and checks at once when it returns; doubles the wait after each failure (up to 30 s) and
+    // resets after a success; stops when the conversation changes or the component unmounts.
+    let stopped = false
+    let timer: ReturnType<typeof setTimeout> | undefined
+    let delay = THREAD_POLL_MS
+    const tick = async () => {
+      timer = undefined
+      if (stopped || document.visibilityState === 'hidden') return
+      const ok = await loadThread(selected, { quiet: true })
+      delay = nextDelay(delay, ok)
+      if (!stopped) timer = setTimeout(tick, delay)
+    }
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && !timer && !stopped) {
+        delay = THREAD_POLL_MS
+        void tick()
+      }
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    void loadThread(selected).then(() => {
+      if (!stopped) timer = setTimeout(tick, THREAD_POLL_MS)
+    })
+    return () => {
+      stopped = true
+      if (timer) clearTimeout(timer)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [selected, loadThread])
 
   useEffect(() => {
-    if (selected == null || !replyPending) return
-    const t = setInterval(() => loadThread(selected, { quiet: true }), FAST_POLL_MS)
-    return () => clearInterval(t)
-  }, [selected, replyPending, loadThread])
+    messagesRef.current = messages
+  }, [messages])
 
-  // Scroll the thread itself, never the page: on the homepage the chat sits mid-page.
+  // Scroll the thread itself, never the page (on the homepage the chat sits mid-page): to the newest message when
+  // the reader was already at the bottom or sent the message themselves; otherwise leave their place alone.
   useEffect(() => {
     const el = threadRef.current
-    if (el) el.scrollTop = el.scrollHeight
+    if (el && (nearBottom.current || messages.at(-1)?.authorKind === 'student' || pending.length)) el.scrollTop = el.scrollHeight
   }, [messages.length, pending.length])
 
   async function loadOlder() {
@@ -271,7 +306,7 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
           </div>
         )}
 
-        <div ref={threadRef} tabIndex={0} aria-label="Messages" className="flex max-h-[28rem] flex-1 flex-col gap-3 overflow-y-auto rounded-md focus-visible:outline-2 focus-visible:outline-ring" aria-live="polite">
+        <div ref={threadRef} onScroll={(e) => { const el = e.currentTarget; nearBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120 }} tabIndex={0} aria-label="Messages" className="flex max-h-[28rem] flex-1 flex-col gap-3 overflow-y-auto rounded-md focus-visible:outline-2 focus-visible:outline-ring" aria-live="polite">
           {threadState === 'loading' ? <p className="text-sm text-muted-foreground">Loading messages…</p> : null}
           {threadState === 'error' ? (
             <p className="text-sm text-muted-foreground">

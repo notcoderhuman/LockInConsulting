@@ -282,12 +282,13 @@ export function EraseStudentForm({ profileId }: { profileId: number }) {
 }
 
 /** Marks a conversation read once it is really shown, not when its page is rendered or prefetched. */
-export function MarkConversationRead({ conversationId }: { conversationId: number }) {
+/** `upTo` is the newest message shown: a message that arrives while the conversation is open is marked read too. */
+export function MarkConversationRead({ conversationId, upTo }: { conversationId: number; upTo?: number }) {
   useEffect(() => {
     const form = new FormData()
     form.set('conversationId', String(conversationId))
     void markConversationReadAction(null, form)
-  }, [conversationId])
+  }, [conversationId, upTo])
   return null
 }
 

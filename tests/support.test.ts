@@ -57,8 +57,10 @@ describe('message validation', () => {
   it('derives a bounded subject and safe pagination', () => {
     expect(deriveSubject(undefined, 'First line\nsecond')).toBe('First line')
     expect(deriveSubject('', 'y'.repeat(300))).toHaveLength(160)
-    expect(parsePageParams(new URL('https://x/?before=-3&limit=999'))).toEqual({ before: null, limit: 50 })
-    expect(parsePageParams(new URL('https://x/?before=12'))).toEqual({ before: 12, limit: 30 })
+    expect(parsePageParams(new URL('https://x/?before=-3&limit=999'))).toEqual({ before: null, after: null, limit: 50 })
+    expect(parsePageParams(new URL('https://x/?before=12'))).toEqual({ before: 12, after: null, limit: 30 })
+    expect(parsePageParams(new URL('https://x/?after=41&limit=50'))).toEqual({ before: null, after: 41, limit: 50 })
+    expect(parsePageParams(new URL('https://x/?after=-1'))).toEqual({ before: null, after: null, limit: 30 })
   })
   it('builds the first-question subject from destination and course, Instagram optional', () => {
     expect(contextSubject('Germany', ' MSc Data ')).toBe('Germany · MSc Data')

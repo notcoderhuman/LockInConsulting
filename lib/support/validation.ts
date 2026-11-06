@@ -62,11 +62,14 @@ export function contextSubject(destination: string, course: string, instagram = 
 
 export const PAGE_SIZE_MAX = 50
 
-export function parsePageParams(url: URL): { before: number | null; limit: number } {
+export function parsePageParams(url: URL): { before: number | null; after: number | null; limit: number } {
   const before = Number(url.searchParams.get('before'))
+  const after = Number(url.searchParams.get('after'))
   const limit = Number(url.searchParams.get('limit'))
   return {
     before: Number.isSafeInteger(before) && before > 0 ? before : null,
+    // Polling cursor: only messages newer than this id.
+    after: Number.isSafeInteger(after) && after > 0 ? after : null,
     limit: Number.isSafeInteger(limit) && limit > 0 ? Math.min(limit, PAGE_SIZE_MAX) : 30,
   }
 }

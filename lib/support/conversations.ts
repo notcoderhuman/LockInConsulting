@@ -226,7 +226,27 @@ export interface MessagePage {
   hasMore: boolean
 }
 
-async function readMessages(db: Db, conversationId: number, before: number | null, limit: number): Promise<{ rows: Row[]; hasMore: boolean }> {
+async function readMessages(db: Db, conversationId: number, before: number | null, limit: number, after: number | null = null): Promise<{ rows: Row[]; hasMore: boolean }> {
+  // Polling: everything newer than the cursor, oldest first, so a quiet conversation costs one tiny query.
+  if (after != null) {
+    const newer = await selectRows(
+      db,
+      `SELECT m.id, m.author_kind, m.author_user_id, m.reviewed_by, m.body, m.created_at,
+            au.name AS author_name, rv.name AS reviewer_name, sp.display_name AS student_name,
+            (r.created_by_kind = 'staff') AS edited_by_human, d.provider AS draft_provider
+       FROM messages m
+       LEFT JOIN auth_user au ON au.id = m.author_user_id AND m.author_kind = 'staff'
+       LEFT JOIN auth_user rv ON rv.id = m.reviewed_by
+       LEFT JOIN conversations c ON c.id = m.conversation_id
+       LEFT JOIN student_profiles sp ON sp.id = c.student_profile_id
+       LEFT JOIN ai_drafts d ON d.id = m.draft_id
+       LEFT JOIN ai_draft_revisions r ON r.draft_id = d.id AND r.revision = d.current_revision
+      WHERE m.conversation_id = ? AND m.id > ?
+      ORDER BY m.id ASC LIMIT ?`,
+      [conversationId, after, limit + 1],
+    )
+    return { rows: newer.slice(0, limit), hasMore: newer.length > limit }
+  }
   const rows = await selectRows(
     db,
     `SELECT m.id, m.author_kind, m.author_user_id, m.reviewed_by, m.body, m.created_at,
@@ -289,7 +309,7 @@ export async function exportStudentConversations(db: Db, student: StudentActor) 
   return out
 }
 
-export async function getStudentMessages(db: Db, student: StudentActor, conversationId: number, { before = null, limit = 30 }: { before?: number | null; limit?: number } = {}) {
+export async function getStudentMessages(db: Db, student: StudentActor, conversationId: number, { before = null, after = null, limit = 30 }: { before?: number | null; after?: number | null; limit?: number } = {}) {
   const conv = await selectRows(
     db,
     `SELECT c.id, c.subject, c.status, c.last_student_message_id, c.ai_paused_by,
@@ -298,7 +318,7 @@ export async function getStudentMessages(db: Db, student: StudentActor, conversa
     [conversationId, student.profileId],
   )
   if (!conv[0]) throw new SupportError(404, 'Conversation not found.')
-  const { rows, hasMore } = await readMessages(db, conversationId, before, limit)
+  const { rows, hasMore } = await readMessages(db, conversationId, before, limit, after)
   const status = String(conv[0].status)
   // The student's latest message has no reply yet. Say what happens next in plain words: Derek is
   // writing (he may answer in a moment), he could not, or a person will follow up. Never why it

@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ConversationBadge, RiskBadge } from '@/components/admin/conversation-badge'
 import { EmptyState, PageHeader, Panel } from '@/components/admin/page-header'
+import { LiveRefresh } from '@/components/admin/live-refresh'
 import { DraftReviewForms, HandoverForm, MarkConversationRead, ReplyForm, RequestDraftForm, StatusForm } from '@/components/admin/support-forms'
 import { requireAdminPage } from '@/lib/admin/access'
 import { actorCan } from '@/lib/admin/roles'
@@ -57,7 +58,8 @@ export default async function ConversationPage({ params, searchParams }: { param
 
   return (
     <>
-      {before ? null : <MarkConversationRead conversationId={id} />}
+      <LiveRefresh conversationId={id} scrollToLatest />
+      {before ? null : <MarkConversationRead conversationId={id} upTo={last?.id} />}
       <PageHeader
         title={`#${c.id} · ${c.subject}`}
         crumbs={[{ href: '/admin/inbox', label: 'Live Inbox' }]}

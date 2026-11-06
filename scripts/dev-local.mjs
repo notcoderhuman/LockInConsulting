@@ -88,7 +88,7 @@ const sandboxEnv = Object.fromEntries(
 )
 const env = { ...process.env, ...sandboxEnv, BETTER_AUTH_URL: `http://localhost:${PORT}`, DEREK_PROVIDER: 'mock', DEREK_AUTO_REPLY_CLEARED: 'mock' }
 // Never let a real key or a production setting from the shell reach the local preview.
-for (const key of ['GEMINI_API_KEY', 'GEMINI_PAID_TIER', 'DEREK_PROVIDER_APPROVED', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'STUDENT_SELF_SIGNUP_ENABLED', 'NODE_ENV', 'AUTH_CLIENT_IP_HEADER', 'NEXT_PUBLIC_SITE_URL', 'ADMIN_DATABASE_URL'])
+for (const key of ['GEMINI_API_KEY', 'GEMINI_PAID_TIER', 'DEREK_PROVIDER_APPROVED', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'STUDENT_SELF_SIGNUP_ENABLED', 'NODE_ENV', 'AUTH_CLIENT_IP_HEADER', 'NEXT_PUBLIC_SITE_URL', 'ADMIN_DATABASE_URL', 'SMTP_HOST', 'SMTP_USER', 'SMTP_PASSWORD', 'MAIL_FROM', 'MAIL_TRANSPORT'])
   delete env[key]
 
 // --oauth (pnpm dev:local:oauth): the REAL Google flow on localhost, opted into explicitly. Only the
@@ -103,6 +103,13 @@ if (oauth) {
   console.log(`\nGoogle sign-in: real credentials loaded from .env.oauth.local (values not shown).`)
   console.log(`Register this redirect URI on the OAuth client: ${env.BETTER_AUTH_URL}/api/auth/callback/google`)
   console.log(`New-student sign-up: ${env.STUDENT_SELF_SIGNUP_ENABLED === 'true' ? 'ON (local only)' : 'off (existing students only)'}`)
+}
+
+// --signup (pnpm dev:local:signup): rehearse student sign-up locally. New accounts on, and emailed
+// codes are printed to this console instead of being sent (MAIL_TRANSPORT=log; never real mail).
+if (process.argv.includes('--signup')) {
+  Object.assign(env, { STUDENT_SELF_SIGNUP_ENABLED: 'true', MAIL_TRANSPORT: 'log' })
+  console.log('\nStudent sign-up: ON (local only). Codes appear in this console as [mail:log].')
 }
 
 console.log(`\nLocal preview: http://localhost:${PORT}  (synthetic sign-ins are listed in .env.sandbox.local)\n`)

@@ -23,6 +23,9 @@ const conversationsRoute = await import('@/app/api/student/conversations/route')
 const { resolveStudentContext } = await import('@/lib/student/access')
 const { PRIVACY_NOTICE_VERSION } = await import('@/lib/student/onboarding')
 const { AGE_CONFIRM_LIMITS } = await import('@/lib/student/age-attestation')
+const { createStudentProfile, PASSWORD_SET_LIMIT } = await import('@/lib/student/onboarding')
+const { takeToken } = await import('@/lib/auth-throttle')
+const messagesRoute = await import('@/app/api/student/conversations/[id]/messages/route')
 const { canStartStudentProfile } = await import('@/lib/student/onboarding')
 
 const BASE = 'http://localhost:3000'
@@ -252,13 +255,13 @@ describe('sessions and profile', () => {
     const call = (body: unknown) =>
       profileRoute.POST(new Request(`${BASE}/api/student/profile`, { method: 'POST', headers: { 'content-type': 'application/json', origin: BASE, cookie }, body: JSON.stringify(body) }))
     expect((await call({ action: 'rename', displayName: 'Too Early' })).status).toBe(403)
-    expect((await call({ action: 'create', privacyAccepted: true })).status).toBe(200)
+    expect((await call({ action: 'create', privacyAccepted: true, password: 'a-long-student-passphrase' })).status).toBe(200)
     expect((await call({ action: 'rename', displayName: '<script>' })).status).toBe(400)
     const ok = await call({ action: 'rename', displayName: '  Asha   Rao ', userId: 'someone-else' })
     expect(await ok.json()).toEqual({ ok: true, displayName: 'Asha Rao' })
     expect(await rows('SELECT display_name FROM student_profiles WHERE user_id = ?', [user.id])).toEqual([{ display_name: 'Asha Rao' }])
     const me = await profileRoute.GET(new Request(`${BASE}/api/student/profile`, { headers: { cookie } }))
-    expect(await me.json()).toEqual({ displayName: 'Asha Rao', email, methods: [] })
+    expect(await me.json()).toEqual({ displayName: 'Asha Rao', email, methods: ['credential'] })
   })
 })
 
@@ -267,7 +270,7 @@ describe('privacy rights', () => {
     route.POST(new Request(`${BASE}${path}`, { method: 'POST', headers: { 'content-type': 'application/json', origin: BASE, cookie }, body: JSON.stringify(body) }))
   async function student(email: string) {
     const cookie = await signUp(email)
-    expect((await studentCall(profileRoute, '/api/student/profile', cookie, { action: 'create', privacyAccepted: true })).status).toBe(200)
+    expect((await studentCall(profileRoute, '/api/student/profile', cookie, { action: 'create', privacyAccepted: true, password: 'a-long-student-passphrase' })).status).toBe(200)
     return cookie
   }
 
@@ -322,6 +325,92 @@ describe('privacy rights', () => {
     expect(res.status).toBe(429)
     expect(Number(res.headers.get('retry-after'))).toBeGreaterThan(0)
     resetRequestBuckets()
+  })
+})
+
+describe('sign-up with name, email and password', () => {
+  const PASSWORD = 'a-long-student-passphrase'
+  const onboard = (cookie: string, body: Record<string, unknown>) =>
+    profileRoute.POST(new Request(`${BASE}/api/student/profile`, { method: 'POST', headers: { 'content-type': 'application/json', origin: BASE, cookie }, body: JSON.stringify({ action: 'create', privacyAccepted: true, ...body }) }))
+  const passwordSignIn = (email: string, password: string) => post('/sign-in/email', { email, password })
+
+  it('verifies the email by code, then sets name and password, then signs in with the password', async () => {
+    const email = 'pw-flow@test.example'
+    const cookie = await signUp(email)
+    // A code-only account must choose a password, within the policy, and a real name.
+    expect((await onboard(cookie, {})).status).toBe(400)
+    expect((await onboard(cookie, { password: 'short' })).status).toBe(400)
+    expect((await onboard(cookie, { password: PASSWORD, displayName: '<b>' })).status).toBe(400)
+    expect(await rows("SELECT id FROM auth_account WHERE providerId = 'credential' AND userId = (SELECT id FROM auth_user WHERE email = ?)", [email])).toHaveLength(0)
+
+    expect((await onboard(cookie, { password: PASSWORD, displayName: 'Meera Iyer' })).status).toBe(200)
+    const [u] = await rows<{ id: string; emailVerified: number }>('SELECT id, emailVerified FROM auth_user WHERE email = ?', [email])
+    expect(u.emailVerified).toBe(1)
+    expect(await rows('SELECT display_name FROM student_profiles WHERE user_id = ?', [u.id])).toEqual([{ display_name: 'Meera Iyer' }])
+
+    expect((await post('/sign-out', {}, cookie)).status).toBe(200)
+    expect((await passwordSignIn(email, 'wrong-passphrase-123')).status).toBe(401)
+    const signedIn = await passwordSignIn(email, PASSWORD)
+    expect(signedIn.status).toBe(200)
+    // A password session is a full student session; staff/student separation is unchanged.
+    expect(await resolveStudentContext(new Headers({ cookie: cookiesFrom(signedIn) }))).toMatchObject({ state: 'ok', student: { userId: u.id, displayName: 'Meera Iyer' } })
+  })
+
+  it('never makes a second account for the same email, and never replaces a password at sign-up', async () => {
+    const email = 'pw-dup@test.example'
+    const cookie = await signUp(email)
+    expect((await onboard(cookie, { password: PASSWORD })).status).toBe(200)
+    // Signing up again with the same email signs in to the same account.
+    const again = await signUp(email)
+    expect(await rows('SELECT id FROM auth_user WHERE email = ?', [email])).toHaveLength(1)
+    expect((await onboard(again, { password: 'another-long-passphrase' })).status).toBe(409)
+    expect((await passwordSignIn(email, PASSWORD)).status).toBe(200)
+    // Better Auth's own password sign-up stays switched off.
+    expect((await post('/sign-up/email', { email: 'pw-direct@test.example', password: PASSWORD, name: 'Direct' })).status).toBe(404)
+    expect(await rows('SELECT id FROM auth_user WHERE email = ?', ['pw-direct@test.example'])).toHaveLength(0)
+  })
+
+  it('refuses an unverified account and a team account, and sets no password for either', async () => {
+    const unverified = randomUUID()
+    await db.query('INSERT INTO auth_user (id, name, email, emailVerified, updatedAt) VALUES (?, ?, ?, 0, UTC_TIMESTAMP(3))', [unverified, 'Unverified', 'pw-unverified@test.example'])
+    expect(await createStudentProfile(unverified, { ageConfirmed: true, privacyAccepted: true, password: PASSWORD }, new Headers())).toMatchObject({ ok: false, status: 403 })
+    const staffId = await staff('pw-staff@test.example')
+    expect(await createStudentProfile(staffId, { ageConfirmed: true, privacyAccepted: true, password: PASSWORD }, new Headers())).toMatchObject({ ok: false, status: 403 })
+    expect(await rows('SELECT id FROM auth_account WHERE userId IN (?, ?)', [unverified, staffId])).toHaveLength(0)
+    expect(await rows('SELECT id FROM student_profiles WHERE user_id IN (?, ?)', [unverified, staffId])).toHaveLength(0)
+  })
+
+  it('budgets password setting before any hash is computed', async () => {
+    const email = 'pw-budget@test.example'
+    const cookie = await signUp(email)
+    resetRequestBuckets()
+    for (let i = 0; i < PASSWORD_SET_LIMIT.burst; i++) takeToken('password-set', PASSWORD_SET_LIMIT, now)
+    const res = await onboard(cookie, { password: PASSWORD })
+    expect(res.status).toBe(429)
+    expect(await rows("SELECT id FROM auth_account WHERE providerId = 'credential' AND userId = (SELECT id FROM auth_user WHERE email = ?)", [email])).toHaveLength(0)
+    resetRequestBuckets()
+    expect((await onboard(cookie, { password: PASSWORD })).status).toBe(200)
+  })
+
+  it('lets a student read only their own conversations', async () => {
+    const a = await signUp('pw-iso-a@test.example')
+    expect((await onboard(a, { password: PASSWORD })).status).toBe(200)
+    const b = await signUp('pw-iso-b@test.example')
+    expect((await onboard(b, { password: PASSWORD })).status).toBe(200)
+    const start = (cookie: string, body: string) =>
+      conversationsRoute.POST(new Request(`${BASE}/api/student/conversations`, { method: 'POST', headers: { 'content-type': 'application/json', origin: BASE, cookie }, body: JSON.stringify({ body, clientRequestId: randomUUID() }) }))
+    expect((await start(a, 'Student A asks about Canada')).status).toBeLessThan(300)
+    expect((await start(b, 'Student B asks about Germany')).status).toBeLessThan(300)
+    const list = async (cookie: string) => (await (await conversationsRoute.GET(new Request(`${BASE}/api/student/conversations`, { headers: { cookie } }))).json()) as { conversations: { id: number }[] }
+    const aIds = (await list(a)).conversations.map((c) => c.id)
+    const bIds = (await list(b)).conversations.map((c) => c.id)
+    expect(aIds).toHaveLength(1)
+    expect(bIds).toHaveLength(1)
+    const read = (cookie: string, id: number) => messagesRoute.GET(new Request(`${BASE}/api/student/conversations/${id}/messages`, { headers: { cookie } }), { params: Promise.resolve({ id: String(id) }) })
+    expect((await read(a, aIds[0])).status).toBe(200)
+    const other = await read(a, bIds[0])
+    expect(other.status).toBe(404)
+    expect(await other.text()).not.toContain('Germany')
   })
 })
 

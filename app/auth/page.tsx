@@ -37,14 +37,13 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
       <SkipLink />
       <SiteHeader />
       {/* Page body not yet translated (Phase D covers the interface shell): marked English for screen readers and browser translation. */}
-      <main id="main" lang="en" className="mx-auto flex w-full max-w-md flex-col gap-8 px-5 pb-20 pt-10 md:pt-16">
-        <div className="flex flex-col gap-3">
-          <p className="text-xs font-medium uppercase tracking-[0.28em] text-primary">Student chat</p>
-          <h1 className="font-serif text-4xl font-medium leading-[1.05] text-balance text-foreground">Talk to the LockIn team</h1>
-          <p className="text-sm leading-relaxed text-pretty text-muted-foreground">Sign in to ask about universities, courses, fees and admissions. Your conversations stay private to you and the team.</p>
+      <main id="main" lang="en" className="mx-auto flex w-full max-w-sm flex-col gap-8 px-4 pb-20 pt-12 md:pt-20">
+        <div className="flex flex-col items-center gap-2 text-center">
+          <h1 className="font-serif text-4xl font-medium leading-[1.05] text-balance text-foreground">Your LockIn account</h1>
+          <p className="text-sm leading-relaxed text-pretty text-muted-foreground">Ask the team about universities, courses, fees and admissions. Your conversations stay private.</p>
         </div>
 
-        <section className="rounded-2xl border border-border bg-card p-6 md:p-8">
+        <section className="rounded-3xl border border-border bg-card p-6 shadow-sm sm:p-8">
           {ctx.state === 'disabled' ? (
             <Notice title="Student accounts aren’t open yet">
               We’re finishing an age-eligibility, privacy and legal review before anyone can sign in and send us questions. Until then no information is collected. Every{' '}

@@ -66,7 +66,7 @@ export function AgeConfirm({ next, back, privacyUrl, providers = [], emailCodes 
           Create your account with {emailCodes ? 'a code sent to your email' : 'one of the options below'}. Afterwards you’ll be asked to accept how LockIn handles your data
           {privacyLink ? <> (read the {privacyLink})</> : null} before you can start chatting. Your confirmation is valid for 15 minutes and can be used once.
         </p>
-        {emailCodes ? <EmailCodeForm mode="sign-in" next={next} /> : null}
+        {emailCodes ? <EmailCodeForm mode="sign-in" next={next} signUp /> : null}
         {providers
           .filter((p) => p.state === 'available')
           .map((p) => (

@@ -10,12 +10,13 @@ import type { ProviderId, ProviderStatus } from '@/lib/identity/policy'
 import { useT } from '@/lib/i18n/client'
 import { signInFieldErrors, type SignInFieldErrors } from '@/lib/identity/sign-in-validation'
 import { CHAT_PATH } from '@/lib/student/next-path'
+import { FIELD, PRIMARY } from './auth-styles'
 import { EmailCodeForm } from './email-code-form'
 
 // Student sign-in: a provider (Google, Microsoft, Apple, Yahoo) when configured, an emailed code when
 // mail is configured, and email and password for students who set one. Sign in never creates an
-// account: new accounts start at /age-confirm (D-045). Providers that are not set up are listed
-// with their honest status and cannot be clicked. `next` is already validated
+// account: new accounts start at /age-confirm (D-045). Only methods that work are shown: no button for
+// a provider without credentials. `next` is already validated
 // (lib/student/next-path.ts): after signing in the student goes there, never anywhere else.
 
 export function StudentSignIn({
@@ -35,8 +36,8 @@ export function StudentSignIn({
   const [fieldErrors, setFieldErrors] = useState<SignInFieldErrors>({})
   const [pending, setPending] = useState(false)
   const [resetting, setResetting] = useState(false)
+  const [useCode, setUseCode] = useState(false)
   const available = providers.filter((p) => p.state === 'available')
-  const others = providers.filter((p) => p.state !== 'available')
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -81,24 +82,15 @@ export function StudentSignIn({
       </div>
     )
 
+  // One column, the most common way first: email and password, then an emailed code, then only the
+  // providers that are actually configured. Nothing is shown that cannot be used.
   return (
     <div className="flex flex-col gap-6">
-      {available.map((p) => (
-        <ProviderContinueButton key={p.id} provider={p.id} label={p.label} next={next} requestSignUp={false} onError={setError} />
-      ))}
-      {available.length ? <p className="-mt-3 text-xs leading-relaxed text-muted-foreground">For existing student accounts. LockIn never gets your password for these accounts.</p> : null}
       {shownError ? (
-        <p role="alert" className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-foreground">
+        <p role="alert" className="rounded-xl border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-foreground">
           {shownError}
         </p>
       ) : null}
-      {emailCodes ? (
-        <>
-          {available.length ? <Divider /> : null}
-          <EmailCodeForm mode="sign-in" next={next} />
-        </>
-      ) : null}
-      {available.length || emailCodes ? <Divider label="or use your password" /> : null}
       <form lang={lang} onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
         <Field id="student-email" label={t('signIn.email')} errors={fieldErrors.email}>
           <input
@@ -109,7 +101,7 @@ export function StudentSignIn({
             required
             aria-invalid={fieldErrors.email ? true : undefined}
             aria-describedby={describedBy('student-email', undefined, fieldErrors.email)}
-            className={controlClass}
+            className={FIELD}
           />
         </Field>
         <Field id="student-password" label={t('signIn.password')} errors={fieldErrors.password}>
@@ -120,37 +112,44 @@ export function StudentSignIn({
             required
             aria-invalid={fieldErrors.password ? true : undefined}
             aria-describedby={describedBy('student-password', undefined, fieldErrors.password)}
-            className={controlClass}
+            className={FIELD}
           />
         </Field>
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" disabled={pending} className={PRIMARY}>
           {pending ? t('signIn.pending') : t('signIn.submit')}
         </Button>
         {emailCodes ? (
-          <button type="button" onClick={() => setResetting(true)} className="min-h-11 self-start text-sm text-primary underline-offset-4 hover:underline">
+          <button type="button" onClick={() => setResetting(true)} className="min-h-11 self-center text-sm text-primary underline-offset-4 hover:underline">
             Forgot your password?
           </button>
         ) : (
-          <p className="text-xs leading-relaxed text-muted-foreground">{t('signIn.forgot')}</p>
+          <p className="text-center text-xs leading-relaxed text-muted-foreground">{t('signIn.forgot')}</p>
         )}
       </form>
-      {others.length ? (
-        <ul className="flex flex-col gap-2" aria-label="Other sign-in options">
-          {others.map((p) => (
-            <li key={p.id}>
-              <button type="button" disabled aria-describedby={`provider-${p.id}`} className="w-full rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground opacity-70">
-                {`Continue with ${p.label} — unavailable`}
-              </button>
-              <p id={`provider-${p.id}`} className="mt-1 text-xs text-muted-foreground">
-                {p.detail}
-              </p>
-            </li>
+      {emailCodes ? (
+        <>
+          <Divider />
+          {useCode ? (
+            <EmailCodeForm mode="sign-in" next={next} />
+          ) : (
+            <Button type="button" variant="outline" className={PRIMARY} onClick={() => setUseCode(true)}>
+              Sign in with an emailed code instead
+            </Button>
+          )}
+        </>
+      ) : null}
+      {available.length ? (
+        <>
+          <Divider />
+          {available.map((p) => (
+            <ProviderContinueButton key={p.id} provider={p.id} label={p.label} next={next} requestSignUp={false} onError={setError} />
           ))}
-        </ul>
+        </>
       ) : null}
     </div>
   )
 }
+
 
 function Divider({ label = 'or' }: { label?: string }) {
   return (
@@ -209,7 +208,7 @@ export function ProviderContinueButton({
         type="button"
         onClick={go}
         disabled={pending}
-        className="inline-flex min-h-11 w-full items-center justify-center gap-3 rounded-lg border border-primary/50 bg-background px-4 text-sm font-medium text-foreground transition-colors hover:border-primary hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-60"
+        className="inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground transition-colors hover:border-primary hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-60"
       >
         {provider === 'google' ? <GoogleMark /> : null}
         {pending ? `Opening ${label}…` : `Continue with ${label}`}

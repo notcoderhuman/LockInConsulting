@@ -2,7 +2,8 @@
 
 import { useRouter } from 'next/navigation'
 import { useId, useState, type FormEvent } from 'react'
-import { controlClass, Field } from '@/components/admin/form-controls'
+import { Field } from '@/components/admin/form-controls'
+import { FIELD, PRIMARY } from './auth-styles'
 import { Button } from '@/components/ui/button'
 import { PasswordInput } from '@/components/ui/password-input'
 import { authClient } from '@/lib/auth-client'
@@ -26,7 +27,8 @@ function message(error: Failure): string {
   return 'That didn’t work. Check your connection and try again.'
 }
 
-export function EmailCodeForm({ mode, next, onDone }: { mode: 'sign-in' | 'reset'; next: string; onDone?: () => void }) {
+/** `signUp`: the step after /age-confirm, where the same code verifies the email and creates the account. */
+export function EmailCodeForm({ mode, next, onDone, signUp = false }: { mode: 'sign-in' | 'reset'; next: string; onDone?: () => void; signUp?: boolean }) {
   const router = useRouter()
   const id = useId()
   const [email, setEmail] = useState('')
@@ -98,11 +100,11 @@ export function EmailCodeForm({ mode, next, onDone }: { mode: 'sign-in' | 'reset
     return (
       <form onSubmit={send} className="flex flex-col gap-4" noValidate>
         <Field id={`${id}-email`} label="Email">
-          <input id={`${id}-email`} type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={`${controlClass} min-h-11`} />
+          <input id={`${id}-email`} type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={FIELD} />
         </Field>
         {alert}
-        <Button type="submit" variant={mode === 'reset' ? 'outline' : 'default'} disabled={pending}>
-          {pending ? 'Sending…' : mode === 'reset' ? 'Email me a reset code' : 'Email me a sign-in code'}
+        <Button type="submit" variant={mode === 'reset' || !signUp ? 'outline' : 'default'} disabled={pending} className={PRIMARY}>
+          {pending ? 'Sending…' : mode === 'reset' ? 'Email me a reset code' : signUp ? 'Send verification code' : 'Email me a sign-in code'}
         </Button>
       </form>
     )
@@ -110,19 +112,19 @@ export function EmailCodeForm({ mode, next, onDone }: { mode: 'sign-in' | 'reset
   return (
     <form onSubmit={verify} className="flex flex-col gap-4" noValidate>
       <p role="status" className="text-sm leading-relaxed text-muted-foreground">
-        If {sentTo} can use a LockIn student account, a 6-digit code is on its way. It works once, for 10 minutes.
+        {signUp ? `We sent a 6-digit code to ${sentTo}.` : `If ${sentTo} can use a LockIn student account, a 6-digit code is on its way.`} It works once, for 10 minutes.
       </p>
       <Field id={`${id}-otp`} label="Code from the email">
-        <input id={`${id}-otp`} name="otp" inputMode="numeric" autoComplete="one-time-code" pattern="\d{6}" maxLength={6} required className={`${controlClass} min-h-11 tracking-[0.4em]`} />
+        <input id={`${id}-otp`} name="otp" inputMode="numeric" autoComplete="one-time-code" pattern="\d{6}" maxLength={6} required className={`${FIELD} tracking-[0.4em]`} />
       </Field>
       {mode === 'reset' ? (
         <Field id={`${id}-password`} label="New password" help="At least 12 characters. Changing it signs you out on every device.">
-          <PasswordInput id={`${id}-password`} name="password" autoComplete="new-password" minLength={12} maxLength={128} required aria-describedby={`${id}-password-help`} className={controlClass} />
+          <PasswordInput id={`${id}-password`} name="password" autoComplete="new-password" minLength={12} maxLength={128} required aria-describedby={`${id}-password-help`} className={FIELD} />
         </Field>
       ) : null}
       {alert}
-      <Button type="submit" disabled={pending}>
-        {pending ? 'Checking…' : mode === 'reset' ? 'Set new password' : 'Sign in'}
+      <Button type="submit" disabled={pending} className={PRIMARY}>
+        {pending ? 'Checking…' : mode === 'reset' ? 'Set new password' : signUp ? 'Verify email' : 'Sign in'}
       </Button>
       <div className="flex flex-wrap gap-4 text-sm">
         <button type="button" onClick={() => send()} disabled={pending} className="min-h-11 text-primary underline-offset-4 hover:underline disabled:opacity-60">

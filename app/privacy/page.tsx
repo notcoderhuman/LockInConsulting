@@ -1,17 +1,17 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { Fact, LegalPage, OwnerToComplete } from '@/components/legal/legal-page'
+import { Fact, LegalPage } from '@/components/legal/legal-page'
 import { BUSINESS, LEGAL_REVIEWED } from '@/lib/legal/notice'
 import { PRIVACY_NOTICE_VERSION } from '@/lib/student/onboarding'
 
 export const metadata: Metadata = {
-  title: 'Privacy notice (draft) · LockIn Consulting',
-  description: 'How LockIn Consulting handles personal data of students who use the student chat. Draft pending legal review.',
-  // Draft: kept out of search until the reviewed version is published.
+  title: 'Privacy notice · LockIn Consulting',
+  description: 'How LockIn Consulting handles personal data of students who use the student chat.',
+  // Kept out of search until a lawyer has reviewed it (lib/legal/notice.ts).
   robots: { index: LEGAL_REVIEWED, follow: true },
 }
 
-// Draft student privacy notice. Structure follows DPDP Act 2023 s.5 and DPDP Rules 2025 r.3
+// Student privacy notice (no legal review yet). Structure follows DPDP Act 2023 s.5 and DPDP Rules 2025 r.3
 // (itemised data, purposes, withdrawal, rights, complaint to the Board), r.9 (contact) and r.14
 // (how to exercise rights). Sources and open questions: docs/LEGAL-DRAFTS.md.
 export default function PrivacyPage() {
@@ -25,10 +25,10 @@ export default function PrivacyPage() {
         </p>
         <ul>
           <li>
-            Legal name and form of the business: <Fact value={BUSINESS.legalName} missing="registered legal name and type of entity" />
+            Business name: <Fact value={BUSINESS.legalName} missing="business name" />
           </li>
           <li>
-            Registered address: <Fact value={BUSINESS.address} missing="postal address" />
+            Address: <Fact value={BUSINESS.address} missing="postal address" />
           </li>
           <li>
             Person who answers questions about your personal data (Act s.8(9), Rules r.9): <Fact value={BUSINESS.contactPerson} missing="name or role" />, <Fact value={BUSINESS.contactEmail} missing="email address" />, <Fact value={BUSINESS.contactPhone} missing="phone number" />
@@ -52,11 +52,11 @@ export default function PrivacyPage() {
               <td>To address you and to keep student services for adults only. We do not ask for your date of birth or check your identity.</td>
             </tr>
             <tr>
-              <td>Your email address, and the sign-in method you use (an emailed code, a password, or Google, Microsoft, Apple or Yahoo)</td>
-              <td>To create your account, sign you in, send sign-in or password-reset codes, and keep accounts separate.</td>
+              <td>Your email address, and the sign-in method you use (an emailed code or Google). LockIn has no passwords for students.</td>
+              <td>To create your account, sign you in, send you sign-in codes, and keep accounts separate.</td>
             </tr>
             <tr>
-              <td>If you use a sign-in provider: the account identifier and the name and email the provider shares. Only basic profile scopes are requested.</td>
+              <td>If you sign in with Google: the account identifier and the name and email Google shares. Only basic profile scopes (name and email) are requested.</td>
               <td>To sign you in. We do not read your mailbox, contacts, files or calendar.</td>
             </tr>
             <tr>
@@ -74,7 +74,7 @@ export default function PrivacyPage() {
           </tbody>
         </table>
         <p>
-          Our hosting provider’s servers record technical data such as IP addresses in their own logs. <OwnerToComplete>what Hostinger records and for how long</OwnerToComplete>
+          Our hosting provider’s servers record technical data such as IP addresses in their own logs, which Hostinger keeps under its own terms and privacy policy.
         </p>
         <p>We do not sell personal data, and we do not use it for advertising.</p>
       </section>
@@ -91,9 +91,10 @@ export default function PrivacyPage() {
       <section className="flex flex-col gap-3">
         <h2>Derek, our AI assistant</h2>
         <p>
-          Some replies are drafted by Derek, LockIn’s AI assistant. To draft a reply, your message and relevant published university information are sent to Google’s Gemini API.
-          Every reply in the chat says whether a person wrote it, a person reviewed Derek’s draft, or Derek replied automatically. Details:{' '}
-          <Link href="/ai">AI disclosure</Link>.
+          Derek is LockIn’s AI assistant. <strong>At the moment Derek is not switched on, so nothing you write is sent to any AI service</strong>: your messages are read and answered by the
+          LockIn team. LockIn plans to use Google’s Gemini service for Derek. Google’s free service, which is the one LockIn would use, may store and review what it receives and use it to
+          improve its products, so LockIn will not switch Derek on until it sends Google only general questions without personal details. Before it does, LockIn will update this notice and
+          ask you to accept it again. Every reply in the chat says who or what wrote it. Details: <Link href="/ai">AI disclosure</Link>.
         </p>
       </section>
 
@@ -101,13 +102,11 @@ export default function PrivacyPage() {
         <h2>Who else processes your data</h2>
         <ul>
           <li>Our hosting provider (Hostinger), which stores the website and database.</li>
-          <li>Google (Gemini API) when Derek drafts a reply, and Google, Microsoft, Apple or Yahoo only if you choose to sign in with them.</li>
-          <li>
-            Our email delivery provider, for sign-in and reset codes: <OwnerToComplete>name of the email provider once chosen</OwnerToComplete>
-          </li>
+          <li>Google, only if you choose to sign in with it. Google (Gemini API) would also process general questions if Derek is switched on, as described above.</li>
+          <li>Hostinger’s email service, which sends your sign-in codes.</li>
         </ul>
         <p>
-          Some of these providers may process data outside India. <OwnerToComplete>countries or regions, and the contracts in place with each processor (Act s.8(2))</OwnerToComplete>
+          Some of these providers may process data outside India, which the Act permits except to countries the Government restricts.
         </p>
       </section>
 
@@ -124,42 +123,38 @@ export default function PrivacyPage() {
             <tr>
               <td>Your account, profile and conversations</td>
               <td>
-                Until you delete your account or ask us to. <OwnerToComplete>whether inactive accounts are deleted after a set period, and that period</OwnerToComplete>
+                Until you delete your account or ask us to. LockIn does not delete inactive accounts automatically at present.
               </td>
             </tr>
             <tr>
               <td>An unfinished sign-up (you signed in but did not accept this notice)</td>
-              <td>Deleted when you choose “cancel” or say you are under 18. <OwnerToComplete>period after which abandoned sign-ups are deleted automatically</OwnerToComplete></td>
+              <td>Deleted when you choose “cancel” or say you are under 18. LockIn does not currently delete abandoned sign-ups automatically.</td>
             </tr>
             <tr>
               <td>The 18+ confirmation with your typed name</td>
               <td>An unused confirmation expires after 15 minutes. The name moves to your profile when the account is created; the confirmation time stays with the account.</td>
             </tr>
             <tr>
-              <td>Sign-in and reset codes; attempt counters</td>
+              <td>Sign-in codes; attempt counters</td>
               <td>Codes expire after 10 minutes and work once. Counters are cleared about an hour after the last attempt.</td>
             </tr>
             <tr>
               <td>Sign-in sessions</td>
-              <td>Up to 8 hours, or until you sign out.</td>
+              <td>Up to 30 days, renewed while you keep using the site, or until you sign out.</td>
             </tr>
             <tr>
               <td>LockIn’s change log (which records that an account was created or deleted, without your name, email or messages)</td>
-              <td>
-                <OwnerToComplete>retention period for the change log</OwnerToComplete>
-              </td>
+              <td>For as long as the service runs: it is append-only by design.</td>
             </tr>
             <tr>
               <td>Backups of the database</td>
-              <td>
-                <OwnerToComplete>how long backups are kept; deleted data can remain in a backup until it expires</OwnerToComplete>
-              </td>
+              <td>Backups exist only for disaster recovery. Data you delete can remain in a backup until that backup is deleted; LockIn has not set a fixed backup period yet.</td>
             </tr>
           </tbody>
         </table>
         <p>
           When the DPDP Rules, 2025 rule 8(3) takes effect (eighteen months after they were published on 13 November 2025), we may have to keep certain personal data, traffic data and
-          processing logs for at least one year for purposes set by law, even after an account is deleted. <OwnerToComplete>how LockIn will meet this, after legal review</OwnerToComplete>
+          processing logs for at least one year for purposes set by law, even after an account is deleted. LockIn will review how this applies to it before then.
         </p>
       </section>
 
@@ -183,11 +178,11 @@ export default function PrivacyPage() {
           </li>
         </ul>
         <p>
-          To make a request, write from the email address on your account to <Fact value={BUSINESS.contactEmail} missing="contact email for privacy requests" />. That email address is the
+          To make a request, write from the email address on your account to <Fact value={BUSINESS.contactEmail} missing="contact email for privacy requests" /> or call <Fact value={BUSINESS.contactPhone} missing="phone" />. That email address is the
           identifier we use to find your account (Rules r.14).
         </p>
         <p>
-          If you are not satisfied with our response, you can complain to the Data Protection Board of India. <OwnerToComplete>link to the Board’s complaint portal, once published</OwnerToComplete>
+          If you are not satisfied with our response, you can complain to the Data Protection Board of India through the Board’s own complaint process.
         </p>
         <p>
           Your duties under the Act (s.15) include giving accurate information, not impersonating anyone, and not filing false or frivolous complaints.
@@ -214,7 +209,7 @@ export default function PrivacyPage() {
       <section className="flex flex-col gap-3">
         <h2>Security and breaches</h2>
         <p>
-          We use encrypted connections, hashed passwords and codes, encrypted sign-in tokens, access controls for staff, and an append-only change log. If a personal data breach
+          We use encrypted connections, hashed sign-in codes, encrypted sign-in tokens, access controls for staff, and an append-only change log. If a personal data breach
           affects you, we will tell you without delay what happened, what it may mean for you, what we are doing and what you can do, and we will report it to the Data Protection
           Board as the Rules require.
         </p>
@@ -223,7 +218,7 @@ export default function PrivacyPage() {
       <section className="flex flex-col gap-3">
         <h2>Cookies</h2>
         <p>
-          We use only cookies needed for the site to work: your sign-in session, a short-lived 18+ confirmation during sign-up, a sign-in protection cookie, and your language choice.
+          We use only cookies needed for the site to work: your sign-in session, a sign-in protection cookie, and your language choice.
           Saved and recently viewed universities stay in your own browser’s storage and are never sent to us.
         </p>
       </section>
@@ -231,7 +226,7 @@ export default function PrivacyPage() {
       <section className="flex flex-col gap-3">
         <h2>Language and changes</h2>
         <p>
-          This notice is in English. <OwnerToComplete>Hindi (and any other language under the Eighth Schedule) version, after review</OwnerToComplete> If we change it in
+          This notice is in English; LockIn has not yet prepared a Hindi version. If we change it in
           substance, we will show the new version and ask you to accept it before you use the chat again; you can download your data or delete your account instead.
         </p>
       </section>

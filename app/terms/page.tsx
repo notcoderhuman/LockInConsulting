@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { Fact, LegalPage, OwnerToComplete } from '@/components/legal/legal-page'
+import { Fact, LegalPage } from '@/components/legal/legal-page'
 import { BUSINESS, LEGAL_REVIEWED } from '@/lib/legal/notice'
 
 export const metadata: Metadata = {
@@ -9,9 +9,9 @@ export const metadata: Metadata = {
   robots: { index: LEGAL_REVIEWED, follow: true },
 }
 
-const TERMS_VERSION = 'terms-2026-11-draft'
+const TERMS_VERSION = 'terms-2026-11-07'
 
-// Draft terms of use. Open questions (governing law, liability, paid services and the Consumer
+// Terms of use (no legal review yet). Open questions (governing law, liability, paid services and the Consumer
 // Protection (E-Commerce) Rules, 2020): docs/LEGAL-DRAFTS.md.
 export default function TermsPage() {
   return (
@@ -19,7 +19,7 @@ export default function TermsPage() {
       <section className="flex flex-col gap-3">
         <h2>About these terms</h2>
         <p>
-          These terms apply to lockinconsulting.com and its student chat, run by LockIn Consulting (“LockIn”). Operator: <Fact value={BUSINESS.legalName} missing="registered legal name and form of entity" />, <Fact value={BUSINESS.address} missing="address" />.
+          These terms apply to lockinconsulting.com and its student chat, run by LockIn Consulting (“LockIn”). Operator: <Fact value={BUSINESS.legalName} missing="business name" />, <Fact value={BUSINESS.address} missing="address" />.
           By creating a student account you accept them. How we handle personal data is set out in the <Link href="/privacy">privacy notice</Link>.
         </p>
       </section>
@@ -35,7 +35,7 @@ export default function TermsPage() {
           Fees, rankings and other figures can change and may contain errors. Each figure shows its source and when it was checked where we have one; the official source prevails.
         </p>
         <p>
-          The student chat is currently free. <OwnerToComplete>whether any paid services will be offered online, their price, refund and cancellation terms</OwnerToComplete>
+          The student chat is free, and LockIn does not take payments on this site.
         </p>
       </section>
 
@@ -63,7 +63,7 @@ export default function TermsPage() {
       <section className="flex flex-col gap-3">
         <h2>AI-assisted replies</h2>
         <p>
-          Some replies are drafted or sent by Derek, LockIn’s AI assistant, and are labelled as such. AI replies can be wrong. Treat them as general information and check
+          Replies may be drafted or sent by Derek, LockIn’s AI assistant, once it is switched on (it is not at the moment), and are labelled as such. AI replies can be wrong. Treat them as general information and check
           important facts with the official source. See the <Link href="/ai">AI disclosure</Link>.
         </p>
       </section>
@@ -79,7 +79,8 @@ export default function TermsPage() {
       <section className="flex flex-col gap-3">
         <h2>Liability</h2>
         <p>
-          <OwnerToComplete>limitation of liability wording, after legal review; nothing here limits rights that cannot be limited under Indian law, including under the Consumer Protection Act, 2019</OwnerToComplete>
+          LockIn takes care over the information it publishes but provides the site and chat as they are, without guarantees. Nothing here limits rights you have that cannot be limited under Indian
+          law, including under the Consumer Protection Act, 2019.
         </p>
       </section>
 
@@ -94,7 +95,7 @@ export default function TermsPage() {
       <section className="flex flex-col gap-3">
         <h2>Law and changes</h2>
         <p>
-          These terms are governed by the laws of India. <OwnerToComplete>courts with jurisdiction</OwnerToComplete> We may update these terms; the version and date are shown at
+          These terms are governed by the laws of India. We may update these terms; the version and date are shown at
           the top, and we will tell account holders about material changes before they apply.
         </p>
       </section>

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { LegalPage, OwnerToComplete } from '@/components/legal/legal-page'
+import { LegalPage } from '@/components/legal/legal-page'
 import { LEGAL_REVIEWED } from '@/lib/legal/notice'
 import { AUTO_REPLY_LIMITS } from '@/lib/derek/auto-reply'
 
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 // lib/support/attribution.ts, limits from lib/derek/auto-reply.ts, provider rules from lib/derek/config.ts.
 export default function AiDisclosurePage() {
   return (
-    <LegalPage eyebrow="AI disclosure" title="Derek, LockIn’s AI assistant" version="ai-2026-11-draft">
+    <LegalPage eyebrow="AI disclosure" title="Derek, LockIn’s AI assistant" version="ai-2026-11-07">
       <section className="flex flex-col gap-3">
         <h2>What Derek does</h2>
         <p>
@@ -42,9 +42,9 @@ export default function AiDisclosurePage() {
       <section className="flex flex-col gap-3">
         <h2>Which AI service, and what it receives</h2>
         <p>
-          Derek uses Google’s Gemini API on a paid account. To draft a reply it sends Google your recent messages in that conversation and the relevant published university
-          information. Under Google’s terms for paid Gemini API use, prompts and responses are not used to improve Google’s products.{' '}
-          <OwnerToComplete>confirm against Google’s current terms, the data location, and how long Google keeps prompts for abuse monitoring</OwnerToComplete>
+          Derek is set up to use Google’s Gemini API on Google’s free service. Under Google’s terms for that service, Google may store and review what it receives and use it to improve
+          its products. For that reason LockIn will not switch Derek on until it sends Google only general questions about universities, without personal details such as names, contact
+          details, marks, money or documents; anything personal goes to the LockIn team instead. LockIn will update this notice and ask you to accept it again before that happens.
         </p>
         <p>
           Please don’t put passwords, ID numbers, bank details or health information in the chat. Messages are kept as described in the <Link href="/privacy#retention">privacy notice</Link>.
@@ -61,7 +61,7 @@ export default function AiDisclosurePage() {
 
       <section className="flex flex-col gap-3">
         <h2>Current status</h2>
-        <p>Student accounts and Derek are not live yet. This page describes how they will work once the Owner switches them on.</p>
+        <p>Student accounts are open. Derek is not switched on: today no message you write is sent to any AI service, and the LockIn team answers. This page describes how Derek will work once it is.</p>
       </section>
     </LegalPage>
   )

@@ -10,7 +10,7 @@ const PAGES = ['app/privacy/page.tsx', 'app/terms/page.tsx', 'app/ai/page.tsx']
 describe('legal drafts', () => {
   it('render through the draft layout, stay out of search, and say they are not in effect', () => {
     const layout = read('components/legal/legal-page.tsx')
-    expect(layout).toContain('Draft pending legal review.')
+    expect(layout).toContain('Not reviewed by a lawyer.')
     expect(layout).toContain('does not claim')
     for (const p of PAGES) {
       const page = read(p)
@@ -20,29 +20,37 @@ describe('legal drafts', () => {
     expect(layout).toMatch(/LEGAL_REVIEWED \? null : \(/)
   })
 
-  it('counts the notice complete only when reviewed and every business detail is filled in', async () => {
+  it('opens sign-up on the statutory business details alone, and never claims a lawyer reviewed anything', async () => {
     const { BUSINESS, LEGAL_REVIEWED, noticeReady } = await import('@/lib/legal/notice')
-    // Today: a draft with no details, so production sign-up stays closed (lib/identity/policy.ts).
+    // The Owner supplied these on 7 Nov 2026. A lawyer's review is not a statutory precondition, so it is not a
+    // gate, and it is not claimed either: the flag stays false and the pages say so.
     expect(LEGAL_REVIEWED).toBe(false)
-    expect(noticeReady()).toBe(false)
+    expect(noticeReady()).toBe(true)
+    expect(BUSINESS).toEqual({
+      legalName: 'LockIn Consulting',
+      address: 'B-11 Ashok Vihar, 100ft Road, Dayalbagh, Agra, 282005, India',
+      contactPerson: 'Dev Gautam',
+      contactEmail: 'lockinconsulting.in@gmail.com',
+      contactPhone: '+91 99978 40093',
+    })
     const full = { legalName: 'X', address: 'Y', contactPerson: 'Z', contactEmail: 'a@b.example', contactPhone: '1' }
-    expect(noticeReady(full, true)).toBe(true)
-    expect(noticeReady(full, false)).toBe(false)
-    expect(noticeReady({ ...full, contactPhone: ' ' }, true)).toBe(false)
-    expect(noticeReady({ ...BUSINESS }, true)).toBe(false)
+    expect(noticeReady(full)).toBe(true)
+    expect(noticeReady({ ...full, contactPhone: ' ' })).toBe(false)
+    expect(noticeReady({ ...full, address: null })).toBe(false)
   })
 
-  it('never claim compliance and leave every unknown business detail to the Owner', () => {
-    for (const p of PAGES) expect(read(p), p).not.toMatch(/\b(we|LockIn) (comply|complies|is compliant|are compliant)|fully compliant|DPDP[- ]compliant/i)
-    const privacy = read('app/privacy/page.tsx')
-    for (const gap of ['registered legal name', 'postal address', 'contact email for privacy requests', 'retention period for the change log'])
-      expect(privacy).toContain(gap)
-    // No invented registration numbers, addresses or officers.
-    expect(privacy).not.toMatch(/\b(CIN|GSTIN|PAN)\b|Grievance Officer:|\+91/)
+  it('never claims compliance or a lawyer’s review, and invents no registration details', () => {
+    for (const p of PAGES) expect(read(p), p).not.toMatch(/\b(we|LockIn) (comply|complies|is compliant|are compliant)|fully compliant|DPDP[- ]compliant|reviewed by (a|our) lawyer\b/i)
+    const notice = read('lib/legal/notice.ts')
+    // No invented registration type or numbers anywhere in the pages or the config.
+    for (const text of [read('app/privacy/page.tsx'), read('app/terms/page.tsx'), notice]) expect(text).not.toMatch(/\b(CIN|GSTIN|GST number|PAN)\b\s*[:=]|proprietorship\)|private limited|\bLLP\b/i)
+    // The AI pages say what is true today: Derek is off and nothing goes to an AI service.
+    expect(read('app/privacy/page.tsx')).toContain('At the moment Derek is not switched on')
+    expect(read('app/ai/page.tsx')).not.toContain('paid account')
   })
 
   it('records which notice version a student accepted, and the footer links all three pages', () => {
-    expect(read('lib/student/onboarding.ts')).toMatch(/PRIVACY_NOTICE_VERSION = 'student-2026-11-draft'/)
+    expect(read('lib/student/onboarding.ts')).toMatch(/PRIVACY_NOTICE_VERSION = 'student-2026-11-07'/)
     expect(read('app/privacy/page.tsx')).toContain('version={PRIVACY_NOTICE_VERSION}')
     const footer = read('components/site/site-footer.tsx')
     for (const href of ['/privacy', '/terms', '/ai']) expect(footer).toContain(`href="${href}"`)

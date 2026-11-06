@@ -676,3 +676,47 @@ describe('minor: revoking a member needs confirmation and reports it', () => {
   })
 })
 
+
+const { PRIVACY_NOTICE_VERSION } = await import('@/lib/student/onboarding')
+describe('Gemini free tier: what Derek sends to the provider', () => {
+  const FREE: DerekStatus = { state: 'ready', providerId: 'mock', notes: [], autoReply: { permitted: false, blockers: ['off'] }, freeTier: true }
+  const accept = (version: string | null) => db.query('UPDATE student_profiles SET privacy_notice_version = ? WHERE id = ?', [version, student.profileId])
+
+  it('sends only the screened current question: no history, name, email or ids', async () => {
+    await accept(PRIVACY_NOTICE_VERSION)
+    const mock = new MockProvider()
+    const first = await C.createConversation(pool(), student, { body: 'What is a conditional offer?', clientRequestId: rid() })
+    expect((await D.prepareDerekDraft(pool(), first.conversationId, first.triggerMessageId!, { status: FREE, provider: mock })).state).toBe('review')
+    const follow = await C.sendStudentMessage(pool(), student, first.conversationId, { body: 'And what is an unconditional offer?', clientRequestId: rid() })
+    await D.prepareDerekDraft(pool(), first.conversationId, follow.triggerMessageId!, { status: FREE, provider: mock })
+    expect(mock.calls).toBe(2)
+    for (const request of mock.requests) {
+      expect(request.history).toEqual([]) // the earlier turn stays in LockIn's database, not at Google
+      expect(JSON.stringify(request)).not.toMatch(/Fix Student|fix-student|test\.example/)
+    }
+    // The question is the student's own unanswered text, screened; earlier turns are never sent as history.
+    expect(mock.requests[1].question).toContain('And what is an unconditional offer?')
+    // The conversation itself is untouched: both questions and their drafts are in the Live Inbox history.
+    expect(await rows("SELECT id FROM messages WHERE conversation_id = ? AND author_kind = 'student'", [first.conversationId])).toHaveLength(2)
+  })
+
+  it('keeps a personal-looking question away from the provider and leaves it for a person', async () => {
+    await accept(PRIVACY_NOTICE_VERSION)
+    const mock = new MockProvider()
+    const q = await C.createConversation(pool(), student, { body: 'My email is fix@test.example and I scored 80% in class 12', clientRequestId: rid() })
+    const outcome = await D.prepareDerekDraft(pool(), q.conversationId, q.triggerMessageId!, { status: FREE, provider: mock })
+    expect(outcome).toMatchObject({ state: 'failed', code: 'withheld_private' })
+    expect(mock.calls).toBe(0)
+    expect(await rows("SELECT status, error_code, provider FROM ai_drafts WHERE conversation_id = ?", [q.conversationId])).toEqual([{ status: 'failed', error_code: 'withheld_private', provider: 'mock' }])
+    expect(await rows("SELECT id FROM messages WHERE conversation_id = ? AND author_kind = 'derek'", [q.conversationId])).toHaveLength(0)
+  })
+
+  it('does not call the provider until the student has accepted the current privacy notice', async () => {
+    await accept('student-2026-11-07')
+    const mock = new MockProvider()
+    const q = await C.createConversation(pool(), student, { body: 'What is a conditional offer?', clientRequestId: rid() })
+    expect((await D.prepareDerekDraft(pool(), q.conversationId, q.triggerMessageId!, { status: FREE, provider: mock })).state).toBe('ineligible')
+    expect(mock.calls).toBe(0)
+    await accept(null)
+  })
+})

@@ -15,6 +15,8 @@ import { analyseQuestion, COMPARISON_TARGET_CHARS, studentPlanFromSubject } from
 import { DEREK_INSTRUCTIONS, type AiProvider, type DraftRequest, type EvidenceItem } from './provider'
 import { callProvider, MAX_ATTEMPTS, type CallOutcome } from './runtime'
 import { assessDraft, assessQuestion, combineRisk, redactPersonalData } from './safeguards'
+import { FREE_TIER_HOLD_CODE, screenForFreeTier } from './free-tier'
+import { PRIVACY_NOTICE_VERSION } from '@/lib/student/onboarding'
 import { classifyMessage, GREETING_REPLY, isSmallTalk, OFF_TOPIC_REPLY, RULES_PROVIDER_ID, scopeRisk, THANKS_REPLY } from './scope'
 
 const RULES_MODEL = 'derek-rules-1'
@@ -63,6 +65,8 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
   const status = deps.status ?? getDerekStatus()
   const provider = deps.provider === undefined ? createProvider(status) : deps.provider
   if (status.state !== 'ready' || !provider) return { state: 'disabled' }
+  // Gemini free tier: Google may keep and read what it gets, so send as little as possible (lib/derek/free-tier.ts).
+  const freeTier = status.freeTier === true
 
   // 1. Claim the question. The UNIQUE key on trigger_message_id makes this the only worker.
   const claim = await inTransaction(pool, async (conn) => {
@@ -104,13 +108,18 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
         throw e
       })
       if (res === 'duplicate') return 'duplicate' as const
-      return { draftId: Number((res as { insertId: number }).insertId), question: classification.question, classification, fixed, firstPendingId, plan: studentPlanFromSubject(String(conv.subject ?? '')) }
+      return { draftId: Number((res as { insertId: number }).insertId), question: classification.question, classification, fixed, firstPendingId, plan: studentPlanFromSubject(String(conv.subject ?? '')), identity: undefined }
     }
 
     // 18+ gate, for every provider whatever its adapter declares: no recorded 18+ confirmation, no
     // provider call (Gemini API terms; Owner decision 6 Nov 2026). Checked here, inside the claim, because
     // every provider request goes through it. The question stays in the Live Inbox for a person.
     if (conv.student_age_confirmed_at == null) return 'ineligible' as const
+    // Free tier: the student must have accepted the current privacy notice, which says what Google may do with it.
+    if (freeTier && conv.student_privacy_version !== PRIVACY_NOTICE_VERSION) return 'ineligible' as const
+    const identity = freeTier
+      ? (await conn.query<Row[]>('SELECT s.display_name AS displayName, u.email AS email FROM student_profiles s JOIN auth_user u ON u.id = s.user_id WHERE s.id = ?', [conv.student_profile_id]))[0][0]
+      : undefined
     // Serialise claims on the settings row so concurrent workers cannot overshoot the caps.
     await conn.query('SELECT id FROM support_settings WHERE id = 1 FOR UPDATE')
     const [[used]] = await conn.query<Row[]>(
@@ -129,7 +138,7 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
         provider.id,
         provider.model,
       ])
-      return { draftId: Number((res as { insertId: number }).insertId), question: classification.question, classification, fixed: null, firstPendingId, plan: studentPlanFromSubject(String(conv.subject ?? '')) }
+      return { draftId: Number((res as { insertId: number }).insertId), question: classification.question, classification, fixed: null, firstPendingId, plan: studentPlanFromSubject(String(conv.subject ?? '')), identity }
     } catch (e) {
       if (isDuplicate(e)) return 'duplicate' as const
       throw e
@@ -147,9 +156,13 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
   let evidence: EvidenceItem[] = []
   let outcome: CallOutcome
   let general = false
+  let held: string | null = null
   if (claim.fixed) outcome = { ok: true, result: { text: claim.fixed, model: RULES_MODEL }, attempts: 0, latencyMs: 0 }
-  else {
-    const historyRows = await selectRows(
+  else if (freeTier && (held = screenForFreeTier(claim.question, { displayName: claim.identity?.displayName == null ? null : String(claim.identity.displayName), email: claim.identity?.email == null ? null : String(claim.identity.email) }))) {
+    // Nothing is sent to Google: the question stays in the Live Inbox for a person (the failure path below tells the team).
+    outcome = { ok: false, code: FREE_TIER_HOLD_CODE, attempts: 0, latencyMs: 0 }
+  } else {
+    const historyRows = freeTier ? [] : await selectRows(
       pool,
       'SELECT author_kind, body FROM messages WHERE conversation_id = ? AND id < ? ORDER BY id DESC LIMIT ?',
       [conversationId, claim.firstPendingId, HISTORY_TURNS],
@@ -158,12 +171,12 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     const history = historyRows.reverse().map((r) => ({ role: r.author_kind === 'student' ? ('student' as const) : ('team' as const), text: redactPersonalData(String(r.body)) }))
     // The plan from the first-question form (destination and course only, never the Instagram
     // handle) counts as something the student already told Derek.
-    const earlier = [claim.plan ?? '', ...history.filter((h) => h.role === 'student').map((h) => h.text)].join('\n')
+    const earlier = [freeTier ? '' : (claim.plan ?? ''), ...history.filter((h) => h.role === 'student').map((h) => h.text)].join('\n')
     // "What about Italy?" looks up evidence with the earlier question's context too.
     const lookup = analyseQuestion(question, [], earlier).isFollowUp ? `${earlier}\n${claim.question}` : claim.question
     evidence = await (deps.loadEvidence ?? loadEvidence)(pool, lookup)
     const analysed = analyseQuestion(question, evidence, earlier, history.filter((h) => h.role === 'team').at(-1)?.text)
-    const guidance = claim.plan
+    const guidance = claim.plan && !freeTier
       ? { ...analysed, note: `${analysed.note} The student told LockIn before asking: "${redactPersonalData(claim.plan)}" Use this and do not ask for it again.` }
       : analysed
     general = guidance.kind !== 'specific_fact'

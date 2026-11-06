@@ -14,11 +14,11 @@ export const metadata: Metadata = {
 // lib/support/attribution.ts, limits from lib/derek/auto-reply.ts, provider rules from lib/derek/config.ts.
 export default function AiDisclosurePage() {
   return (
-    <LegalPage eyebrow="AI disclosure" title="Derek, LockIn’s AI assistant" version="ai-2026-11-07">
+    <LegalPage eyebrow="AI disclosure" title="Derek, LockIn’s AI assistant" version="ai-2026-11-07b">
       <section className="flex flex-col gap-3">
         <h2>What Derek does</h2>
         <p>
-          Once switched on, Derek drafts answers to questions in the student chat about universities, courses, fees and admissions, using the information published on this site. It does not make
+          Derek drafts answers to questions in the student chat about universities, courses, fees and admissions, using the information published on this site. It does not make
           decisions about you, assess your chances, or give legal, immigration or financial advice.
         </p>
       </section>
@@ -42,12 +42,14 @@ export default function AiDisclosurePage() {
       <section className="flex flex-col gap-3">
         <h2>Which AI service, and what it receives</h2>
         <p>
-          Derek is set up to use Google’s Gemini API on Google’s free service. Under Google’s terms for that service, Google may store and review what it receives and use it to improve
-          its products. For that reason LockIn will not switch Derek on until it sends Google only general questions about universities, without personal details such as names, contact
-          details, marks, money or documents; anything personal goes to the LockIn team instead. LockIn will update this notice and ask you to accept it again before that happens.
+          Derek uses Google’s Gemini API on Google’s free service. Under Google’s terms for that service, Google may store and review what it receives and use it to improve its
+          products. For that reason LockIn sends Google only the text of your current question, and only when it looks like a general question about universities, courses, fees or
+          admissions, together with public information from this site. It never sends your name, email, phone, account details, earlier messages or documents. A question that looks
+          personal (names, contact details, marks or test scores, money, visa or health history, documents) is not sent at all; the LockIn team answers it. Derek is for people outside
+          the European Economic Area, Switzerland and the United Kingdom.
         </p>
         <p>
-          Please don’t put passwords, ID numbers, bank details or health information in the chat. Messages are kept as described in the <Link href="/privacy#retention">privacy notice</Link>.
+          Please don’t put personal details in your questions, and never passwords, ID numbers, bank details or health information. Messages are kept as described in the <Link href="/privacy#retention">privacy notice</Link>.
         </p>
       </section>
 
@@ -61,7 +63,7 @@ export default function AiDisclosurePage() {
 
       <section className="flex flex-col gap-3">
         <h2>Current status</h2>
-        <p>Student accounts are open. Derek is not switched on: today no message you write is sent to any AI service, and the LockIn team answers. This page describes how Derek will work once it is.</p>
+        <p>Student accounts are open and Derek is on, in the free-tier mode described above. You can always ask for a person.</p>
       </section>
     </LegalPage>
   )

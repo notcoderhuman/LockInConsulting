@@ -91,10 +91,13 @@ export default function PrivacyPage() {
       <section className="flex flex-col gap-3">
         <h2>Derek, our AI assistant</h2>
         <p>
-          Derek is LockIn’s AI assistant. <strong>At the moment Derek is not switched on, so nothing you write is sent to any AI service</strong>: your messages are read and answered by the
-          LockIn team. LockIn plans to use Google’s Gemini service for Derek. Google’s free service, which is the one LockIn would use, may store and review what it receives and use it to
-          improve its products, so LockIn will not switch Derek on until it sends Google only general questions without personal details. Before it does, LockIn will update this notice and
-          ask you to accept it again. Every reply in the chat says who or what wrote it. Details: <Link href="/ai">AI disclosure</Link>.
+          Derek is LockIn’s AI assistant. It uses Google’s Gemini service, on Google’s <strong>free service</strong>. Under Google’s terms for that service, Google may store what it
+          receives, let people read it, and use it to improve its products. So LockIn sends Google <strong>only the text of your current question, after checking it is a general question
+          about universities, courses, fees or admissions</strong>, together with public information from this site. LockIn does not send Google your name, email, phone number, account
+          details, earlier messages, documents, or anything about your marks, money, health or visa history. If a question looks personal, it is not sent to Google at all and the LockIn
+          team answers it instead. <strong>Please do not put personal details in your questions.</strong> Derek is for people outside the European Economic Area, Switzerland and the United
+          Kingdom, because Google’s free service may not be used for people there. Your messages stay in LockIn’s own database as described below, and every reply says who or what wrote it.
+          Details: <Link href="/ai">AI disclosure</Link>.
         </p>
       </section>
 
@@ -102,7 +105,7 @@ export default function PrivacyPage() {
         <h2>Who else processes your data</h2>
         <ul>
           <li>Our hosting provider (Hostinger), which stores the website and database.</li>
-          <li>Google, only if you choose to sign in with it. Google (Gemini API) would also process general questions if Derek is switched on, as described above.</li>
+          <li>Google: if you choose to sign in with it, and (Gemini API, free service) for the screened general questions described above.</li>
           <li>Hostinger’s email service, which sends your sign-in codes.</li>
         </ul>
         <p>

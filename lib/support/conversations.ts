@@ -60,7 +60,7 @@ export async function applyEvent(
 export async function lockConversation(conn: PoolConnection, id: number, studentProfileId?: number): Promise<Row & { status: ConversationStatus }> {
   const rows = await selectRows(
     conn,
-    `SELECT c.*, s.status AS student_status, s.user_id AS student_user_id, s.age_confirmed_at AS student_age_confirmed_at
+    `SELECT c.*, s.status AS student_status, s.user_id AS student_user_id, s.age_confirmed_at AS student_age_confirmed_at, s.privacy_notice_version AS student_privacy_version
        FROM conversations c JOIN student_profiles s ON s.id = c.student_profile_id
       WHERE c.id = ? ${studentProfileId != null ? 'AND c.student_profile_id = ?' : ''} FOR UPDATE`,
     studentProfileId != null ? [id, studentProfileId] : [id],

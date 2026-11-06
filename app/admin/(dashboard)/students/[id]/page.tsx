@@ -37,7 +37,7 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
             ['Email', student.email ?? '—'],
             ['Status', humanize(student.status)],
             ['Joined', formatUtc(student.createdAt)],
-            ['Age confirmation', student.ageConfirmedAt ? formatUtc(student.ageConfirmedAt) : 'Not recorded (flow not built; legal review pending)'],
+            ['Age confirmation', student.ageConfirmedAt ? formatUtc(student.ageConfirmedAt) : 'Not recorded: Derek will not draft for this student'],
             ['Privacy notice accepted', student.privacyNoticeVersion ?? 'Not recorded'],
           ].map(([label, value]) => (
             <div key={label} className="flex flex-col gap-0.5">

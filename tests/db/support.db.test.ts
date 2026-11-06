@@ -32,7 +32,9 @@ const T = await import('@/lib/admin/team')
 const W = await import('@/lib/admin/workflow')
 const { loadEvidence } = await import('@/lib/derek/evidence')
 const { MockProvider } = await import('@/lib/derek/providers/mock')
-const { AUTO_REPLY_LIMITS } = await import('@/lib/derek/auto-reply')
+const AR = await import('@/lib/derek/auto-reply')
+const { AUTO_REPLY_LIMITS } = AR
+const { getDerekStatus } = await import('@/lib/derek/config')
 const { GREETING_REPLY, OFF_TOPIC_REPLY, THANKS_REPLY } = await import('@/lib/derek/scope')
 const { DIRECTORY_LABEL } = await import('@/lib/derek/provider')
 const { unsupportedFigures } = await import('@/lib/derek/safeguards')
@@ -81,7 +83,7 @@ async function makeStudent(name = 'Synthetic Student'): Promise<StudentActor> {
   studentSeq += 1
   const userId = `stu-${studentSeq}-${randomUUID().slice(0, 8)}`
   await db.query('INSERT INTO auth_user (id, name, email, emailVerified, updatedAt) VALUES (?, ?, ?, 0, UTC_TIMESTAMP(3))', [userId, name, `student${studentSeq}@test.example`])
-  const [res] = await db.query('INSERT INTO student_profiles (user_id, display_name) VALUES (?, ?)', [userId, name])
+  const [res] = await db.query('INSERT INTO student_profiles (user_id, display_name, age_confirmed_at) VALUES (?, ?, UTC_TIMESTAMP(3))', [userId, name])
   return { userId, profileId: Number((res as { insertId: number }).insertId), displayName: name }
 }
 
@@ -164,11 +166,11 @@ describe('identity separation', () => {
     // A student account: a credential user with a student profile and no admin membership.
     const stu = await cli(['create', '--email', 'student-login@test.example', '--name', 'Login Student', '--role', 'editor'])
     await db.query('DELETE FROM admin_members WHERE user_id = ?', [stu.userId])
-    await db.query("INSERT INTO student_profiles (user_id, display_name) VALUES (?, 'Login Student')", [stu.userId])
+    await db.query("INSERT INTO student_profiles (user_id, display_name, age_confirmed_at) VALUES (?, 'Login Student', UTC_TIMESTAMP(3))", [stu.userId])
     await cli(['create', '--email', 'staff-login@test.example', '--name', 'Staff Login', '--role', 'reviewer'])
     // A misconfigured account holding both: must be refused on both sides.
     const dual = await cli(['create', '--email', 'dual@test.example', '--name', 'Dual Account', '--role', 'owner'])
-    await db.query("INSERT INTO student_profiles (user_id, display_name) VALUES (?, 'Dual Account')", [dual.userId])
+    await db.query("INSERT INTO student_profiles (user_id, display_name, age_confirmed_at) VALUES (?, 'Dual Account', UTC_TIMESTAMP(3))", [dual.userId])
     studentCookie = await signIn('student-login@test.example')
     staffCookie = await signIn('staff-login@test.example')
     dualCookie = await signIn('dual@test.example')
@@ -942,6 +944,64 @@ describe('Derek Auto Mode (offline, mock providers only)', () => {
     const { autoReply: _declared, ...undeclared } = during(async () => {}) // same adapter, no declaration
     expect((await run(q, undeclared)).state).toBe('review')
     expect(await lastReason(q.conversationId)).toBe('Automatic reply held: the provider that wrote this draft is not cleared for automatic replies')
+  })
+
+  describe('18+ gate on the server, for every provider', () => {
+    // A profile without a recorded confirmation (none is created that way today; legacy or hand-made rows).
+    const minorProfile = async () => {
+      const s = await makeStudent('No Age Recorded')
+      await db.query('UPDATE student_profiles SET age_confirmed_at = NULL WHERE id = ?', [s.profileId])
+      return s
+    }
+
+    it('never calls any provider, even the offline mock or an adapter that declares no policy', async () => {
+      const s = await minorProfile()
+      // The student APIs still work, so a person can answer: the gate is on the AI, not on the chat.
+      const q = await ask(s, 'What is the tuition fee at Synthetic Thames University?')
+      const mock = new MockProvider()
+      expect(await run(q, mock)).toEqual({ state: 'ineligible' })
+      const undeclared = during(async () => {})
+      const spy = vi.spyOn(undeclared, 'generate')
+      expect(await run(q, undeclared)).toEqual({ state: 'ineligible' })
+      expect(mock.calls + spy.mock.calls.length).toBe(0)
+      expect(await rows('SELECT id FROM ai_drafts WHERE conversation_id = ?', [q.conversationId])).toHaveLength(0)
+      expect(await derekMessages(q.conversationId)).toHaveLength(0)
+      // A team member asking Derek for a draft is refused too.
+      await expect(D.requestDraftForConversation(pool(), reviewer, q.conversationId, { provider: mock })).rejects.toMatchObject({ status: 409, message: expect.stringMatching(/18\+ confirmation/) })
+      expect(mock.calls).toBe(0)
+      // Reading history works and shows only the student's own message.
+      expect((await C.getStudentMessages(pool(), s, q.conversationId)).messages.map((m: { authorKind: string }) => m.authorKind)).toEqual(['student'])
+    })
+
+    it('still gives LockIn’s own fixed reply to a greeting (no provider involved)', async () => {
+      const s = await minorProfile()
+      const mock = new MockProvider()
+      expect((await run(await ask(s, 'hi'), mock)).state).toBe('auto_sent')
+      expect(mock.calls).toBe(0)
+    })
+
+    it('the send-time check also refuses a model-written reply for such a student', async () => {
+      const s = await minorProfile()
+      const q = await ask(s, general)
+      const conn = await pool().getConnection()
+      try {
+        await conn.beginTransaction()
+        const conv = await C.lockConversation(conn, q.conversationId)
+        const decision = await AR.decideAutoReply(conn, {
+          settings: await S.getSupportSettings(conn),
+          status: getDerekStatus(),
+          provider: new MockProvider(),
+          conv,
+          risk: 'low',
+          text: 'A statement of purpose explains your goals.',
+          evidence: [],
+        })
+        expect(decision).toEqual({ send: false, heldReason: 'the student has no recorded 18+ confirmation' })
+        await conn.rollback()
+      } finally {
+        conn.release()
+      }
+    })
   })
 
   it('holds replies past the per-student and global caps for a person', async () => {

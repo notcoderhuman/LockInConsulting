@@ -1,4 +1,4 @@
-import { ProviderError, UNCERTAIN_MARKER, type AiProvider, type AutoReplyCapability, type DraftRequest, type DraftResult, type ProviderPolicy } from '../provider'
+import { citation, ProviderError, UNCERTAIN_MARKER, type AiProvider, type AutoReplyCapability, type DraftRequest, type DraftResult, type ProviderPolicy } from '../provider'
 
 // Google Gemini API adapter (REST `models.generateContent`), checked 21 Oct, 26 Oct and 5 Nov 2026 (docs now
 // served from aistudio.google.com/docs/models and /docs/deprecations: Stable, "No shutdown date announced")
@@ -32,7 +32,21 @@ const MAX_RESPONSE_BYTES = 256 * 1024
 // refused or filtered the content. Anything else unexpected is treated as an invalid response.
 const SAFETY_FINISH = new Set(['SAFETY', 'RECITATION', 'LANGUAGE', 'BLOCKLIST', 'PROHIBITED_CONTENT', 'SPII', 'IMAGE_SAFETY', 'IMAGE_PROHIBITED_CONTENT'])
 
+/**
+ * Gemini on Vertex AI (Google Cloud terms; docs/DEREK-PROVIDER-TERMS.md). Same generateContent request and
+ * response as the Developer API, so the same adapter serves both; only the URL and provider id differ.
+ * Project and location are checked so they cannot change the host or path.
+ */
+export function vertexEndpoint(project: string, location: string): string | null {
+  if (!/^[a-z][a-z0-9-]{4,28}[a-z0-9]$/.test(project) || !/^(global|[a-z]+-[a-z]+\d+)$/.test(location)) return null
+  const host = location === 'global' ? 'aiplatform.googleapis.com' : `${location}-aiplatform.googleapis.com`
+  return `https://${host}/v1/projects/${project}/locations/${location}/publishers/google/models/${GEMINI_MODEL}:generateContent`
+}
+
 export interface GeminiOptions {
+  /** 'vertex' with `url` from vertexEndpoint(); default the Gemini Developer API. */
+  provider?: 'gemini' | 'vertex'
+  url?: string
   apiKey: string
   model?: string
   dailyDraftLimit: number
@@ -46,7 +60,7 @@ const count = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v 
 
 export function buildGeminiRequest(req: DraftRequest, maxOutputTokens = GEMINI_MAX_OUTPUT_TOKENS) {
   const evidence = req.evidence.length
-    ? req.evidence.map((e) => `- [${e.ref}] ${e.text} (official source: ${e.sourceUrl}, ${e.publisher}, checked ${e.checkedAt})`).join('\n')
+    ? req.evidence.map((e) => `- [${e.ref}] ${e.text} ${citation(e)}`).join('\n')
     : '- none: there is no verified LockIn directory record for this question.'
   return {
     systemInstruction: {
@@ -119,16 +133,20 @@ export class GeminiProvider implements AiProvider {
   // owner must also clear it (DEREK_AUTO_REPLY_CLEARED=gemini; in production DEREK_PROVIDER_APPROVED and
   // GEMINI_PAID_TIER too), and every send-time gate still applies (risk, team offline, caps, takeover).
   static readonly autoReply: AutoReplyCapability = { permitted: true }
-  readonly id = 'gemini'
+  readonly id: 'gemini' | 'vertex'
   readonly model: string
   readonly policy: ProviderPolicy
   readonly autoReply = GeminiProvider.autoReply
   readonly #apiKey: string
   readonly #fetch: typeof fetch
+  readonly #url: string
 
-  constructor({ apiKey, model = GEMINI_MODEL, dailyDraftLimit, fetchImpl }: GeminiOptions) {
+  constructor({ apiKey, model = GEMINI_MODEL, dailyDraftLimit, fetchImpl, provider = 'gemini', url }: GeminiOptions) {
     if (model !== GEMINI_MODEL) throw new Error(`Unsupported Gemini model (only ${GEMINI_MODEL} is approved).`)
+    if (provider === 'vertex' && !url) throw new Error('Vertex AI needs its endpoint URL.')
+    this.id = provider
     this.model = model
+    this.#url = url ?? `${GEMINI_ENDPOINT}/${model}:generateContent`
     this.#apiKey = apiKey
     this.#fetch = fetchImpl ?? fetch
     this.policy = { external: true, requiresAdultStudent: true, dailyDraftLimit }
@@ -137,7 +155,7 @@ export class GeminiProvider implements AiProvider {
   async generate(request: DraftRequest, { signal }: { signal: AbortSignal }): Promise<DraftResult> {
     let res: Response
     try {
-      res = await this.#fetch(`${GEMINI_ENDPOINT}/${this.model}:generateContent`, {
+      res = await this.#fetch(this.#url, {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-goog-api-key': this.#apiKey },
         body: JSON.stringify(buildGeminiRequest(request)),

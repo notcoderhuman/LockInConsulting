@@ -239,9 +239,11 @@ describe('provisional listings', () => {
     }
   })
 
-  it('gives Derek no evidence from provisional entries, and keeps the audit chain intact', async () => {
+  it('gives Derek provisional entries only as labelled, unverified evidence, and keeps the audit chain intact', async () => {
+    // Owner decision (6 Nov 2026): drafts may inform Derek, but never as verified facts.
     const evidence = await loadEvidence(getPool(), 'Tell me about Alpha Synthetic University', TODAY)
-    expect(evidence.filter((e) => e.text.includes('Alpha Synthetic University'))).toEqual([])
+    for (const e of evidence.filter((x) => x.text.includes('Alpha Synthetic University')))
+      expect(e).toMatchObject({ unverified: true, ref: expect.stringMatching(/^draft_/), text: expect.stringMatching(/^UNVERIFIED, not yet checked by LockIn: /) })
     expect(await verifyAuditChain(getAdminPool())).toMatchObject({ ok: true })
   })
 })

@@ -27,6 +27,13 @@ describe('natural answers pass, whatever their shape', () => {
       expect(styleIssues(text), question).toEqual([])
     }
   })
+
+  it('does not count the required unverified label on each draft fact as a repeated opening', () => {
+    const tag = 'UNVERIFIED, not yet checked by LockIn:'
+    const text = `Not yet checked by LockIn (unverified):\n- ${tag} Example U offers MSc Data (source: https://x.example/a, X, accessed 2026-11-01)\n- ${tag} MSc Data intake: September (source: https://x.example/a, X, accessed 2026-11-01)\n- ${tag} MSc Data tuition fee: AUD 1000 per year (source: https://x.example/b, X, accessed 2026-11-01)`
+    expect(styleIssues(text)).toEqual([])
+    expect(styleIssues('The course is good. The course is long. The course is hard.')).toContain('Repetitive sentence openings')
+  })
 })
 
 describe('flags the habits the style rules forbid', () => {

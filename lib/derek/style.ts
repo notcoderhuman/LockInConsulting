@@ -1,6 +1,10 @@
+import { UNVERIFIED_TAG } from './provider'
+
 // Light clean-up of a provider's draft before it is checked and stored. It only removes filler and
 // markdown that the rules forbid (greetings, "Great question", sign-offs, **bold**, # headings);
 // it never adds or rewrites content, and a reviewer still sees and approves the result.
+
+const UNVERIFIED_PREFIX = new RegExp(`^${UNVERIFIED_TAG}:\\s*`, 'i')
 
 const LEADING_FILLER: RegExp[] = [
   /^(hi|hello|hey|dear|namaste)\b[^.!?\n]{0,40}[.!?,:]\s*/i,
@@ -69,7 +73,8 @@ export function styleIssues(text: string): string[] {
   // Three or more sentences opening with the same two words read as a template.
   const openings = text
     .split(/(?<=[.!?])\s+|\n+/)
-    .map((s) => s.replace(/^[-*•\d.)\s]+/, '').toLowerCase().split(/\s+/).slice(0, 2).join(' '))
+    // The required unverified label on each draft fact is not a sentence opening.
+    .map((s) => s.replace(/^[-*•\d.)\s]+/, '').replace(UNVERIFIED_PREFIX, '').toLowerCase().split(/\s+/).slice(0, 2).join(' '))
     .filter((o) => o.split(' ').length === 2)
   if (Object.values(openings.reduce<Record<string, number>>((n, o) => ({ ...n, [o]: (n[o] ?? 0) + 1 }), {})).some((n) => n >= 3))
     issues.push('Repetitive sentence openings')

@@ -852,6 +852,31 @@ describe('Derek Auto Mode (offline, mock providers only)', () => {
     for (const c of [altered, unpublished]) expect(await derekMessages(c.conversationId)).toHaveLength(0)
   })
 
+  it('answers from a draft record directly, labelled unverified with its source; the Owner sees it and can take over', async () => {
+    const src = await newSource()
+    const uni = await W.createRecord(pool(), editor, 'university', form({ name: 'Synthetic Draftonly University', slug: 'synthetic-draftonly-university', destinationIso2: 'AU', officialWebsite: 'https://draftonly.example/', sourceId: String(src) }), null)
+    const course = await W.createRecord(pool(), editor, 'course', form({ name: 'MSc Draftonly Data', slug: 'msc-draftonly-data', studyLevel: 'PG', qualification: 'master', sourceId: String(src) }), uni)
+    await W.createRecord(pool(), editor, 'tuition_fee', form({ category: 'international', currency: 'AUD', billingPeriod: 'per_year', amount: '45670.00', sourceId: String(src) }), course)
+
+    const s = await makeStudent()
+    const q = await ask(s, 'What is the tuition fee at Synthetic Draftonly University?')
+    const out = await run(q, new MockProvider())
+    expect(out.state).toBe('auto_sent')
+    const [reply] = await rows<{ body: string }>("SELECT body FROM messages WHERE conversation_id = ? AND author_kind = 'derek'", [q.conversationId])
+    expect(reply.body).toContain('Not yet checked by LockIn (unverified):')
+    expect(reply.body).toMatch(/UNVERIFIED, not yet checked by LockIn: .*AUD 45670\.00 per year .*\(source: https:\/\/uni\.example\/support\/\d+, Example University \(synthetic\), accessed /)
+    expect(reply.body).not.toContain(DIRECTORY_LABEL)
+    // Still a draft: the public directory does not show it.
+    expect(await rows("SELECT id FROM public_universities WHERE slug = 'synthetic-draftonly-university'")).toHaveLength(0)
+
+    // Owner supervision: the conversation is in the Live Inbox, and the Owner can take it over.
+    expect((await C.listInbox(pool(), owner)).rows.some((r) => r.id === q.conversationId)).toBe(true)
+    await C.takeOverConversation(pool(), owner, q.conversationId)
+    expect((await C.getConversationForStaff(pool(), owner, q.conversationId)).conversation.takenOver).toMatchObject({ byName: owner.name })
+    const next = await C.sendStudentMessage(pool(), s, q.conversationId, { body: 'And the deadline?', clientRequestId: rid() })
+    expect(await run({ conversationId: q.conversationId, triggerMessageId: next.messageId }, new MockProvider())).toMatchObject({ state: 'taken_over' })
+  })
+
   it('escalates visa, legal and distress questions, uncertain answers, refusals, unverified links and long replies', async () => {
     const s = await makeStudent()
     const cases: [string, AiProvider, RegExp | null][] = [

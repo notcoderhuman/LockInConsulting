@@ -1,5 +1,5 @@
 import type { AiProvider, AutoReplyCapability } from './provider'
-import { GEMINI_MODEL, GeminiProvider } from './providers/gemini'
+import { GEMINI_MODEL, GeminiProvider, vertexEndpoint } from './providers/gemini'
 import { MockProvider } from './providers/mock'
 
 // Derek's global gate. Defaults: OFF. Every flag must be set deliberately:
@@ -17,6 +17,11 @@ import { MockProvider } from './providers/mock'
 //                                  DEREK_AUTO_REPLY_CLEARED nor a student's 18+ checkbox counts as this.
 //   GEMINI_PAID_TIER=true          required for gemini in production: unpaid-tier inputs may be
 //                                  read by human reviewers and used to improve Google's products
+//   DEREK_PROVIDER=vertex         Gemini on Vertex AI (Google Cloud terms, docs/DEREK-PROVIDER-TERMS.md):
+//   VERTEX_API_KEY=…               server-side only; a Google Cloud API key restricted to Vertex AI
+//   VERTEX_PROJECT_ID / VERTEX_LOCATION  project ID; region (e.g. asia-south1) or "global" (default)
+//                                  Production also needs DEREK_PROVIDER_APPROVED=vertex; the model check,
+//                                  the 18+ rule, the caps and every other gate are the same as gemini.
 //   DEREK_GEMINI_DAILY_DRAFT_LIMIT optional cost cap (default 100 drafts per rolling 24 h, max 2000)
 //   DEREK_MAX_ATTEMPTS=1|2         provider attempts per draft (default 2: one retry on 429/5xx/timeout);
 //                                  1 guarantees at most one request, e.g. for a supervised smoke test
@@ -78,10 +83,10 @@ export function readGeminiApiKey(env: Env = process.env): string | null {
 // Not a format check: a value with control or non-ASCII characters cannot be carried in an HTTP
 // header, so fetch would throw before reaching Google. Messages never include the key, its prefix
 // or its length.
-function geminiKeyProblem(env: Env): string | null {
-  const key = readGeminiApiKey(env)
-  if (!key) return 'GEMINI_API_KEY is not set.'
-  if (/[^\x20-\x7E]/.test(key)) return 'GEMINI_API_KEY contains characters that cannot be sent in an HTTP header (check for a line break or a copied invisible character).'
+function geminiKeyProblem(env: Env, name: 'GEMINI_API_KEY' | 'VERTEX_API_KEY' = 'GEMINI_API_KEY'): string | null {
+  const key = (env[name] ?? '').trim()
+  if (!key) return `${name} is not set.`
+  if (/[^\x20-\x7E]/.test(key)) return `${name} contains characters that cannot be sent in an HTTP header (check for a line break or a copied invisible character).`
   return null
 }
 
@@ -154,7 +159,29 @@ export function getDerekStatus(env: Env = process.env): DerekStatus {
     }
   }
 
-  return blocked(providerId, `Unknown AI provider "${providerId.slice(0, 40)}" (DEREK_PROVIDER must be mock or gemini).`)
+  // Gemini on Vertex AI under the Google Cloud terms (docs/DEREK-PROVIDER-TERMS.md). Same model and gates, except
+  // GEMINI_PAID_TIER: Vertex is billed through Cloud Billing and the Cloud terms bar training on customer data.
+  if (providerId === 'vertex') {
+    const keyProblem = geminiKeyProblem(env, 'VERTEX_API_KEY')
+    if (keyProblem) return blocked('vertex', keyProblem)
+    if (!vertexEndpoint(env.VERTEX_PROJECT_ID ?? '', env.VERTEX_LOCATION || 'global'))
+      return blocked('vertex', 'VERTEX_PROJECT_ID must be a Google Cloud project ID and VERTEX_LOCATION a region such as asia-south1 (default global).')
+    if (env.DEREK_GEMINI_MODEL && env.DEREK_GEMINI_MODEL !== GEMINI_MODEL) return blocked('vertex', `DEREK_GEMINI_MODEL must be ${GEMINI_MODEL}; other models are not approved.`)
+    if (production && env.DEREK_PROVIDER_APPROVED !== 'vertex')
+      return blocked('vertex', 'Vertex AI may not process real student messages: approval of the Google Cloud generative AI terms for this service (including the under-18 rule) and the data-handling review are not recorded (DEREK_PROVIDER_APPROVED).')
+    return {
+      state: 'ready',
+      providerId,
+      notes: [
+        `Model ${GEMINI_MODEL} on Vertex AI (${env.VERTEX_LOCATION || 'global'}). Drafts only for students with a recorded 18+ confirmation (Service Specific Terms, Generative AI: Age Restrictions).`,
+        `Cost cap: ${geminiDailyDraftLimit(env)} drafts per rolling 24 hours (DEREK_GEMINI_DAILY_DRAFT_LIMIT).`,
+        ...(env.DEREK_PROVIDER_APPROVED === 'vertex' ? [] : ['Provider terms not approved for this service: synthetic local testing only (blocked in production).']),
+      ],
+      autoReply: autoReplyFor('vertex', GeminiProvider.autoReply, env),
+    }
+  }
+
+  return blocked(providerId, `Unknown AI provider "${providerId.slice(0, 40)}" (DEREK_PROVIDER must be mock, gemini or vertex).`)
 }
 
 /** The provider to use, or null when Derek must not run. Never constructs a provider that is not ready. */
@@ -163,5 +190,8 @@ export function createProvider(status: DerekStatus = getDerekStatus(), env: Env 
   if (status.providerId === 'mock') return new MockProvider()
   const apiKey = status.providerId === 'gemini' ? readGeminiApiKey(env) : null
   if (apiKey) return new GeminiProvider({ apiKey, model: GEMINI_MODEL, dailyDraftLimit: geminiDailyDraftLimit(env) })
+  const vertexKey = status.providerId === 'vertex' ? (env.VERTEX_API_KEY ?? '').trim() : ''
+  const url = vertexEndpoint(env.VERTEX_PROJECT_ID ?? '', env.VERTEX_LOCATION || 'global')
+  if (vertexKey && url) return new GeminiProvider({ apiKey: vertexKey, provider: 'vertex', url, dailyDraftLimit: geminiDailyDraftLimit(env) })
   return null
 }

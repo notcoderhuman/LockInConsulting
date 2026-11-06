@@ -4,7 +4,7 @@ import { EmptyState, PageHeader, Panel } from '@/components/admin/page-header'
 import { AcademicYearForm } from '@/components/admin/data-tools-forms'
 import { FxRateForm, FxTermsForm, RankingRightsForm } from '@/components/admin/settings-forms'
 import { listAcademicYears } from '@/lib/admin/data-tools'
-import { SupportSettingsForm, TestEmailForm } from '@/components/admin/support-forms'
+import { GeminiTestForm, SupportSettingsForm, TestEmailForm } from '@/components/admin/support-forms'
 import { requireAdminPage } from '@/lib/admin/access'
 import { humanize } from '@/lib/admin/entities'
 import { getSettingsData, type Row } from '@/lib/admin/queries'
@@ -12,7 +12,7 @@ import { can, ROLE_LABEL, type AdminRole } from '@/lib/admin/roles'
 import { formatDate, formatUtc } from '@/lib/admin/view'
 import { todayIso } from '@/lib/data/publication'
 import { getAdminPool } from '@/lib/db/pool'
-import { getDerekStatus } from '@/lib/derek/config'
+import { getDerekStatus, readGeminiApiKey } from '@/lib/derek/config'
 import { getIdentityProviderStatus, mailConfigured, testerEmails, testerMode } from '@/lib/identity/policy'
 import { getSupportSettings } from '@/lib/support/settings'
 
@@ -100,6 +100,7 @@ export default async function SettingsPage() {
             ))}
           </ul>
         ) : null}
+        {can(actor.role, 'support.settings') && readGeminiApiKey() ? <GeminiTestForm /> : null}
         {can(actor.role, 'support.settings') ? (
           <SupportSettingsForm autoReplyEnabled={support.autoReplyEnabled} autoReplyPermitted={derek.autoReply.permitted} />
         ) : null}

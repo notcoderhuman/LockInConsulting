@@ -4,9 +4,8 @@ import { SiteHeader } from '@/components/site/site-header'
 import { SkipLink } from '@/components/site/skip-link'
 import { LEGAL_REVIEWED } from '@/lib/legal/notice'
 
-// Shared layout for /privacy, /terms and /ai. Every page is a DRAFT until the Owner's legal review
-// is done (lib/legal/notice.ts LEGAL_REVIEWED, docs/LEGAL-DRAFTS.md); the banner says so and nothing
-// here claims compliance.
+// Shared layout for /privacy, /terms and /ai. Until a lawyer has reviewed them (lib/legal/notice.ts LEGAL_REVIEWED,
+// docs/LEGAL-DRAFTS.md) the banner says so, and nothing here claims compliance.
 
 export function LegalPage({ eyebrow, title, version, children }: { eyebrow: string; title: string; version: string; children: ReactNode }) {
   return (
@@ -22,8 +21,8 @@ export function LegalPage({ eyebrow, title, version, children }: { eyebrow: stri
         </div>
         {LEGAL_REVIEWED ? null : (
           <div role="note" className="rounded-xl border border-primary/50 bg-primary/10 p-4 text-sm leading-relaxed text-foreground">
-            <strong>Draft pending legal review.</strong> This page is not yet in effect and has not been reviewed by a lawyer. It does not claim that LockIn
-            Consulting complies with the Digital Personal Data Protection Act, 2023 or any other law. Parts marked “to be completed by the Owner” are still missing.
+            <strong>Not reviewed by a lawyer.</strong> LockIn wrote this from the Digital Personal Data Protection Act, 2023 and the DPDP Rules, 2025, and has not
+            had it reviewed by a lawyer. It does not claim that LockIn complies with any law.
           </div>
         )}
         <div className="legal-prose flex flex-col gap-6 text-sm leading-relaxed text-muted-foreground [&_h2]:mt-4 [&_h2]:font-serif [&_h2]:text-2xl [&_h2]:text-foreground [&_h3]:font-medium [&_h3]:text-foreground [&_li]:ml-5 [&_li]:list-disc [&_a]:text-primary [&_a]:underline-offset-4 hover:[&_a]:underline [&_strong]:text-foreground [&_table]:w-full [&_td]:border-t [&_td]:border-border [&_td]:py-2 [&_td]:pr-3 [&_td]:align-top [&_th]:pb-2 [&_th]:pr-3 [&_th]:text-left [&_th]:text-foreground">

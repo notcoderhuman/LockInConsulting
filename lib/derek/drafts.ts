@@ -107,9 +107,10 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
       return { draftId: Number((res as { insertId: number }).insertId), question: classification.question, classification, fixed, firstPendingId, plan: studentPlanFromSubject(String(conv.subject ?? '')) }
     }
 
-    // External-provider policy, checked before anything leaves this server. The question stays in
-    // the Live Inbox for a human either way.
-    if (provider.policy?.requiresAdultStudent && conv.student_age_confirmed_at == null) return 'ineligible' as const
+    // 18+ gate, for every provider whatever its adapter declares: no recorded 18+ confirmation, no
+    // provider call (Gemini API terms; Owner decision 6 Nov 2026). Checked here, inside the claim, because
+    // every provider request goes through it. The question stays in the Live Inbox for a person.
+    if (conv.student_age_confirmed_at == null) return 'ineligible' as const
     // Serialise claims on the settings row so concurrent workers cannot overshoot the caps.
     await conn.query('SELECT id FROM support_settings WHERE id = 1 FOR UPDATE')
     const [[used]] = await conn.query<Row[]>(
@@ -698,7 +699,7 @@ export async function requestDraftForConversation(pool: Pool, actor: AdminActor,
   if (outcome.state === 'duplicate') throw new SupportError(409, 'Derek has already drafted (or is drafting) a reply to this message.')
   if (outcome.state === 'stale') throw new SupportError(409, 'The latest message has already been answered.')
   if (outcome.state === 'ineligible')
-    throw new SupportError(409, 'This provider only drafts for students with a recorded 18+ confirmation. Please answer this one yourself.')
+    throw new SupportError(409, 'Derek only drafts for students with a recorded 18+ confirmation. Please answer this one yourself.')
   if (outcome.state === 'quota') throw new SupportError(429, 'Derek’s daily draft limit for this provider has been reached. Please answer this one yourself.')
   return outcome
 }

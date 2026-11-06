@@ -79,6 +79,8 @@ export async function decideAutoReply(
   if (!input.builtIn && (status.state !== 'ready' || status.providerId !== provider.id || provider.autoReply?.permitted !== true))
     return hold('the provider that wrote this draft is not cleared for automatic replies')
   if (conv.ai_paused_by != null) return hold('a team member has taken over this conversation')
+  // Second line of defence: the worker never asks a provider for such a student (lib/derek/drafts.ts).
+  if (!input.builtIn && conv.student_age_confirmed_at == null) return hold('the student has no recorded 18+ confirmation')
   // Sending would supersede the earlier held or failed draft and take it out of the review queue.
   if (!input.handoff && (conv.status === 'awaiting_human_review' || conv.status === 'failed')) return hold('an earlier question in this conversation is waiting for a person')
   if (conv.status === 'resolved') return hold('the conversation was resolved')

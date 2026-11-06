@@ -1,11 +1,13 @@
 # Derek: AI provider terms for LockIn's audience
 
+> **Decision (6 November 2026):** the Owner chose the existing Gemini Developer API integration (`DEREK_PROVIDER=gemini`). Dev states that Google's permission for this use has been obtained (see D-041). The comparison below is kept for the record and is not being pursued. Go-live steps: `docs/DEREK-GO-LIVE.md`.
+
 Checked on **6 November 2026** against the providers' official pages (URLs below). This is a reading of the
 terms, not legal advice. The Owner decides, with legal review, before setting `DEREK_PROVIDER_APPROVED`.
 
 **LockIn's audience:** students, mostly in India, using a free chat. Many are in Class 12 or college, so some
 are under 18. Derek drafts only for signed-in students whose profile records an 18+ confirmation
-(`requiresAdultStudent`, lib/derek/drafts.ts), but other pages of the site are open to everyone.
+(lib/derek/drafts.ts, for every provider since 6 Nov 2026), but other pages of the site are open to everyone.
 
 ## 1. Gemini Developer API (current `DEREK_PROVIDER=gemini`)
 

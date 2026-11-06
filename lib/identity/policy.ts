@@ -138,6 +138,37 @@ export function studentSignUpOpen(env: Env = process.env, noticeComplete: boolea
   )
 }
 
+// ---- Pre-launch tester mode ----------------------------------------------------------------
+// STUDENT_TEST_EMAILS="a@x.example, b@y.example": while the privacy notice is not ready, the student
+// area (with STUDENT_ACCOUNTS_ENABLED=true) is open ONLY to these addresses, so the real flow can be
+// tested in production. Everyone else is treated as if student accounts were closed and is told
+// nothing about the list. Staff are never students, listed or not (lib/auth-otp.ts, onboarding,
+// access). Once noticeReady(), tester mode switches itself off and public sign-up follows
+// studentSignUpOpen() alone.
+
+const EMAIL = /^[^\s@,]+@[^\s@,]+\.[^\s@,]+$/
+
+/** The allowlist, lower-cased, de-duplicated, invalid entries dropped. Never shown anywhere. */
+export function testerEmails(env: Env = process.env): string[] {
+  return [...new Set((env.STUDENT_TEST_EMAILS ?? '').split(',').map((s) => s.trim().toLowerCase()).filter((s) => EMAIL.test(s)))]
+}
+
+/** Tester mode is on: student area enabled, notice not ready, and at least one address listed. */
+export function testerMode(env: Env = process.env, noticeComplete: boolean = noticeReady()): boolean {
+  return env.STUDENT_ACCOUNTS_ENABLED === 'true' && !noticeComplete && testerEmails(env).length > 0
+}
+
+/** This email may use the student area: always outside tester mode, else only when listed. */
+export function studentEmailAllowed(email: string | null | undefined, env: Env = process.env, noticeComplete: boolean = noticeReady()): boolean {
+  if (!testerMode(env, noticeComplete)) return true
+  return testerEmails(env).includes((email ?? '').trim().toLowerCase())
+}
+
+/** New accounts can be created at all: public sign-up, or tester mode (then only for listed emails). */
+export function newAccountsAllowed(env: Env = process.env, noticeComplete: boolean = noticeReady()): boolean {
+  return studentSignUpOpen(env, noticeComplete) || testerMode(env, noticeComplete)
+}
+
 // ---- Student area gate ---------------------------------------------------------------------
 
 export type StudentAreaStatus = { enabled: true } | { enabled: false; reason: 'student_accounts_disabled' | 'auth_not_configured' }

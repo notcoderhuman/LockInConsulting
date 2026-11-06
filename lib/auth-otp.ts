@@ -1,5 +1,6 @@
 import { createHash, createHmac, randomUUID } from 'node:crypto'
 import type { Pool } from 'mysql2/promise'
+import { studentEmailAllowed } from '@/lib/identity/policy'
 import { clientIpHeader, clock, giveTokenBack, maybeCleanup, takeToken } from '@/lib/auth-throttle'
 
 // Email one-time codes (Better Auth's emailOTP plugin, wired in lib/auth.ts) with the limits the
@@ -128,7 +129,8 @@ export async function guardEmailOtp(request: Request, handle: (request: Request)
     return tooMany(wait)
   }
   // Same answer as a real send, so the form cannot tell anyone which emails belong to staff.
-  if (await isStaffEmail(db, email)) return Response.json({ success: true }, { headers: NO_STORE })
+  // Pre-launch tester mode: only listed addresses get a code (lib/identity/policy.ts). Same answer either way.
+  if ((await isStaffEmail(db, email)) || !studentEmailAllowed(email)) return Response.json({ success: true }, { headers: NO_STORE })
   // One live code per email and purpose: a resend makes every earlier code useless.
   await db.query('DELETE FROM auth_verification WHERE identifier = ?', [`${type}-otp-${email}`])
   return forward()

@@ -1,6 +1,6 @@
 import { getAuth } from '@/lib/auth'
 import { clientIpHeader, clock, takeToken } from '@/lib/auth-throttle'
-import { signUpMethodAvailable, studentSignUpOpen } from '@/lib/identity/policy'
+import { newAccountsAllowed, signUpMethodAvailable } from '@/lib/identity/policy'
 import { checkSameOrigin, jsonError } from '@/lib/student/access'
 import { AGE_CONFIRM_LIMITS, ageCookieHeader, ageTokenFrom, issueAgeAttestation, normalizeFullName, revokeAgeAttestation } from '@/lib/student/age-attestation'
 
@@ -13,7 +13,9 @@ const NO_STORE = { 'Cache-Control': 'no-store' }
 export async function POST(request: Request) {
   const crossSite = checkSameOrigin(request)
   if (crossSite) return crossSite
-  if (!getAuth() || !studentSignUpOpen() || !signUpMethodAvailable()) return jsonError(503, 'New student accounts aren’t open yet.', { state: 'unavailable' })
+  // In tester mode this is open to anyone who reaches it, but only a listed email can then get a code or an
+  // account (lib/auth-otp.ts, lib/auth.ts); the confirmation alone grants nothing.
+  if (!getAuth() || !newAccountsAllowed() || !signUpMethodAvailable()) return jsonError(503, 'New student accounts aren’t open yet.', { state: 'unavailable' })
   // Request budget before anything is written (PRODUCTION-READINESS S-4): one process-wide bucket, and
   // per client IP only with a verified AUTH_CLIENT_IP_HEADER (unset on Hostinger, R-033).
   const now = clock.now()

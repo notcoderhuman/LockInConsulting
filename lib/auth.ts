@@ -6,7 +6,7 @@ import { getAuthPool } from '@/lib/db/pool'
 import { AUTH_MODELS, DISABLED_AUTH_PATHS, PASSWORD_POLICY, RATE_LIMIT } from '@/lib/auth-options.mjs'
 import { OTP_ALLOWED_ATTEMPTS, OTP_TTL_SECONDS, otpHasher } from '@/lib/auth-otp'
 import { authIpAddressOptions } from '@/lib/auth-throttle'
-import { emailOtpOpen, providerSignInOpen, studentSignUpOpen } from '@/lib/identity/policy'
+import { emailOtpOpen, newAccountsAllowed, providerSignInOpen, studentEmailAllowed, testerMode } from '@/lib/identity/policy'
 import { mailer, otpMessage } from '@/lib/mail'
 import { AGE_COOKIE, ageTokenFrom, bindAgeAttestation, consumeAgeAttestation, revokeAgeAttestation } from '@/lib/student/age-attestation'
 
@@ -15,8 +15,13 @@ const socialCommon = () => ({
   disableIdTokenSignIn: true,
   requireEmailVerification: true,
   disableImplicitSignUp: true,
-  disableSignUp: !studentSignUpOpen(),
+  disableSignUp: !newAccountsAllowed(),
 })
+
+async function emailOf(userId: string): Promise<string | null> {
+  const [rows] = await getAuthPool().query('SELECT email FROM auth_user WHERE id = ?', [userId])
+  return (rows as { email: string }[])[0]?.email ?? null
+}
 
 async function isStaff(userId: string): Promise<boolean> {
   const [rows] = await getAuthPool().query('SELECT 1 FROM admin_members WHERE user_id = ? LIMIT 1', [userId])
@@ -124,7 +129,7 @@ export function createAuth(baseURL = resolveAuthBaseUrl()) {
               expiresIn: OTP_TTL_SECONDS,
               allowedAttempts: OTP_ALLOWED_ATTEMPTS,
               storeOTP: { hash: otpHasher(process.env.BETTER_AUTH_SECRET ?? '') },
-              disableSignUp: !studentSignUpOpen(),
+              disableSignUp: !newAccountsAllowed(),
               async sendVerificationOTP({ email, otp, type }) {
                 await mailer.send(otpMessage(email, otp, type, OTP_TTL_SECONDS / 60))
               },
@@ -153,7 +158,8 @@ export function createAuth(baseURL = resolveAuthBaseUrl()) {
             // Better Auth inserts the user BEFORE it applies requireEmailVerification, so an unverified
             // provider identity would leave an auth_user row behind. Refuse it here instead, and spend
             // the confirmation so the failed attempt cannot be replayed.
-            if (user.emailVerified !== true) {
+            // Pre-launch tester mode: only listed addresses may get an account (lib/identity/policy.ts).
+            if (user.emailVerified !== true || !studentEmailAllowed(user.email)) {
               await revokeAgeAttestation(token)
               return false
             }
@@ -174,7 +180,13 @@ export function createAuth(baseURL = resolveAuthBaseUrl()) {
       },
       session: {
         create: {
-          before: async (session, ctx) => (isStudentOnlyPath(ctx?.path) && (await isStaff(session.userId)) ? false : undefined),
+          before: async (session, ctx) => {
+            const staff = await isStaff(session.userId)
+            if (staff && isStudentOnlyPath(ctx?.path)) return false
+            // Tester mode: no session at all for an unlisted student, whichever way they sign in.
+            if (!staff && testerMode() && !studentEmailAllowed(await emailOf(session.userId))) return false
+            return undefined
+          },
         },
       },
     },

@@ -113,7 +113,7 @@ describe('the public directory view', () => {
     expect((await fetchQsPage(pool, 'GB', '', 50)).cards).toEqual([])
 
     const us = await fetchQsPage(pool, 'US', '', 0)
-    expect(us.cards.map((c) => c.rank)).toEqual(['#1', '=2', '=2', '731-740', '1401+'])
+    expect(us.cards.map((c) => c.rank)).toEqual(['#1', '=2', '=2', '731\u2013740', '1401+'])
     expect(us.cards.map((c) => c.name)).toEqual(['Us Alpha', 'Us Bravo', 'Us Charlie', 'Us Delta', 'Us Echo'])
     // Cards carry exactly three things.
     expect(Object.keys(us.cards[0]).sort()).toEqual(['name', 'rank', 'verified'])

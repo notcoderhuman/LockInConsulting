@@ -19,9 +19,13 @@ export interface QsPage {
 
 export const QS_PAGE_SIZE = 25
 
-/** "#4", "=45", "731-740", "1401+": the label QS prints; without one a band shows as low-high and a position as "#n". */
+/**
+ * The three formats a card shows: exact "#514", tied "=488", band "741–750" (open band "1401+"). The stored label is
+ * QS's own text (hyphen in a band); only the dash is typeset here. Without a label a band shows as low–high and a
+ * position as "#n". The number used for ordering is stored separately (rank_position / rank_band_low).
+ */
 export const rankText = (label: unknown, order: unknown, bandHigh: unknown = null): string =>
-  label != null && /^[=]|[-+]/.test(String(label)) ? String(label) : bandHigh != null ? `${order}-${bandHigh}` : `#${order}`
+  label != null && /^[=]|[-+]/.test(String(label)) ? String(label).replace('-', '\u2013') : bandHigh != null ? `${order}\u2013${bandHigh}` : `#${order}`
 
 const escapeLike = (q: string) => q.replace(/[\\%_]/g, (c) => `\\${c}`)
 

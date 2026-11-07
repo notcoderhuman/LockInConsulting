@@ -41,6 +41,7 @@ export function QsDirectory({
   const [published, setPublished] = useState(true)
   const [state, setState] = useState<Load>('loading')
   const [more, setMore] = useState(false)
+  const [moreError, setMoreError] = useState(false)
   const controller = useRef<AbortController | null>(null)
 
   useEffect(() => {
@@ -79,9 +80,11 @@ export function QsDirectory({
 
   async function showMore() {
     setMore(true)
+    setMoreError(false)
     const page = await fetchPage(cards.length)
     setMore(false)
     if (page) setCards((prev) => [...prev, ...page.cards])
+    else if (page === null) setMoreError(true)
   }
 
   function choose(next: string) {
@@ -167,6 +170,11 @@ export function QsDirectory({
                 </li>
               ))}
             </ol>
+            {moreError ? (
+              <p role="alert" className="text-center text-sm text-foreground">
+                More universities could not be loaded. Try again.
+              </p>
+            ) : null}
             {cards.length < total ? (
               <button
                 type="button"

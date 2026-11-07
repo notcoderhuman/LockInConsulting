@@ -12,7 +12,9 @@
 --     attribution text and link recorded and the licence covering ordering and display (allow_ordering = 1);
 --     until the Owner records that executed licence in Admin → Settings, this view returns no rows at all;
 --   * the QS 2027 overall rank (subject '') of a university that is not hidden from the public directory
---     (listing_hidden = 0) and whose rank cites its source;
+--     (listing_hidden = 0) and whose rank cites its source. The rank rows themselves may still be drafts: QS is the
+--     source and the licence is the gate, so ranks are not reviewed one by one (unlike public_university_rankings);
+--     only a rank marked unpublished or unavailable is withheld;
 --   * at most 50 universities per destination, best global rank first (ties by name, then id).
 -- 'verified' is 1 only when the university itself is published (it passed LockIn's own review workflow);
 -- it is never inferred from QS, from a website check or from a rank.
@@ -26,10 +28,10 @@ ALTER TABLE university_rankings
   ADD CONSTRAINT ck_university_rankings_label CHECK (rank_label IS NULL OR rank_label REGEXP '^=?[0-9]{1,4}([-][0-9]{1,4}|[+])?$');
 
 CREATE VIEW public_qs_directory AS
-SELECT x.id, x.destination_iso2, x.slug, x.name, x.rank_order, x.rank_position, x.rank_label, x.verified,
+SELECT x.id, x.destination_iso2, x.slug, x.name, x.rank_order, x.rank_position, x.rank_band_low, x.rank_band_high, x.rank_label, x.verified,
        x.attribution_text, x.attribution_url
 FROM (
-  SELECT u.id, u.destination_iso2, u.slug, u.name, COALESCE(r.rank_position, r.rank_band_low) AS rank_order, r.rank_position, r.rank_label,
+  SELECT u.id, u.destination_iso2, u.slug, u.name, COALESCE(r.rank_position, r.rank_band_low) AS rank_order, r.rank_position, r.rank_band_low, r.rank_band_high, r.rank_label,
          (u.publication_status = 'published' AND u.verification_status = 'verified') AS verified,
          p.attribution_text, p.attribution_url,
          ROW_NUMBER() OVER (PARTITION BY u.destination_iso2 ORDER BY COALESCE(r.rank_position, r.rank_band_low), u.name, u.id) AS destination_position

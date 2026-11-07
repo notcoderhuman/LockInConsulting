@@ -34,6 +34,8 @@ describe('rank text', () => {
     expect(rankText('=45', 45)).toBe('=45')
     expect(rankText('731-740', 731)).toBe('731-740')
     expect(rankText('1401+', 1401)).toBe('1401+')
+    // A band stored without a label still shows as a band, never as an exact rank.
+    expect(rankText(null, 731, 740)).toBe('731-740')
   })
 })
 

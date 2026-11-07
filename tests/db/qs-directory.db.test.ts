@@ -88,6 +88,8 @@ describe('the public directory view', () => {
     const summary = await T.importRecords(pool, editor, 'qs-gb.json', file(gb))
     expect(summary).toMatchObject({ universitiesCreated: 55, rankingsCreated: 55 })
     await T.importRecords(pool, editor, 'qs-us.json', file(us))
+    const others = ['CA', 'DE', 'IT', 'PL', 'AU', 'SA', 'AE', 'FI', 'NZ'].map((iso2) => uni(`${iso2} Solo University`, iso2, { position: 100 }))
+    await T.importRecords(pool, editor, 'qs-others.json', file(others))
     expect(await rows('SELECT id FROM public_qs_directory')).toHaveLength(0)
     expect(await fetchQsPage(pool, 'GB', '', 0)).toEqual({ cards: [], total: 0, published: false })
   })
@@ -120,7 +122,7 @@ describe('the public directory view', () => {
     expect((await fetchQsPage(pool, 'GB', 'Us Bravo', 0)).cards).toEqual([])
     expect((await fetchQsPage(pool, 'US', '50%_', 0)).total).toBe(0) // LIKE wildcards are escaped
     // A destination with nothing says so with zero cards, not an error.
-    expect(await fetchQsPage(pool, 'FI', '', 0)).toMatchObject({ cards: [], total: 0, published: true })
+    expect(await fetchQsPage(pool, 'FI', 'no such university', 0)).toMatchObject({ cards: [], total: 0, published: true })
   })
 
   it('marks a university Verified only after LockIn itself verified and published it', async () => {
@@ -158,14 +160,19 @@ describe('the QS directory scope', () => {
     await db.query("INSERT INTO data_conflicts (kind, entity_type, entity_id, field_name, current_value, proposed_value, detail) VALUES ('field_value', 'university', ?, 'official_website', NULL, 'https://x.example/', 'website')", [outB])
 
     await expect(T.applyQsDirectoryScope(pool, reviewer)).rejects.toThrow(/permission/)
+    // A partial import cannot trigger an archive of destinations that were not imported yet.
+    const [fi] = await rows<{ id: number }>("SELECT id FROM universities WHERE slug = 'fi-solo-university'")
+    await db.query('UPDATE university_rankings SET ranking_year = 2026 WHERE university_id = ?', [fi.id])
+    await expect(T.applyQsDirectoryScope(pool, owner)).rejects.toThrow(/Missing: FI/)
+    await db.query('UPDATE university_rankings SET ranking_year = 2027 WHERE university_id = ?', [fi.id])
     const result = await T.applyQsDirectoryScope(pool, owner)
-    expect(result).toMatchObject({ inScope: 55, archived: 7, dismissed: 1 })
+    expect(result).toMatchObject({ inScope: 64, archived: 7, dismissed: 1 })
     expect(result.keptPublished).toBe(0)
     expect((await rows<{ listing_hidden: number }>('SELECT listing_hidden FROM universities WHERE id IN (?, ?) ORDER BY id', [outA, outB])).map((r) => Number(r.listing_hidden))).toEqual([1, 1])
     // Gb University 51–55 have ranks too but fall outside the top 50, so they are archived as well.
     expect(Number((await rows<{ n: number }>("SELECT COUNT(*) AS n FROM universities WHERE listing_hidden = 1"))[0].n)).toBe(2 + 5)
     // Nothing is deleted, the website conflict is still open, the admissions one is dismissed with a note.
-    expect(Number((await rows<{ n: number }>("SELECT COUNT(*) AS n FROM universities"))[0].n)).toBe(62)
+    expect(Number((await rows<{ n: number }>("SELECT COUNT(*) AS n FROM universities"))[0].n)).toBe(71)
     expect(await rows("SELECT field_name, status FROM data_conflicts WHERE entity_id IN (?, ?) ORDER BY field_name", [outA, outB])).toEqual([
       { field_name: 'admissions_url', status: 'dismissed' },
       { field_name: 'official_website', status: 'open' },

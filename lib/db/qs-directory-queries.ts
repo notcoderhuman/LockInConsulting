@@ -19,8 +19,9 @@ export interface QsPage {
 
 export const QS_PAGE_SIZE = 25
 
-/** "#4", "=45", "731-740", "1401+": the label QS prints, else the position as "#n". */
-export const rankText = (label: unknown, order: unknown): string => (label != null && /^[=]|[-+]/.test(String(label)) ? String(label) : `#${order}`)
+/** "#4", "=45", "731-740", "1401+": the label QS prints; without one a band shows as low-high and a position as "#n". */
+export const rankText = (label: unknown, order: unknown, bandHigh: unknown = null): string =>
+  label != null && /^[=]|[-+]/.test(String(label)) ? String(label) : bandHigh != null ? `${order}-${bandHigh}` : `#${order}`
 
 const escapeLike = (q: string) => q.replace(/[\\%_]/g, (c) => `\\${c}`)
 
@@ -32,7 +33,7 @@ const escapeLike = (q: string) => q.replace(/[\\%_]/g, (c) => `\\${c}`)
 export async function fetchQsPage(db: Db, iso2: string, q: string, offset: number): Promise<QsPage> {
   const like = q ? `%${escapeLike(q)}%` : '%'
   const [rows] = await db.query<RowDataPacket[]>(
-    `SELECT name, rank_order, rank_label, verified FROM public_qs_directory
+    `SELECT name, rank_order, rank_band_high, rank_label, verified FROM public_qs_directory
       WHERE destination_iso2 = ? AND name LIKE ?
       ORDER BY rank_order, name, id LIMIT ? OFFSET ?`,
     [iso2, like, QS_PAGE_SIZE, offset],
@@ -40,7 +41,7 @@ export async function fetchQsPage(db: Db, iso2: string, q: string, offset: numbe
   const [[count]] = await db.query<RowDataPacket[]>('SELECT COUNT(*) AS n FROM public_qs_directory WHERE destination_iso2 = ? AND name LIKE ?', [iso2, like])
   const [[any]] = await db.query<RowDataPacket[]>('SELECT COUNT(*) AS n FROM public_qs_directory')
   return {
-    cards: rows.map((r) => ({ name: String(r.name), rank: rankText(r.rank_label, r.rank_order), verified: Number(r.verified) === 1 })),
+    cards: rows.map((r) => ({ name: String(r.name), rank: rankText(r.rank_label, r.rank_order, r.rank_band_high), verified: Number(r.verified) === 1 })),
     total: Number(count.n),
     published: Number(any.n) > 0,
   }

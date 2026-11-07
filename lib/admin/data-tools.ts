@@ -3,6 +3,7 @@ import type { Pool, PoolConnection, ResultSetHeader, RowDataPacket } from 'mysql
 import { z } from 'zod'
 import { todayIso } from '@/lib/data/publication'
 import { SOURCE_TYPES } from '@/lib/data/types'
+import { DESTINATIONS } from '@/lib/destinations'
 import { academicYear, courseInput, httpsUrl, intakeInput, isoDate, rankingInput, reasonInput, tuitionFeeInput, universityInput } from '@/lib/data/validation'
 import { appendChangeLog } from './audit'
 import { ENTITIES, type EntityKey } from './entities'
@@ -691,10 +692,18 @@ export async function applyQsDirectoryScope(db: Pool, actor: AdminActor): Promis
            JOIN ranking_providers p ON p.id = r.provider_id AND p.slug = 'qs'
            JOIN universities u ON u.id = r.university_id
           WHERE r.ranking_year = 2027 AND r.subject = '' AND u.institution_category = 'university'
+            AND r.source_id IS NOT NULL AND r.publication_status <> 'unpublished' AND r.verification_status <> 'unavailable'
        ) x WHERE n <= 50`,
     )
     const keep = new Set(ranked.map((r) => Number(r.university_id)))
     if (keep.size === 0) throw new WorkflowError('Import the QS 2027 ranks first: without them nothing is in scope.')
+    // A partial import must never archive the destinations that were simply not imported yet.
+    const [covered] = await conn.query<Row[]>(
+      `SELECT DISTINCT u.destination_iso2 AS iso2 FROM university_rankings r JOIN ranking_providers p ON p.id = r.provider_id AND p.slug = 'qs'
+         JOIN universities u ON u.id = r.university_id WHERE r.ranking_year = 2027 AND r.subject = ''`,
+    )
+    const missing = DESTINATIONS.map((d) => d.iso2).filter((iso2) => !covered.some((c) => c.iso2 === iso2))
+    if (missing.length) throw new WorkflowError(`Import the QS 2027 ranks for every destination first. Missing: ${missing.join(', ')}.`)
     const [candidates] = await conn.query<Row[]>("SELECT id, publication_status FROM universities WHERE listing_hidden = 0 FOR UPDATE")
     const def = ENTITIES.university
     let archived = 0

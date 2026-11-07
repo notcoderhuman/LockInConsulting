@@ -54,7 +54,7 @@ export default async function DestinationPage({ params }: Props) {
           <div className="mx-auto max-w-3xl px-5 py-16 md:px-8">
             <div className="mb-8">
               <SectionHeading id="universities-title" eyebrow="Directory" title={`Universities in ${destination.shortName}`}>
-                <p>Listed in QS World University Rankings 2027 order. Search by name.</p>
+                <p>Ranked universities come first, in QS World University Rankings 2027 order. Universities QS does not rank follow, without a rank. Search by name.</p>
               </SectionHeading>
             </div>
             <QsDirectory destinations={[{ iso2: destination.iso2, name: destination.shortName }]} initial={destination.iso2} attribution={QS_ATTRIBUTION} fixed />
@@ -66,7 +66,7 @@ export default async function DestinationPage({ params }: Props) {
             <SectionHeading id="data-status-title" eyebrow="How we verify" title="What the Verified badge means">
               <p>
                 A university shows Verified only when LockIn itself has checked it against official sources and published it. A university without the badge is listed from its QS
-                World University Rankings 2027 position alone.
+                World University Rankings 2027 position, or, if QS does not rank it, from official sources.
               </p>
             </SectionHeading>
           </div>

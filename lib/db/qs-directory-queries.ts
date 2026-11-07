@@ -2,7 +2,7 @@ import type { Pool, RowDataPacket } from 'mysql2/promise'
 
 type Db = Pick<Pool, 'query'>
 
-/** What a public card may carry: the university's name, its QS rank as printed, and LockIn's own verification. */
+/** What a public card may carry: the university's name, its QS rank as printed (empty for a university QS does not rank), and LockIn's own verification. */
 export interface QsCard {
   name: string
   rank: string
@@ -37,15 +37,15 @@ const escapeLike = (q: string) => q.replace(/[\\%_]/g, (c) => `\\${c}`)
 export async function fetchQsPage(db: Db, iso2: string, q: string, offset: number): Promise<QsPage> {
   const like = q ? `%${escapeLike(q)}%` : '%'
   const [rows] = await db.query<RowDataPacket[]>(
-    `SELECT name, rank_order, rank_band_high, rank_label, verified FROM public_qs_directory
+    `SELECT name, is_ranked, rank_order, rank_band_high, rank_label, verified FROM public_qs_directory
       WHERE destination_iso2 = ? AND name LIKE ?
-      ORDER BY rank_order, name, id LIMIT ? OFFSET ?`,
+      ORDER BY is_ranked DESC, rank_order, name, id LIMIT ? OFFSET ?`,
     [iso2, like, QS_PAGE_SIZE, offset],
   )
   const [[count]] = await db.query<RowDataPacket[]>('SELECT COUNT(*) AS n FROM public_qs_directory WHERE destination_iso2 = ? AND name LIKE ?', [iso2, like])
   const [[any]] = await db.query<RowDataPacket[]>('SELECT COUNT(*) AS n FROM public_qs_directory')
   return {
-    cards: rows.map((r) => ({ name: String(r.name), rank: rankText(r.rank_label, r.rank_order, r.rank_band_high), verified: Number(r.verified) === 1 })),
+    cards: rows.map((r) => ({ name: String(r.name), rank: Number(r.is_ranked) === 1 ? rankText(r.rank_label, r.rank_order, r.rank_band_high) : '', verified: Number(r.verified) === 1 })),
     total: Number(count.n),
     published: Number(any.n) > 0,
   }

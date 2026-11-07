@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ImportForm, QsScopeForm, ResolveConflictForm, ScanDuplicatesForm } from '@/components/admin/data-tools-forms'
+import { ImportForm, QsScopeForm, ResolveConflictForm, ScanDuplicatesForm, UnrankedForm } from '@/components/admin/data-tools-forms'
 import { EmptyState, PageHeader, Panel } from '@/components/admin/page-header'
 import { requireAdminPage } from '@/lib/admin/access'
 import { listConflicts, listImportBatches } from '@/lib/admin/data-tools'
@@ -37,6 +37,11 @@ export default async function DataToolsPage() {
       {can(actor.role, 'rights.manage') ? (
         <Panel title="QS directory scope" description="Owner only. Keeps the public directory to the QS 2027 top 50 per destination.">
           <QsScopeForm />
+        </Panel>
+      ) : null}
+      {can(actor.role, 'rights.manage') ? (
+        <Panel title="Universities QS does not rank" description="Owner only. Lists unranked universities after the ranked ones, without a rank.">
+          <UnrankedForm />
         </Panel>
       ) : null}
 

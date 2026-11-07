@@ -19,6 +19,11 @@
 -- 'verified' is 1 only when the university itself is published (it passed LockIn's own review workflow);
 -- it is never inferred from QS, from a website check or from a rank.
 --
+-- The view is SQL SECURITY INVOKER, unlike the other public views: the managed MariaDB host does not let a remote
+-- session create a view owned by the app's own 127.0.0.1 account (that needs the SET USER privilege), and a
+-- DEFINER view owned by anyone else would stop working once its temporary remote account is gone. The app's
+-- database user has all privileges on its own database, so it can read everything the view reads.
+--
 -- Rollback (only together with the code that reads it): DROP VIEW public_qs_directory; then
 -- ALTER TABLE university_rankings DROP CONSTRAINT ck_university_rankings_label, DROP COLUMN rank_label;
 -- and remove 0014 from schema_migrations.
@@ -27,7 +32,7 @@ ALTER TABLE university_rankings
   ADD COLUMN rank_label VARCHAR(12) CHARACTER SET ascii COLLATE ascii_bin NULL AFTER rank_position,
   ADD CONSTRAINT ck_university_rankings_label CHECK (rank_label IS NULL OR rank_label REGEXP '^=?[0-9]{1,4}([-][0-9]{1,4}|[+])?$');
 
-CREATE VIEW public_qs_directory AS
+CREATE SQL SECURITY INVOKER VIEW public_qs_directory AS
 SELECT x.id, x.destination_iso2, x.slug, x.name, x.rank_order, x.rank_position, x.rank_band_low, x.rank_band_high, x.rank_label, x.verified,
        x.attribution_text, x.attribution_url
 FROM (

@@ -696,6 +696,9 @@ export async function applyQsDirectoryScope(db: Pool, actor: AdminActor): Promis
        ) x WHERE n <= 50`,
     )
     const keep = new Set(ranked.map((r) => Number(r.university_id)))
+    // Universities the Owner chose to list although QS does not rank them stay in scope.
+    const [unranked] = await conn.query<Row[]>('SELECT id FROM universities WHERE directory_unranked = 1')
+    for (const u of unranked) keep.add(Number(u.id))
     if (keep.size === 0) throw new WorkflowError('Import the QS 2027 ranks first: without them nothing is in scope.')
     // A partial import must never archive the destinations that were simply not imported yet.
     const [covered] = await conn.query<Row[]>(
@@ -730,5 +733,62 @@ export async function applyQsDirectoryScope(db: Pool, actor: AdminActor): Promis
       await appendChangeLog(conn, { entityType: 'data_conflict', entityId: id, action: 'resolve_conflict', actorId: actor.userId, actorRole: actor.role, reason: DISMISS_NOTE, before, after })
     }
     return { inScope: keep.size, archived, keptPublished, dismissed: open.length }
+  })
+}
+
+// ---------------------------------------------------------------------------------------------
+// Universities QS does not rank (Owner decision, 7 Nov 2026): listed after the ranked ones, without a rank.
+// Only destinations where QS 2027 ranks fewer than 50 universities, so every QS-ranked university there is already in
+// the directory and any other university is genuinely unranked (QS table read on 7 Nov 2026: CA 30, IT 47, PL 20,
+// AU 37, SA 22, AE 12, FI 9, NZ 8). Never for a destination where QS ranks more than the 50 shown.
+// ---------------------------------------------------------------------------------------------
+
+export const UNRANKED_DESTINATIONS = ['CA', 'IT', 'PL', 'AU', 'SA', 'AE', 'FI', 'NZ'] as const
+const UNRANKED_REASON = 'Listed in the directory without a rank: QS 2027 does not rank it'
+
+export interface UnrankedResult {
+  listed: Record<string, number>
+}
+
+/**
+ * Owner only. For each eligible destination, lists the university records that are real universities with an official
+ * website and source, have no QS 2027 rank, and are not already listed, filling the 50 places left after the ranked
+ * ones (alphabetical). Un-archives them (listing_hidden = 0). Audited; nothing is deleted.
+ */
+export async function listUnrankedUniversities(db: Pool, actor: AdminActor): Promise<UnrankedResult> {
+  assertCan(actor, 'rights.manage')
+  return inTransaction(db, async (conn) => {
+    const def = ENTITIES.university
+    const listed: Record<string, number> = {}
+    for (const iso2 of UNRANKED_DESTINATIONS) {
+      const [[ranked]] = await conn.query<Row[]>(
+        `SELECT COUNT(*) AS n FROM university_rankings r JOIN ranking_providers p ON p.id = r.provider_id AND p.slug = 'qs' JOIN universities u ON u.id = r.university_id
+          WHERE u.destination_iso2 = ? AND r.ranking_year = 2027 AND r.subject = '' AND r.source_id IS NOT NULL`,
+        [iso2],
+      )
+      if (Number(ranked.n) === 0) throw new WorkflowError(`Import the QS 2027 ranks for ${iso2} first.`)
+      const [[already]] = await conn.query<Row[]>('SELECT COUNT(*) AS n FROM universities WHERE destination_iso2 = ? AND directory_unranked = 1', [iso2])
+      const room = Math.max(0, 50 - Number(ranked.n) - Number(already.n))
+      listed[iso2] = 0
+      if (room === 0) continue
+      const [candidates] = await conn.query<Row[]>(
+        `SELECT u.id FROM universities u
+          WHERE u.destination_iso2 = ? AND u.institution_category = 'university' AND u.directory_unranked = 0
+            AND u.official_website IS NOT NULL AND u.source_id IS NOT NULL
+            AND NOT EXISTS (SELECT 1 FROM university_rankings r JOIN ranking_providers p ON p.id = r.provider_id AND p.slug = 'qs'
+                             WHERE r.university_id = u.id AND r.ranking_year = 2027 AND r.subject = '')
+          ORDER BY u.name, u.id LIMIT ? FOR UPDATE`,
+        [iso2, room],
+      )
+      for (const c of candidates) {
+        const id = Number(c.id)
+        const before = await readRow(conn, def.table, id)
+        await conn.query('UPDATE universities SET directory_unranked = 1, listing_hidden = 0 WHERE id = ?', [id])
+        const after = await readRow(conn, def.table, id)
+        await appendChangeLog(conn, { entityType: def.logType, entityId: id, action: 'provisional_change', actorId: actor.userId, actorRole: actor.role, reason: UNRANKED_REASON, before, after })
+        listed[iso2]++
+      }
+    }
+    return { listed }
   })
 }

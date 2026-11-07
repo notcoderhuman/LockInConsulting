@@ -156,17 +156,17 @@ export function QsDirectory({
         ) : (
           <>
             <p className="text-sm text-muted-foreground" aria-live="polite">
-              {debounced ? `${total} ${total === 1 ? 'match' : 'matches'}` : `${total} ${total === 1 ? 'university' : 'universities'}`} in {current}, in QS World University Rankings 2027 order
+              {debounced ? `${total} ${total === 1 ? 'match' : 'matches'}` : `${total} ${total === 1 ? 'university' : 'universities'}`} in {current}: ranked universities first, in QS World University Rankings 2027 order, then universities QS does not rank
             </p>
             <ol className="flex flex-col gap-3">
               {cards.map((c, i) => (
                 <li key={`${c.rank}-${c.name}-${i}`} className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-card px-5 py-4">
                   <span className="font-serif text-xl leading-snug text-foreground">{c.name}</span>
                   <span className="flex shrink-0 items-center gap-2 text-sm font-medium text-primary">
-                    <span>{c.rank}</span>
+                    {c.rank ? <span>{c.rank}</span> : null}
                     {c.verified ? (
                       <span className="inline-flex items-center gap-1">
-                        <span aria-hidden="true">·</span>
+                        {c.rank ? <span aria-hidden="true">·</span> : null}
                         <BadgeCheck aria-hidden="true" className="size-4" />
                         <span>Verified</span>
                       </span>

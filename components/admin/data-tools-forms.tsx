@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { applyQsDirectoryScopeAction, bulkVerifyAction, importRecordsAction, resolveConflictAction, saveAcademicYearAction, scanDuplicatesAction } from '@/app/admin/actions'
+import { applyQsDirectoryScopeAction, listUnrankedUniversitiesAction, bulkVerifyAction, importRecordsAction, resolveConflictAction, saveAcademicYearAction, scanDuplicatesAction } from '@/app/admin/actions'
 import { controlClass, Field, FormMessage } from './form-controls'
 import { useFormAction } from './use-form-action'
 
@@ -38,6 +38,28 @@ export function QsScopeForm() {
       <div>
         <Button type="submit" variant="outline" disabled={pending}>
           {pending ? 'Applying…' : 'Apply the QS directory scope'}
+        </Button>
+      </div>
+    </form>
+  )
+}
+
+export function UnrankedForm() {
+  const { state, pending, onSubmit } = useFormAction(listUnrankedUniversitiesAction)
+  return (
+    <form onSubmit={onSubmit} className="flex flex-col gap-3" noValidate>
+      <p className="text-sm leading-relaxed text-muted-foreground">
+        For Canada, Italy, Poland, Australia, Saudi Arabia, UAE, Finland and New Zealand, where QS ranks fewer than 50 universities, lists real universities with an official website and source that QS 2027 does not rank,
+        after the ranked ones and without a rank, up to 50 per destination (alphabetical). Un-archives them; nothing is deleted.
+      </p>
+      <label className="flex items-start gap-2 text-sm text-foreground">
+        <input type="checkbox" name="confirm" className="mt-1" />
+        <span>List the unranked universities.</span>
+      </label>
+      <FormMessage state={state} />
+      <div>
+        <Button type="submit" variant="outline" disabled={pending}>
+          {pending ? 'Listing…' : 'List unranked universities'}
         </Button>
       </div>
     </form>

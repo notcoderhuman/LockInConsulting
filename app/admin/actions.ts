@@ -20,7 +20,7 @@ import {
   WorkflowError,
   type WorkflowAction,
 } from '@/lib/admin/workflow'
-import { applyQsDirectoryScope, bulkVerify, importRecords, IMPORT_MAX_BYTES, resolveConflict, saveAcademicYear, scanDuplicates } from '@/lib/admin/data-tools'
+import { applyQsDirectoryScope, bulkVerify, listUnrankedUniversities, importRecords, IMPORT_MAX_BYTES, resolveConflict, saveAcademicYear, scanDuplicates } from '@/lib/admin/data-tools'
 import { getAdminPool } from '@/lib/db/pool'
 
 // Every action re-authorises on the server (session + active membership + role) before reading
@@ -180,6 +180,15 @@ export async function bulkVerifyAction(_prev: ActionState, form: FormData): Prom
       message: `${results.length - refused.length} verified, ${refused.length} refused. Publishing is a separate step.`,
       blockers: refused.map((r) => `#${r.id}: ${r.message}`),
     }
+  })
+}
+
+export async function listUnrankedUniversitiesAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  return run('rights.manage', async (actor) => {
+    if (form.get('confirm') !== 'on') throw new WorkflowError('Tick the box to confirm.')
+    const { listed } = await listUnrankedUniversities(getAdminPool(), actor)
+    const total = Object.values(listed).reduce((a, b) => a + b, 0)
+    return { message: `${total} unranked universities listed (${Object.entries(listed).map(([k, v]) => `${k} ${v}`).join(', ')}).` }
   })
 }
 

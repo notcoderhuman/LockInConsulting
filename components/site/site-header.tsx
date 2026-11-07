@@ -10,7 +10,7 @@ import { LanguageSwitch } from './language-switch'
 import { TextSizeControl } from './text-size-control'
 
 const NAV: { href: string; label: MessageKey }[] = [
-  { href: '/universities', label: 'nav.universities' },
+  { href: '/destinations', label: 'nav.destinations' },
   { href: '/#how-it-works', label: 'nav.howItWorks' },
   { href: '/#team', label: 'nav.team' },
 ]

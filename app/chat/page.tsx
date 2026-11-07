@@ -62,7 +62,7 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
           <Card title="Student accounts aren’t open yet">
             <p>
               We’re finishing an age-eligibility, privacy and legal review before anyone can send us messages here. Until then no information is collected. Every{' '}
-              <Link href="/universities" className="text-primary hover:underline">
+              <Link href="/destinations" className="text-primary hover:underline">
                 destination page
               </Link>{' '}
               lists official sources in the meantime.

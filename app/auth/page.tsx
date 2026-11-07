@@ -45,7 +45,7 @@ export default async function AuthPage({ searchParams }: { searchParams: Promise
           {ctx.state === 'disabled' ? (
             <Notice title="Student accounts aren’t open yet">
               We’re finishing an age-eligibility, privacy and legal review before anyone can sign in and send us questions. Until then no information is collected. Every{' '}
-              <Link href="/universities" className="text-primary hover:underline">
+              <Link href="/destinations" className="text-primary hover:underline">
                 destination page
               </Link>{' '}
               lists official sources in the meantime.

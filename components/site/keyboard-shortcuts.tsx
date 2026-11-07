@@ -38,7 +38,7 @@ export function KeyboardShortcuts() {
       if (input) {
         input.focus()
         input.select()
-      } else router.push('/universities?focus=search')
+      } else router.push('/destinations')
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)

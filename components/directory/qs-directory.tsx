@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 
 // The public university directory: eleven destinations, search by name, universities in QS global order.
-// A card carries exactly three things: the name, the QS rank as printed (#4, =45, 731-740, 1401+) and,
+// A card carries exactly three things: the name, the QS rank as printed (#4, =45, 731–740, 1401+) and,
 // only when LockIn itself has verified the university, a "Verified" badge. The QS attribution sits below the
 // list, never on a card. All data comes from /api/qs-directory, which returns nothing until the QS licence
 // is recorded as executed (then the page says the directory is being prepared).

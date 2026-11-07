@@ -236,6 +236,7 @@ export const ENTITIES: Record<EntityKey, EntityDef> = {
       { name: 'edition', column: 'edition', label: 'Edition', kind: 'text' },
       { name: 'subject', column: 'subject', label: 'Subject (empty = overall)', kind: 'text' },
       { name: 'position', column: 'rank_position', label: 'Exact position', kind: 'int' },
+      { name: 'label', column: 'rank_label', label: 'Rank as printed (=45 for a tie, 1401+ for an open band)', kind: 'text' },
       { name: 'bandLow', column: 'rank_band_low', label: 'Band low', kind: 'int' },
       { name: 'bandHigh', column: 'rank_band_high', label: 'Band high', kind: 'int' },
       SOURCE_FIELD,

@@ -20,7 +20,7 @@ import {
   WorkflowError,
   type WorkflowAction,
 } from '@/lib/admin/workflow'
-import { bulkVerify, importRecords, IMPORT_MAX_BYTES, resolveConflict, saveAcademicYear, scanDuplicates } from '@/lib/admin/data-tools'
+import { applyQsDirectoryScope, bulkVerify, importRecords, IMPORT_MAX_BYTES, resolveConflict, saveAcademicYear, scanDuplicates } from '@/lib/admin/data-tools'
 import { getAdminPool } from '@/lib/db/pool'
 
 // Every action re-authorises on the server (session + active membership + role) before reading
@@ -179,6 +179,16 @@ export async function bulkVerifyAction(_prev: ActionState, form: FormData): Prom
     return {
       message: `${results.length - refused.length} verified, ${refused.length} refused. Publishing is a separate step.`,
       blockers: refused.map((r) => `#${r.id}: ${r.message}`),
+    }
+  })
+}
+
+export async function applyQsDirectoryScopeAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  return run('rights.manage', async (actor) => {
+    if (form.get('confirm') !== 'on') throw new WorkflowError('Tick the box to confirm.')
+    const r = await applyQsDirectoryScope(getAdminPool(), actor)
+    return {
+      message: `${r.inScope} universities are in the directory. Archived ${r.archived} (not deleted), dismissed ${r.dismissed} admissions-link conflicts${r.keptPublished ? `, left ${r.keptPublished} published records alone` : ''}.`,
     }
   })
 }

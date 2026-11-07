@@ -6,6 +6,9 @@ vi.mock('next/navigation', () => ({
   notFound: () => {
     throw new Error('NEXT_NOT_FOUND')
   },
+  redirect: (url: string) => {
+    throw new Error(`NEXT_REDIRECT:${url}`)
+  },
   useRouter: () => ({ push: () => {} }),
 }))
 
@@ -29,11 +32,9 @@ describe('destination routing', () => {
     expect(getDestinationBySlug('uae')?.subRegions?.map((s) => s.name)).toContain('Dubai')
   })
 
-  it('builds metadata per destination and none for unknown slugs', async () => {
-    const meta = await page.generateMetadata({ params: Promise.resolve({ slug: 'germany' }) })
-    expect(meta.title).toContain('Germany')
-    expect(meta.alternates?.canonical).toBe('/destinations/germany')
-    expect(await page.generateMetadata({ params: Promise.resolve({ slug: 'nowhere' }) })).toEqual({})
+  it('sends every old destination page to the directory, already on that destination', async () => {
+    for (const d of DESTINATIONS)
+      await expect(page.default({ params: Promise.resolve({ slug: d.slug }) })).rejects.toThrow(`NEXT_REDIRECT:/universities?d=${d.iso2.toLowerCase()}`)
   })
 
   it('has URL-safe unique slugs and hrefs', () => {

@@ -20,7 +20,7 @@ export function recordTitle(entity: EntityKey, row: R): string {
     case 'acceptance_rate':
       return `${row.rate_percent == null ? 'Not published' : `${row.rate_percent}%`} · ${row.cohort_label}`
     case 'university_ranking': {
-      const rank = row.rank_position != null ? `#${row.rank_position}` : `${row.rank_band_low}–${row.rank_band_high}`
+      const rank = row.rank_label != null ? String(row.rank_label) : row.rank_position != null ? `#${row.rank_position}` : `${row.rank_band_low}–${row.rank_band_high}`
       return `${row.ranking_year}${row.subject ? ` ${row.subject}` : ''} · ${rank}`
     }
   }

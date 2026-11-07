@@ -3,6 +3,7 @@ import type { Pool, PoolConnection, ResultSetHeader, RowDataPacket } from 'mysql
 import { z } from 'zod'
 import { todayIso } from '@/lib/data/publication'
 import { SOURCE_TYPES } from '@/lib/data/types'
+import { DESTINATIONS } from '@/lib/destinations'
 import { academicYear, courseInput, httpsUrl, intakeInput, isoDate, rankingInput, reasonInput, tuitionFeeInput, universityInput } from '@/lib/data/validation'
 import { appendChangeLog } from './audit'
 import { ENTITIES, type EntityKey } from './entities'
@@ -657,4 +658,77 @@ export async function listInReview(db: Pool, entity: EntityKey, limit = BULK_VER
     [limit],
   )
   return rows
+}
+
+// ---------------------------------------------------------------------------------------------
+// QS directory scope (7 Nov 2026): the public directory is the QS 2027 top 50 per destination. Everything else
+// is archived (hidden from the public directory, never deleted) and the admissions-link conflicts, which no
+// longer matter because the directory shows no admissions links, are dismissed. All of it is audited.
+// ---------------------------------------------------------------------------------------------
+
+const SCOPE_REASON = 'Outside the QS 2027 top-50 directory scope: archived, not deleted'
+const DISMISS_NOTE = 'The public directory shows no admissions links, so this proposed value no longer matters. Dismissed under the QS directory scope.'
+
+export interface ScopeResult {
+  inScope: number
+  archived: number
+  keptPublished: number
+  dismissed: number
+}
+
+/**
+ * Owner only. Refuses to run until the QS 2027 ranks are imported (it will not archive everything).
+ * Records still in `published` status are never hidden here: a verified record is unpublished through the
+ * normal workflow. Only open `admissions_url` conflicts are dismissed; website conflicts stay open.
+ */
+export async function applyQsDirectoryScope(db: Pool, actor: AdminActor): Promise<ScopeResult> {
+  assertCan(actor, 'rights.manage')
+  return inTransaction(db, async (conn) => {
+    const [ranked] = await conn.query<Row[]>(
+      `SELECT university_id FROM (
+         SELECT r.university_id,
+                ROW_NUMBER() OVER (PARTITION BY u.destination_iso2 ORDER BY COALESCE(r.rank_position, r.rank_band_low), u.name, u.id) AS n
+           FROM university_rankings r
+           JOIN ranking_providers p ON p.id = r.provider_id AND p.slug = 'qs'
+           JOIN universities u ON u.id = r.university_id
+          WHERE r.ranking_year = 2027 AND r.subject = '' AND u.institution_category = 'university'
+            AND r.source_id IS NOT NULL AND r.publication_status <> 'unpublished' AND r.verification_status <> 'unavailable'
+       ) x WHERE n <= 50`,
+    )
+    const keep = new Set(ranked.map((r) => Number(r.university_id)))
+    if (keep.size === 0) throw new WorkflowError('Import the QS 2027 ranks first: without them nothing is in scope.')
+    // A partial import must never archive the destinations that were simply not imported yet.
+    const [covered] = await conn.query<Row[]>(
+      `SELECT DISTINCT u.destination_iso2 AS iso2 FROM university_rankings r JOIN ranking_providers p ON p.id = r.provider_id AND p.slug = 'qs'
+         JOIN universities u ON u.id = r.university_id WHERE r.ranking_year = 2027 AND r.subject = ''`,
+    )
+    const missing = DESTINATIONS.map((d) => d.iso2).filter((iso2) => !covered.some((c) => c.iso2 === iso2))
+    if (missing.length) throw new WorkflowError(`Import the QS 2027 ranks for every destination first. Missing: ${missing.join(', ')}.`)
+    const [candidates] = await conn.query<Row[]>("SELECT id, publication_status FROM universities WHERE listing_hidden = 0 FOR UPDATE")
+    const def = ENTITIES.university
+    let archived = 0
+    let keptPublished = 0
+    for (const c of candidates) {
+      const id = Number(c.id)
+      if (keep.has(id)) continue
+      if (c.publication_status === 'published') {
+        keptPublished++
+        continue
+      }
+      const before = await readRow(conn, def.table, id)
+      await conn.query('UPDATE universities SET listing_hidden = 1, provisional_listing = 0 WHERE id = ?', [id])
+      const after = await readRow(conn, def.table, id)
+      await appendChangeLog(conn, { entityType: def.logType, entityId: id, action: 'provisional_change', actorId: actor.userId, actorRole: actor.role, reason: SCOPE_REASON, before, after })
+      archived++
+    }
+    const [open] = await conn.query<Row[]>("SELECT id FROM data_conflicts WHERE status = 'open' AND kind = 'field_value' AND field_name = 'admissions_url' FOR UPDATE")
+    for (const c of open) {
+      const id = Number(c.id)
+      const before = await readRow(conn, 'data_conflicts', id)
+      await conn.query("UPDATE data_conflicts SET status = 'dismissed', resolution_note = ?, resolved_by = ?, resolved_at = UTC_TIMESTAMP() WHERE id = ?", [DISMISS_NOTE, actor.userId, id])
+      const after = await readRow(conn, 'data_conflicts', id)
+      await appendChangeLog(conn, { entityType: 'data_conflict', entityId: id, action: 'resolve_conflict', actorId: actor.userId, actorRole: actor.role, reason: DISMISS_NOTE, before, after })
+    }
+    return { inScope: keep.size, archived, keptPublished, dismissed: open.length }
+  })
 }

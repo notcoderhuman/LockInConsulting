@@ -258,19 +258,10 @@ describe('See more universities', () => {
 
 describe('GET /api/destinations/[iso2]/universities', () => {
   afterEach(() => vi.unstubAllEnvs())
-  const call = (iso2: string, offset: string) =>
-    GET(new Request(`http://localhost/api/destinations/${iso2}/universities?offset=${offset}`), { params: Promise.resolve({ iso2 }) })
-
-  it('refuses unknown destinations and offsets that are not a page within the first 50', async () => {
-    for (const [iso2, offset] of [['XX', '5'], ['de', '5'], ['DE', '-5'], ['DE', '3'], ['DE', '50'], ['DE', '1e9'], ['DE', 'abc']])
-      expect((await call(iso2, offset)).status, `${iso2} ${offset}`).toBe(404)
-  })
-
-  it('answers 503, never fake data, when no database is connected', async () => {
-    vi.stubEnv('DATABASE_URL', '')
-    const res = await call('DE', '5')
-    expect(res.status).toBe(503)
-    expect(await res.json()).not.toHaveProperty('entries')
+  it('is retired: it answers 410 and returns no listings (the directory is /api/qs-directory)', async () => {
+    const res = (GET as unknown as () => Response)()
+    expect(res.status).toBe(410)
+    expect(await res.json()).toEqual({ error: expect.stringContaining('/api/qs-directory') })
   })
 })
 

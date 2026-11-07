@@ -83,7 +83,7 @@ describe('language preference', () => {
     }
     const hidden = renderToStaticMarkup(<SiteHeader />)
     expect(hidden).not.toContain('हिन्दी में देखें')
-    expect(hidden).toContain('Destinations')
+    expect(hidden).toContain('Universities')
     const shown = renderToStaticMarkup(<LocaleProvider locale="en" languageSwitch><SiteHeader /></LocaleProvider>)
     expect(shown).toContain('aria-label="हिन्दी में देखें"')
   })

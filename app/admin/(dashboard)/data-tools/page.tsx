@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ImportForm, ResolveConflictForm, ScanDuplicatesForm } from '@/components/admin/data-tools-forms'
+import { ImportForm, QsScopeForm, ResolveConflictForm, ScanDuplicatesForm } from '@/components/admin/data-tools-forms'
 import { EmptyState, PageHeader, Panel } from '@/components/admin/page-header'
 import { requireAdminPage } from '@/lib/admin/access'
 import { listConflicts, listImportBatches } from '@/lib/admin/data-tools'
@@ -33,6 +33,12 @@ export default async function DataToolsPage() {
           ) : null
         }
       />
+
+      {can(actor.role, 'rights.manage') ? (
+        <Panel title="QS directory scope" description="Owner only. Keeps the public directory to the QS 2027 top 50 per destination.">
+          <QsScopeForm />
+        </Panel>
+      ) : null}
 
       {capture ? (
         <Panel title="Bulk import" description="Universities with optional courses, intakes and fees. The whole file is validated before anything is written; a file can be imported only once.">

@@ -64,7 +64,8 @@ describe('public directory never shows private research records', () => {
       const code = stripComments(readFileSync(file, 'utf8'))
       const rel = path.relative(ROOT, file)
       expect(code, rel).not.toMatch(/['"`](?:\.\/)?db\/intake|['"`]intake['"`]|intake\/destinations|research-batch|LOCKIN_RESEARCH_DIR/)
-      expect(code, rel).not.toMatch(/QS_RANKINGS|QS World University Rankings/)
+      // The directory page may NAME the ranking it follows; the ranks themselves live only in the database.
+      if (!/^(app[\\/]universities[\\/]page\.tsx|components[\\/]directory[\\/]qs-directory\.tsx)$/.test(rel)) expect(code, rel).not.toMatch(/QS_RANKINGS|QS World University Rankings/)
     }
     expect(existsSync(path.join(ROOT, 'lib', 'data', 'verified-directory.ts'))).toBe(false)
   })

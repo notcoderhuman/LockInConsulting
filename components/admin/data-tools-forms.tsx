@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { bulkVerifyAction, importRecordsAction, resolveConflictAction, saveAcademicYearAction, scanDuplicatesAction } from '@/app/admin/actions'
+import { applyQsDirectoryScopeAction, bulkVerifyAction, importRecordsAction, resolveConflictAction, saveAcademicYearAction, scanDuplicatesAction } from '@/app/admin/actions'
 import { controlClass, Field, FormMessage } from './form-controls'
 import { useFormAction } from './use-form-action'
 
@@ -16,6 +16,28 @@ export function ImportForm() {
       <div>
         <Button type="submit" disabled={pending}>
           {pending ? 'Importing…' : 'Import as drafts'}
+        </Button>
+      </div>
+    </form>
+  )
+}
+
+export function QsScopeForm() {
+  const { state, pending, onSubmit } = useFormAction(applyQsDirectoryScopeAction)
+  return (
+    <form onSubmit={onSubmit} className="flex flex-col gap-3" noValidate>
+      <p className="text-sm leading-relaxed text-muted-foreground">
+        Archives every university outside the QS 2027 top 50 of its destination (hidden from the public directory, never deleted) and dismisses the open admissions-link conflicts. Website conflicts stay open.
+        Published records are never touched. Needs the QS 2027 ranks imported first.
+      </p>
+      <label className="flex items-start gap-2 text-sm text-foreground">
+        <input type="checkbox" name="confirm" className="mt-1" />
+        <span>Archive the out-of-scope records and dismiss the admissions-link conflicts.</span>
+      </label>
+      <FormMessage state={state} />
+      <div>
+        <Button type="submit" variant="outline" disabled={pending}>
+          {pending ? 'Applying…' : 'Apply the QS directory scope'}
         </Button>
       </div>
     </form>

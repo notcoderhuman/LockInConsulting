@@ -51,7 +51,7 @@ describe('migration 0013', () => {
   it('adds the provenance columns and tables, and keeps change-log types in sync', async () => {
     const cols = await rows<{ c: string }>("SELECT CONCAT(TABLE_NAME, '.', COLUMN_NAME) AS c FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND COLUMN_NAME IN ('admissions_url', 'institution_subtype', 'other_language_requirements', 'attribution_url')")
     // The public ranking view also carries attribution_url, so the licence link can be shown with every rank.
-    expect(cols.map((r) => r.c).sort()).toEqual(['courses.other_language_requirements', 'public_university_rankings.attribution_url', 'ranking_providers.attribution_url', 'universities.admissions_url', 'universities.institution_subtype'])
+    expect(cols.map((r) => r.c).sort()).toEqual(['courses.other_language_requirements', 'public_qs_directory.attribution_url', 'public_university_rankings.attribution_url', 'ranking_providers.attribution_url', 'universities.admissions_url', 'universities.institution_subtype'])
     const tables = await rows<{ t: string }>("SELECT TABLE_NAME AS t FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('academic_years', 'field_sources', 'data_conflicts', 'import_batches') ORDER BY t")
     expect(tables.map((r) => r.t)).toEqual(['academic_years', 'data_conflicts', 'field_sources', 'import_batches'])
     const [entity] = await rows<{ COLUMN_TYPE: string }>("SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'data_change_log' AND COLUMN_NAME = 'entity_type'")

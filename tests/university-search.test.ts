@@ -33,14 +33,12 @@ describe('search request parsing', () => {
 describe('search and lookup routes', () => {
   afterEach(() => vi.unstubAllEnvs())
 
-  it('answer 400 to malformed requests and 503 without a database, never invented results', async () => {
-    vi.stubEnv('DATABASE_URL', '')
-    expect((await searchRoute(new Request('http://x/api/universities/search?sort=qs'))).status).toBe(400)
-    expect((await lookupRoute(new Request('http://x/api/universities/lookup?u=XX:a'))).status).toBe(400)
-    const res = await searchRoute(new Request('http://x/api/universities/search?q=berlin'))
-    expect(res.status).toBe(503)
-    expect(await res.json()).toEqual({ error: 'Search is unavailable right now.' })
-    expect((await lookupRoute(new Request('http://x/api/universities/lookup?u=DE:a'))).status).toBe(503)
+  it('are retired: both answer 410 and return no listings (the directory is /api/qs-directory)', async () => {
+    for (const route of [searchRoute, lookupRoute] as unknown as (() => Response)[]) {
+      const res = route()
+      expect(res.status).toBe(410)
+      expect(await res.json()).toEqual({ error: expect.stringContaining('/api/qs-directory') })
+    }
   })
 
   it('never expose verification status: no status field, and no status filter or sort', () => {

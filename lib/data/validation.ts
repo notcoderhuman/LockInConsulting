@@ -164,6 +164,8 @@ export const rankingInput = z
     edition: z.string().trim().max(120).optional(),
     subject: z.string().trim().max(120).default(''),
     position: z.number().int().positive().optional(),
+    // The rank exactly as the provider prints it: "45", "=45" (a tie) or "1401+" (open band). Its number must be the position.
+    label: z.string().trim().regex(/^=?[0-9]{1,4}(-[0-9]{1,4}|\+)?$/, 'Use the rank as printed, for example 45, =45, 731-740 or 1401+.').optional(),
     bandLow: z.number().int().positive().optional(),
     bandHigh: z.number().int().positive().optional(),
   })
@@ -172,6 +174,10 @@ export const rankingInput = z
     const hasBand = r.bandLow !== undefined || r.bandHigh !== undefined
     if (hasPosition === hasBand)
       ctx.addIssue({ code: 'custom', path: ['position'], message: 'Enter either an exact position or a band, not both.' })
+    // The label's first number is the one used for ordering: the position, or a band's low end.
+    const labelled = r.label === undefined ? null : /[0-9]+/.exec(r.label)
+    if (r.label !== undefined && (!labelled || Number(labelled[0]) !== (r.position ?? r.bandLow)))
+      ctx.addIssue({ code: 'custom', path: ['label'], message: 'The rank label must start with the position (or the band low end), for example =45 for position 45.' })
     if (hasBand && (r.bandLow === undefined || r.bandHigh === undefined))
       ctx.addIssue({ code: 'custom', path: ['bandHigh'], message: 'A band needs both a low and a high value.' })
     if (r.bandLow !== undefined && r.bandHigh !== undefined && r.bandLow > r.bandHigh)

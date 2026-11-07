@@ -36,7 +36,7 @@ export default async function FaqPage() {
               <p className="font-serif text-2xl text-foreground">{t('faq.emptyTitle')}</p>
               <p className="mt-2">
                 {t('faq.emptyBefore')}{' '}
-                <Link href="/universities" className="text-primary underline-offset-4 hover:underline">
+                <Link href="/destinations" className="text-primary underline-offset-4 hover:underline">
                   {t('faq.emptyLink')}
                 </Link>{' '}
                 {t('faq.emptyAfter')}

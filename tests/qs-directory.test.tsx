@@ -82,10 +82,10 @@ describe('the page', () => {
 })
 
 describe('retired research pages', () => {
-  it('no longer link the old destination explorer from the header', () => {
+  it('keep the header on the original Destinations entry, with no all-countries Universities entry', () => {
     const header = read('components/site/site-header.tsx')
-    expect(header).not.toContain("'/destinations'")
-    expect(header).toContain("'/universities'")
+    expect(header).toContain("'/destinations'")
+    expect(header).not.toContain("'/universities'")
   })
 
   it('exposes only name, rank and verified through the public API', () => {

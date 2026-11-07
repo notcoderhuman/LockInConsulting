@@ -28,10 +28,13 @@ export function QsDirectory({
   destinations,
   initial,
   attribution,
+  fixed = false,
 }: {
   destinations: { iso2: string; name: string }[]
   initial: string
   attribution: { text: string; url: string }
+  /** One destination only (a country page): no destination buttons, and the URL is left alone. */
+  fixed?: boolean
 }) {
   const [iso2, setIso2] = useState(initial)
   const [query, setQuery] = useState('')
@@ -89,13 +92,13 @@ export function QsDirectory({
 
   function choose(next: string) {
     setIso2(next)
-    window.history.replaceState(null, '', `/universities?d=${next.toLowerCase()}`)
   }
 
   const current = destinations.find((d) => d.iso2 === iso2)?.name ?? ''
 
   return (
     <div className="flex flex-col gap-8">
+      {fixed ? null : (
       <div role="group" aria-label="Destination" className="flex flex-wrap gap-2">
         {destinations.map((d) => (
           <button
@@ -112,11 +115,13 @@ export function QsDirectory({
           </button>
         ))}
       </div>
+      )}
 
       <label className="relative block">
         <span className="sr-only">Search universities in {current}</span>
         <Search aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <input
+          id="uni-q"
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}

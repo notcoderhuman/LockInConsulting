@@ -32,9 +32,30 @@ describe('destination routing', () => {
     expect(getDestinationBySlug('uae')?.subRegions?.map((s) => s.name)).toContain('Dubai')
   })
 
-  it('sends every old destination page to the directory, already on that destination', async () => {
-    for (const d of DESTINATIONS)
-      await expect(page.default({ params: Promise.resolve({ slug: d.slug }) })).rejects.toThrow(`NEXT_REDIRECT:/universities?d=${d.iso2.toLowerCase()}`)
+  it('builds metadata per destination and none for unknown slugs', async () => {
+    const meta = await page.generateMetadata({ params: Promise.resolve({ slug: 'germany' }) })
+    expect(meta.title).toContain('Germany')
+    expect(meta.alternates?.canonical).toBe('/destinations/germany')
+    expect(await page.generateMetadata({ params: Promise.resolve({ slug: 'nowhere' }) })).toEqual({})
+  })
+
+  it('renders every destination as its own page with its own country-only directory', async () => {
+    const { renderToStaticMarkup } = await import('react-dom/server')
+    for (const d of DESTINATIONS) {
+      const html = renderToStaticMarkup(await page.default({ params: Promise.resolve({ slug: d.slug }) }))
+      expect(html, d.slug).toContain(`Universities in ${d.shortName}`)
+      expect(html, d.slug).toContain('id="universities"')
+      // One destination only: no destination buttons, so no other country can be listed on this page.
+      expect(html, d.slug).not.toContain('aria-label="Destination"')
+      expect(html.match(/type="search"/g), d.slug).toHaveLength(1)
+    }
+  })
+
+  it('has no all-countries listing: /universities and university profiles go back to the country pages', async () => {
+    const universities = await import('@/app/universities/page')
+    expect(() => universities.default()).toThrow('NEXT_REDIRECT:/destinations')
+    const record = await import('@/app/destinations/[slug]/universities/[university]/page')
+    await expect(record.default({ params: Promise.resolve({ slug: 'uk' }) })).rejects.toThrow('NEXT_REDIRECT:/destinations/uk#universities')
   })
 
   it('has URL-safe unique slugs and hrefs', () => {

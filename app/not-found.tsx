@@ -24,7 +24,7 @@ export default async function NotFound() {
         </p>
         <div className="flex flex-wrap gap-3">
           <Link
-            href="/universities"
+            href="/destinations"
             className="inline-flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground"
           >
             {t('notFound.destinations')}

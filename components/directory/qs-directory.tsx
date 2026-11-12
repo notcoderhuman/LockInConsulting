@@ -163,10 +163,10 @@ export function QsDirectory({
                 <li key={`${c.rank}-${c.name}-${i}`} className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-card px-5 py-4">
                   <span className="font-serif text-xl leading-snug text-foreground">{c.name}</span>
                   <span className="flex shrink-0 items-center gap-2 text-sm font-medium text-primary">
-                    {c.rank ? <span>{c.rank}</span> : null}
+                    {c.rank ? <span>{c.rank}</span> : <span className="font-normal text-muted-foreground">Not ranked in QS WUR 2027</span>}
                     {c.verified ? (
                       <span className="inline-flex items-center gap-1">
-                        {c.rank ? <span aria-hidden="true">·</span> : null}
+                        <span aria-hidden="true">·</span>
                         <BadgeCheck aria-hidden="true" className="size-4" />
                         <span>Verified</span>
                       </span>

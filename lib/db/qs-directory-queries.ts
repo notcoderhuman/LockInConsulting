@@ -27,7 +27,15 @@ export const QS_PAGE_SIZE = 25
 export const rankText = (label: unknown, order: unknown, bandHigh: unknown = null): string =>
   label != null && /^[=]|[-+]/.test(String(label)) ? String(label).replace('-', '\u2013') : bandHigh != null ? `${order}\u2013${bandHigh}` : `#${order}`
 
-const escapeLike = (q: string) => q.replace(/[\\%_]/g, (c) => `\\${c}`)
+/**
+ * Owner's Poland rule (12 Nov 2026): among the unranked institutions genuine universities (the name says university,
+ * Uniwersytet, Politechnika, Polytechnic) come first, other higher-education institutions after, each group alphabetical.
+ * shortcut: a name pattern, applied to Poland only; upgrade to a stored institution type if more destinations need it.
+ */
+export const GENUINE_UNIVERSITY_REGEXP = '(^|[^[:alpha:]])(uniwersytet|university|politechnika|polytechnic|universität)([^[:alpha:]]|$)'
+export const NOT_GENUINE_FIRST_SQL = "(destination_iso2 = 'PL' AND name NOT REGEXP ?)"
+
+const escapeLike =(q: string) => q.replace(/[\\%_]/g, (c) => `\\${c}`)
 
 /**
  * One page of the public directory for one destination, in QS global order. Reads only public_qs_directory, which
@@ -39,8 +47,8 @@ export async function fetchQsPage(db: Db, iso2: string, q: string, offset: numbe
   const [rows] = await db.query<RowDataPacket[]>(
     `SELECT name, is_ranked, rank_order, rank_band_high, rank_label, verified FROM public_qs_directory
       WHERE destination_iso2 = ? AND name LIKE ?
-      ORDER BY is_ranked DESC, rank_order, name, id LIMIT ? OFFSET ?`,
-    [iso2, like, QS_PAGE_SIZE, offset],
+      ORDER BY is_ranked DESC, rank_order, ${NOT_GENUINE_FIRST_SQL}, name, id LIMIT ? OFFSET ?`,
+    [iso2, like, GENUINE_UNIVERSITY_REGEXP, QS_PAGE_SIZE, offset],
   )
   const [[count]] = await db.query<RowDataPacket[]>('SELECT COUNT(*) AS n FROM public_qs_directory WHERE destination_iso2 = ? AND name LIKE ?', [iso2, like])
   const [[any]] = await db.query<RowDataPacket[]>('SELECT COUNT(*) AS n FROM public_qs_directory')

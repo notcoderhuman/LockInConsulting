@@ -5,6 +5,7 @@ import { todayIso } from '@/lib/data/publication'
 import { SOURCE_TYPES } from '@/lib/data/types'
 import { DESTINATIONS } from '@/lib/destinations'
 import { academicYear, courseInput, httpsUrl, intakeInput, isoDate, rankingInput, reasonInput, tuitionFeeInput, universityInput } from '@/lib/data/validation'
+import { GENUINE_UNIVERSITY_REGEXP } from '@/lib/db/qs-directory-queries'
 import { appendChangeLog } from './audit'
 import { ENTITIES, type EntityKey } from './entities'
 import { formText, parseEntityForm, type FieldErrors } from './forms'
@@ -745,6 +746,7 @@ export async function applyQsDirectoryScope(db: Pool, actor: AdminActor): Promis
 
 export const UNRANKED_DESTINATIONS = ['CA', 'IT', 'PL', 'AU', 'SA', 'AE', 'FI', 'NZ'] as const
 const UNRANKED_REASON = 'Listed in the directory without a rank: QS 2027 does not rank it'
+const UNRANKED_REORDER_REASON = 'Poland: genuine universities are listed first, so this institution is no longer among the places shown'
 
 export interface UnrankedResult {
   listed: Record<string, number>
@@ -761,6 +763,7 @@ export async function listUnrankedUniversities(db: Pool, actor: AdminActor): Pro
     const def = ENTITIES.university
     const listed: Record<string, number> = {}
     for (const iso2 of UNRANKED_DESTINATIONS) {
+      const poland = iso2 === 'PL'
       const [[ranked]] = await conn.query<Row[]>(
         `SELECT COUNT(*) AS n FROM university_rankings r JOIN ranking_providers p ON p.id = r.provider_id AND p.slug = 'qs' JOIN universities u ON u.id = r.university_id
           WHERE u.destination_iso2 = ? AND r.ranking_year = 2027 AND r.subject = '' AND r.source_id IS NOT NULL`,
@@ -768,19 +771,34 @@ export async function listUnrankedUniversities(db: Pool, actor: AdminActor): Pro
       )
       if (Number(ranked.n) === 0) throw new WorkflowError(`Import the QS 2027 ranks for ${iso2} first.`)
       const [[already]] = await conn.query<Row[]>('SELECT COUNT(*) AS n FROM universities WHERE destination_iso2 = ? AND directory_unranked = 1', [iso2])
-      const room = Math.max(0, 50 - Number(ranked.n) - Number(already.n))
+      // Poland picks from every eligible record (already listed or not): genuine universities first, then the rest, each by name.
+      const room = poland ? Math.max(0, 50 - Number(ranked.n)) : Math.max(0, 50 - Number(ranked.n) - Number(already.n))
       listed[iso2] = 0
       if (room === 0) continue
       const [candidates] = await conn.query<Row[]>(
-        `SELECT u.id FROM universities u
-          WHERE u.destination_iso2 = ? AND u.institution_category = 'university' AND u.directory_unranked = 0
+        `SELECT u.id, u.directory_unranked FROM universities u
+          WHERE u.destination_iso2 = ? AND u.institution_category = 'university' ${poland ? '' : 'AND u.directory_unranked = 0'}
             AND u.official_website IS NOT NULL AND u.source_id IS NOT NULL
             AND NOT EXISTS (SELECT 1 FROM university_rankings r JOIN ranking_providers p ON p.id = r.provider_id AND p.slug = 'qs'
                              WHERE r.university_id = u.id AND r.ranking_year = 2027 AND r.subject = '')
-          ORDER BY u.name, u.id LIMIT ? FOR UPDATE`,
-        [iso2, room],
+          ORDER BY ${poland ? 'u.name NOT REGEXP ?, ' : ''}u.name, u.id LIMIT ? FOR UPDATE`,
+        poland ? [iso2, GENUINE_UNIVERSITY_REGEXP, room] : [iso2, room],
       )
+      const want = new Set(candidates.map((c) => Number(c.id)))
+      if (poland) {
+        // Records listed earlier that the genuine-first order no longer reaches leave the list (kept, audited, not deleted).
+        const [flagged] = await conn.query<Row[]>("SELECT id FROM universities WHERE destination_iso2 = 'PL' AND directory_unranked = 1 FOR UPDATE")
+        for (const f of flagged) {
+          const id = Number(f.id)
+          if (want.has(id)) continue
+          const before = await readRow(conn, def.table, id)
+          await conn.query('UPDATE universities SET directory_unranked = 0 WHERE id = ?', [id])
+          const after = await readRow(conn, def.table, id)
+          await appendChangeLog(conn, { entityType: def.logType, entityId: id, action: 'provisional_change', actorId: actor.userId, actorRole: actor.role, reason: UNRANKED_REORDER_REASON, before, after })
+        }
+      }
       for (const c of candidates) {
+        if (Number(c.directory_unranked) === 1) continue
         const id = Number(c.id)
         const before = await readRow(conn, def.table, id)
         await conn.query('UPDATE universities SET directory_unranked = 1, listing_hidden = 0 WHERE id = ?', [id])

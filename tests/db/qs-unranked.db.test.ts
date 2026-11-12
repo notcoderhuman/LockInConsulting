@@ -110,6 +110,25 @@ describe('unranked universities in the QS directory', () => {
     expect(await verifyAuditChain(db)).toMatchObject({ ok: true })
   })
 
+  it('Poland: genuine universities first, then other institutions, each alphabetical; leaving ones are unflagged, not deleted', async () => {
+    const pool = getAdminPool()
+    // 40 academies (alphabetical before the universities) and 12 universities: only 49 places after the one ranked.
+    const others = Array.from({ length: 40 }, (_, i) => uni(`Akademia ${String(i).padStart(2, '0')}`, 'PL'))
+    const genuine = Array.from({ length: 12 }, (_, i) => uni(`${String.fromCharCode(90 - i)} University`, 'PL'))
+    await T.importRecords(pool, editor, 'pl.json', file([...others, ...genuine]))
+    await T.listUnrankedUniversities(pool, owner)
+    const names: string[] = []
+    for (let o = 0; o < 100; o += 25) names.push(...(await fetchQsPage(pool, 'PL', '', o)).cards.map((c) => c.name))
+    expect(names).toHaveLength(50)
+    expect(names[0]).toBe('PL Ranked')
+    const unranked = names.slice(1)
+    // 12 genuine ones first (alphabetical), then the academies, then whatever of the earlier three still fits.
+    expect(unranked.slice(0, 12)).toEqual(Array.from({ length: 12 }, (_, i) => `${String.fromCharCode(79 + i)} University`))
+    expect(unranked[12]).toBe('Akademia 00')
+    expect(Number((await rows<{ n: number }>("SELECT COUNT(*) AS n FROM universities WHERE destination_iso2 = 'PL'"))[0].n)).toBeGreaterThan(49) // nothing deleted
+    expect(await verifyAuditChain(db)).toMatchObject({ ok: true })
+  })
+
   it('caps a destination at 50 in all', async () => {
     const pool = getAdminPool()
     const many = Array.from({ length: 60 }, (_, i) => uni(`Many ${String(i).padStart(2, '0')}`, 'NZ'))

@@ -98,7 +98,7 @@ export function otpMessage(email: string, otp: string, type: keyof typeof PURPOS
 <h1 style="margin:0 0 14px;font-family:${SERIF};font-size:26px;line-height:32px;font-weight:normal;color:${INK};">${escapeHtml(heading)}</h1>
 <p style="margin:0 0 28px;font-family:${SANS};font-size:15px;line-height:24px;color:${BODY};">${escapeHtml(body)}</p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;">
-<tr><td align="center" bgcolor="#faf7f0" style="background-color:#faf7f0;border:1px solid #e3d6b8;border-top:3px solid ${GOLD};border-radius:10px;padding:26px 12px 24px;">
+<tr><td align="center" bgcolor="#faf7f0" style="background-color:#faf7f0;border:1px solid #e3d6b8;border-radius:10px;padding:26px 12px 24px;">
 <div style="font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:2px;text-transform:uppercase;color:${GOLD_DARK};padding-bottom:10px;">One-time code</div>
 <div style="font-family:'SFMono-Regular',Menlo,Consolas,'Liberation Mono','Courier New',monospace;font-size:38px;line-height:46px;font-weight:bold;letter-spacing:12px;color:${INK};padding-left:12px;">${code}</div>
 </td></tr>

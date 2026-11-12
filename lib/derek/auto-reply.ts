@@ -15,6 +15,8 @@ import { styleIssues } from './style'
 export const AUTO_REPLY_LIMITS = {
   /** Auto replies are for short, ordinary answers; anything longer waits for a person. */
   maxChars: 900,
+  /** An answer built from the university's own pages (entry requirements with several pathways) may be longer. */
+  maxCharsResearched: 3000,
   globalPerHour: 60,
   globalPerDay: 300,
 }
@@ -22,15 +24,19 @@ export const AUTO_REPLY_LIMITS = {
 const REFUSAL =
   /\bI(?: can(?:'|’)?t| cannot| am (?:not able|unable) to|(?:'|’)m (?:not able|unable) to) (?:help|answer|assist|provide)\b|\bas an AI\b|\bI(?:'|’)m sorry,? (?:but )?I can(?:'|’)?t\b/i
 
+/** The length allowed for this answer: longer when it rests on pages read from the university's own website. */
+export const maxCharsFor = (evidence: EvidenceItem[]) => (evidence.some((e) => e.ref.startsWith('web:')) ? AUTO_REPLY_LIMITS.maxCharsResearched : AUTO_REPLY_LIMITS.maxChars)
+
 /** Reasons the draft's text is not suitable to send unreviewed. Empty = suitable. */
 export function autoReplyContentBlockers(text: string, evidence: EvidenceItem[]): string[] {
   const reasons: string[] = []
-  if (text.length > AUTO_REPLY_LIMITS.maxChars) reasons.push(`Longer than ${AUTO_REPLY_LIMITS.maxChars} characters`)
+  const limit = maxCharsFor(evidence)
+  if (text.length > limit) reasons.push(`Longer than ${limit} characters`)
   const allowed = evidenceUrls(evidence)
   // A link a student may follow must come from a verified record, never from the model's memory.
   if ((text.match(/https?:\/\/\S+/gi) ?? []).map(trimUrl).some((u) => !allowed.has(u))) reasons.push('Contains a link that is not from verified evidence')
   if (REFUSAL.test(text)) reasons.push('Reads like a refusal')
-  for (const issue of styleIssues(text)) reasons.push(`Style: ${issue}`)
+  for (const issue of styleIssues(text, { maxWords: limit > AUTO_REPLY_LIMITS.maxChars ? 450 : 220 })) reasons.push(`Style: ${issue}`)
   return reasons
 }
 

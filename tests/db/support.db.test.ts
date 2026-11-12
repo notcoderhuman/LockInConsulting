@@ -8,6 +8,7 @@ import type { Connection, RowDataPacket } from 'mysql2/promise'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { connect, startTestDatabase, type TestDatabase } from './harness'
 import { chatLastSeen, handleChat } from './handling'
+import { ANALYTICS_RULE, MASSEY, masseyPages, PATHWAYS } from '../fixtures/massey-site'
 import { loadMigrations, migrate } from '../../scripts/migrate.mjs'
 import { runAdminCli } from '../../scripts/admin-user.mjs'
 import { todayIso } from '@/lib/data/publication'
@@ -2617,5 +2618,99 @@ describe('Derek on the free tier: privacy, redraft, ordinary uncertainty and fai
     expect(await rows("SELECT id FROM notifications WHERE conversation_id = ? AND title LIKE '%abandoned%'", [lost.conversationId])).toHaveLength(1)
     expect(await view(t, lost.conversationId)).toMatchObject({ replyPending: false, acknowledgement: expect.stringContaining('couldn’t generate an answer') })
     expect(await left(t)).toBe(10)
+  })
+})
+
+describe('Massey entry requirements through the whole Derek pipeline (regression, fixtures)', () => {
+  const env = { DEREK_AI_ENABLED: 'true', DEREK_PROVIDER: 'mock', DEREK_AUTO_REPLY_CLEARED: 'mock' }
+  const question = 'What are the entry requirements for Master’s in Computer Science at Massey University?'
+  const site = { name: 'Massey University', officialWebsite: MASSEY.home, courseUrls: [MASSEY.analytics] }
+
+  beforeEach(async () => {
+    Object.assign(process.env, env)
+    AUTO_REPLY_LIMITS.globalPerHour = 100_000
+    AUTO_REPLY_LIMITS.globalPerDay = 100_000
+    await S.updateSupportSettings(pool(), owner, { autoReplyEnabled: true })
+  })
+  afterEach(async () => {
+    for (const k of Object.keys(env)) delete process.env[k]
+    await db.query("UPDATE support_settings SET support_mode = 'online', auto_reply_enabled = FALSE WHERE id = 1")
+  })
+
+  it('answers from the official programme pages and regulations, never from the Master of Analytics, with no needless disclaimer', async () => {
+    const R = await import('@/lib/derek/research')
+    const s = await makeStudent()
+    const q = await C.createConversation(pool(), s, { body: question, clientRequestId: rid(), subject: 'New Zealand · Master’s in Computer Science' })
+    // What LockIn's own records hold: the university, and only the Master of Analytics (the live conversation's situation).
+    const loadEvidence = async (): Promise<EvidenceItem[]> => [
+      { ref: 'draft_university:74', text: `${UNVERIFIED_TAG}: Massey University, official website ${MASSEY.home}`, sourceUrl: MASSEY.home, publisher: 'Massey University', checkedAt: TODAY, unverified: true },
+      { ref: 'draft_course:59', text: `${UNVERIFIED_TAG}: Master of Analytics offers a master’s degree; course page ${MASSEY.analytics}`, sourceUrl: MASSEY.analytics, publisher: 'Massey University', checkedAt: TODAY, unverified: true },
+      { ref: 'draft_course:59:requirements', text: `${UNVERIFIED_TAG}: Master of Analytics entry requirements: ${ANALYTICS_RULE}`, sourceUrl: MASSEY.analytics, publisher: 'Massey University', checkedAt: TODAY, unverified: true },
+    ]
+    const research = (input: Parameters<typeof R.researchQuestion>[0]) => R.researchQuestion({ ...input, universities: [site] }, { fetchPage: async (u) => masseyPages[u] ?? null, search: null })
+    // A stand-in for the model: it writes a short answer using ONLY what is in the evidence it receives (like Gemini under the rules).
+    const { citation, UNVERIFIED_LABEL } = await import('@/lib/derek/provider')
+    const seen: { evidence: EvidenceItem[]; note: string }[] = []
+    const model: AiProvider = {
+      id: 'mock',
+      model: 'mock-derek-1',
+      autoReply: { permitted: true },
+      async generate(req) {
+        seen.push({ evidence: req.evidence, note: req.guidance?.note ?? '' })
+        const fromPage = (url: string, re: RegExp) => req.evidence.find((e) => e.sourceUrl === url && re.test(e.text))
+        const detail = (e: EvidenceItem | undefined) => (e ? `${e.text.replace(/^.*?: (?=[A-Z])/, '').replace(/^from the web page "[^"]*": /, '')} ${citation(e)}` : '')
+        const lines = [
+          'The closest programme that is currently open is the Master of Information Sciences (MInfSc). Its published entry routes are below.',
+          '',
+          UNVERIFIED_LABEL,
+          ...[/Bachelor of Information Sciences or equivalent, with a B- average/, /two years of relevant professional experience/, /Honours or Postgraduate Diploma/].map((re) => `- ${detail(fromPage(MASSEY.minfsc, re))}`),
+          `- ${detail(fromPage(MASSEY.minfsc, /English language requirements/))}`,
+          `- ${detail(fromPage(MASSEY.minfscRegulations, /transitional provisions/))}`,
+          `- ${detail(fromPage(MASSEY.mscRegulations, /not accepting new enrolments/))}`,
+          '',
+          'Meeting the minimum requirements does not guarantee admission. Please confirm on the official pages before you apply.',
+        ]
+        return { text: lines.join('\n'), model: 'mock-derek-1' }
+      },
+    }
+    const outcome = await D.prepareDerekDraft(pool(), q.conversationId, q.triggerMessageId!, { provider: model, loadEvidence, research })
+    expect(outcome).toMatchObject({ state: 'auto_sent' })
+
+    // What the model was given: the three published pathways, English-language and university-wide requirements, the transitional rule and the closed
+    // pathway, each with its official page; and no Master of Analytics record at all.
+    const evidenceSeen = seen[0].evidence.map((e) => e.text).join('\n')
+    for (const pathway of PATHWAYS) expect(evidenceSeen).toContain(pathway)
+    expect(evidenceSeen).toContain('English language requirements')
+    expect(evidenceSeen).toContain('Computer Science is among the subjects available under transitional provisions')
+    expect(evidenceSeen).toContain('not accepting new enrolments')
+    expect(evidenceSeen).not.toMatch(/Analytics|C\+ average/)
+    expect(seen[0].evidence.map((e) => e.sourceUrl)).toEqual(expect.arrayContaining([MASSEY.minfsc, MASSEY.minfscRegulations, MASSEY.mscRegulations]))
+    expect(seen[0].note).toMatch(/give it directly and completely/)
+
+    // What the student received: the delivered answer, with direct official links, accepted by every check, without the uncertainty disclaimer.
+    const [body] = (await rows<{ body: string }>("SELECT body FROM messages WHERE conversation_id = ? AND author_kind = 'derek'", [q.conversationId])).map((r) => r.body)
+    for (const url of [MASSEY.minfsc, MASSEY.minfscRegulations, MASSEY.mscRegulations]) expect(body).toContain(url)
+    expect(body).toMatch(/B- average[\s\S]*300-level[\s\S]*two years[\s\S]*portfolio[\s\S]*700-level/)
+    expect(body).toContain('English language requirements')
+    expect(body).toContain('not accepting new enrolments')
+    expect(body).not.toMatch(/Analytics|C\+ average/)
+    expect(body).not.toContain(D.PRELIMINARY_NOTE)
+    expect(body).not.toMatch(/has not verified|hasn’t verified|have not verified/i)
+    expect(body).toContain('does not guarantee admission')
+    // Recorded for the team: sources read, no Analytics page among them, and nothing escalated.
+    const [draft] = await D.listDrafts(pool(), owner, q.conversationId)
+    expect(draft.research?.sources.map((x) => x.url)).not.toContain(MASSEY.analytics)
+    expect(draft.research?.failure).toBeNull()
+    expect(await rows("SELECT id FROM notifications WHERE conversation_id = ? AND kind IN ('high_risk', 'ai_failure')", [q.conversationId])).toHaveLength(0)
+    expect((await AL.getAllowance(pool(), s.profileId)).remaining).toBe(9)
+  })
+
+  it('tells the model to name official qualifications, explain renamed or closed programmes, and never guarantee admission', async () => {
+    const { DEREK_INSTRUCTIONS } = await import('@/lib/derek/provider')
+    expect(DEREK_INSTRUCTIONS).toMatch(/Name the qualification exactly as the EVIDENCE does/)
+    expect(DEREK_INSTRUCTIONS).toMatch(/closed to new enrolments or runs under transitional provisions/)
+    expect(DEREK_INSTRUCTIONS).toMatch(/never use another qualification's requirements or fees/)
+    expect(DEREK_INSTRUCTIONS).toMatch(/does not guarantee admission/)
+    expect(DEREK_INSTRUCTIONS).toMatch(/never as an opening habit/)
   })
 })

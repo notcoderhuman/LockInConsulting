@@ -58,7 +58,7 @@ const HEDGE = /\b(based on (?:the )?available information|while specific details
 const EMOJI = /\p{Extended_Pictographic}/u
 
 /** Editorial problems in a draft (empty = none found). */
-export function styleIssues(text: string): string[] {
+export function styleIssues(text: string, { maxWords = 220 }: { maxWords?: number } = {}): string[] {
   const issues: string[] = []
   if (FILLER_OPENER.test(text)) issues.push('Starts with filler instead of the answer')
   if (COLLAB.test(text)) issues.push('Chatbot sign-off or filler phrase')
@@ -69,10 +69,13 @@ export function styleIssues(text: string): string[] {
   if (HEDGE.test(text)) issues.push('Generic hedge or disclaimer')
   if (/\*\*|__|^#{1,6}\s/m.test(text) || EMOJI.test(text)) issues.push('Decorative formatting (bold, headings or emoji)')
   if ((text.match(/^\s*(?:-|\*|•|\d+[.)])\s/gm) ?? []).length > 8) issues.push('Long list')
-  if (wordCount(text) > 220) issues.push(`Long reply (${wordCount(text)} words)`)
+  if (wordCount(text) > maxWords) issues.push(`Long reply (${wordCount(text)} words)`)
   // Three or more sentences opening with the same two words read as a template.
+  // List items (the published pathways of a programme) naturally start alike: only prose sentences count.
   const openings = text
+    .replace(/\((?:official )?source:[^)]*\)/gi, ' ') // a source citation is not a sentence
     .split(/(?<=[.!?])\s+|\n+/)
+    .filter((s) => !/^\s*(?:[-*•]|\d+[.)])\s/.test(s))
     // The required unverified label on each draft fact is not a sentence opening.
     .map((s) => s.replace(/^[-*•\d.)\s]+/, '').replace(UNVERIFIED_PREFIX, '').toLowerCase().split(/\s+/).slice(0, 2).join(' '))
     .filter((o) => o.split(' ').length === 2)

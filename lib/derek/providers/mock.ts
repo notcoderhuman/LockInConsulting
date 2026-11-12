@@ -41,7 +41,14 @@ export class MockProvider implements AiProvider {
 
 function contractAnswer(request: DraftRequest): { text: string; uncertain: boolean } {
   const g = request.guidance
-  const top = request.evidence.slice(0, 5)
+  // As many evidence lines as fit in a message (4000 characters), best first.
+  const top: EvidenceItem[] = []
+  let size = 0
+  for (const e of request.evidence) {
+    size += e.text.length + citation(e).length + 8
+    if (size > 3300) break
+    top.push(e)
+  }
   const facts = top.map((e) => `- ${e.text} ${citation(e)}`)
   // Verified facts under the directory label; draft records only under the unverified one.
   const block = (label: string, list: EvidenceItem[]) => (list.length ? [label, ...list.map((e) => `- ${e.text} ${citation(e)}`)] : [])

@@ -3,6 +3,7 @@ import dns from 'node:dns/promises'
 import net from 'node:net'
 import type { Pool, RowDataPacket } from 'mysql2/promise'
 import { screenForFreeTier } from './free-tier'
+import { CLOSED_RE, isOtherQualification, matchesQualification, parseQualification, type Qualification } from './qualification'
 import { UNVERIFIED_TAG, type EvidenceItem } from './provider'
 
 // Derek's web research (Owner request, 12 Nov 2026). Order of knowledge: LockIn's verified records first
@@ -21,9 +22,11 @@ import { UNVERIFIED_TAG, type EvidenceItem } from './provider'
 
 export const RESEARCH = {
   pageTimeoutMs: 6_000,
-  totalBudgetMs: 18_000,
+  totalBudgetMs: 22_000,
   maxBytes: 400_000,
-  maxPages: 6,
+  maxPages: 10,
+  /** Every page read, relevant or not: bounds the time and load of one answer. */
+  maxFetches: 20,
   maxRedirects: 3,
   passagesPerPage: 4,
   /** A page last changed longer ago than this is described as possibly outdated. */
@@ -227,7 +230,7 @@ export function isOutdated(published: string | null, today: Date): boolean {
 const TOPIC_WORDS: Record<string, string[]> = {
   fees: ['tuition', 'fee', 'fees', 'cost', 'costs', 'per year', 'per annum', 'per point'],
   deadlines: ['deadline', 'deadlines', 'apply by', 'closing date', 'closes', 'intakes', 'application period', 'applications open', 'application window'],
-  requirements: ['requirement', 'requirements', 'eligib', 'admission', 'entry', 'ielts', 'toefl', 'pte', 'duolingo', 'gpa', 'degree', 'prerequisite', 'language'],
+  requirements: ['requirement', 'requirements', 'eligib', 'admission', 'entry', 'ielts', 'toefl', 'pte', 'duolingo', 'gpa', 'prerequisite', 'language', 'pathway', 'average', 'professional experience', 'portfolio', 'credits', 'new enrolments', 'new enrollments', 'transitional'],
   scholarships: ['scholarship', 'scholarships', 'bursary', 'funding', 'financial aid', 'grant'],
   visa: ['visa', 'immigration', 'residence permit', 'study permit'],
   other: ['admission', 'apply', 'application'],
@@ -246,20 +249,21 @@ function wordsFor(topics: string[]): string[] {
 function substantive(line: string, topics: string[]): boolean {
   const key = topics.join(' ')
   if (/fee|tuition|cost|deadline|intake|date/.test(key)) return /\d/.test(line)
-  if (/requirement|eligib|entry|language|score/.test(key)) return /\d|\b(?:degree|bachelor|master|ielts|toefl|pte|duolingo|gpa|grade|diploma|certificate|english)\b/i.test(line)
+  if (/requirement|eligib|entry|language|score/.test(key)) return CLOSED_RE.test(line) || /\d|\b(?:degree|bachelor|master|ielts|toefl|pte|duolingo|gpa|grade|diploma|certificate|english|average|experience|portfolio|interview)\b/i.test(line)
   return true
 }
 
 /** The lines of a page that speak about the topic, best first. */
-export function relevantPassages(text: string, topics: string[], course: string | null, max: number = RESEARCH.passagesPerPage): string[] {
+export function relevantPassages(text: string, topics: string[], course: string | null, max: number = RESEARCH.passagesPerPage, q: Qualification | null = null): string[] {
   const words = wordsFor(topics)
-  const courseWords = (course ?? '').toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length >= 4)
+  const courseWords = q ? q.words : (course ?? '').toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length >= 4)
   const lines = [...new Set(text.split('\n').flatMap((l) => (l.length > 400 ? l.split(/(?<=[.!?])\s+/) : [l])).map((l) => l.trim()).filter((l) => l.length >= 40 && l.length <= 400))]
   return lines
     .map((line, i) => {
       const lower = line.toLowerCase()
       const hits = words.filter((w) => lower.includes(w)).length
-      return { line, i, score: hits * 2 + courseWords.filter((w) => lower.includes(w)).length + (/\d/.test(line) ? 1 : 0) }
+      // A line that says the programme is closed to new students, or under transitional rules, is always worth keeping.
+      return { line, i, score: hits * 2 + courseWords.filter((w) => lower.includes(w)).length + (/\d/.test(line) ? 1 : 0) + (CLOSED_RE.test(line) ? 4 : 0) }
     })
     .filter((x) => x.score >= 2 && substantive(x.line, topics))
     .sort((a, b) => b.score - a.score || a.i - b.i)
@@ -270,9 +274,18 @@ export function relevantPassages(text: string, topics: string[], course: string 
 
 const HREF = /<a\b[^>]*?href=["']([^"'#]+)["'][^>]*>([\s\S]*?)<\/a>/gi
 /** Same-site links whose address or text matches the topic, best first. */
-export function relevantLinks(html: string, base: string, topics: string[], course: string | null): string[] {
+export function relevantLinks(html: string, base: string, topics: string[], course: string | null, q: Qualification | null = null): string[] {
+  return scoredLinks(html, base, topics, course, q).map((l) => l.url)
+}
+
+/** The same links with their scores, best first, so the crawl can read the most promising page next. */
+export function scoredLinks(html: string, base: string, topics: string[], course: string | null, q: Qualification | null = null): { url: string; score: number }[] {
   const words = wordsFor(topics)
-  const courseWords = (course ?? '').toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length >= 4)
+  const courseWords = q ? q.words : (course ?? '').toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length >= 4)
+  // Pages that list qualifications and their regulations lead to the programme-specific rules.
+  const hubWords = q ? ['qualification', 'regulation', 'calendar', 'postgraduate', 'programme'] : []
+  // A phrase ("information sciences") says far more than a common word ("science"), which also names every college and news item.
+  const weight = (w: string) => (w.includes(' ') ? 4 : 1)
   const host = new URL(base).hostname.replace(/^www\./, '')
   const scored = new Map<string, number>()
   for (const m of html.matchAll(HREF)) {
@@ -284,14 +297,20 @@ export function relevantLinks(html: string, base: string, topics: string[], cour
       if (/(^|[.-])(my|login|sso|moodle|portal|intranet|mail|webmail|lms|canvas|blackboard)[a-z]*\./i.test(u.hostname) || /\/(login|signin|sign-in|account|portal)\b/i.test(u.pathname)) continue
       if (/\.(pdf|jpe?g|png|gif|zip|docx?|xlsx?|mp4)$/i.test(u.pathname)) continue
       u.hash = ''
-      const hay = `${u.pathname} ${pageText(m[2])}`.toLowerCase()
-      const score = words.filter((w) => hay.includes(w)).length + courseWords.filter((w) => hay.includes(w)).length * 2
+      const label = pageText(m[2])
+      const hay = `${u.pathname.replace(/[-_/]+/g, ' ')} ${label}`.toLowerCase()
+      // A link that names a different qualification is not followed: its requirements would not be this one's.
+      if (q && isOtherQualification(label, q)) continue
+      // The page that lists every qualification is the way to the programme-specific rules, so it outranks general admissions pages.
+      const listing = q && /(?:all|find|browse|list of)[^.]{0,30}qualification|qualifications?\s+(?:and|&)\s+degrees|degrees?\s+(?:and|&)\s+programmes?|(?:programmes?|courses?)\s+a[\s-]*z/.test(label.toLowerCase()) ? 8 : 0
+      const noise = /\b(?:college|colleges|school of|research|news|staff|people|events|alumni|campus|careers|giving)\b/.test(hay) ? 5 : 0
+      const score = words.filter((w) => hay.includes(w)).length + courseWords.filter((w) => hay.includes(w)).reduce((n, w) => n + weight(w), 0) + hubWords.filter((w) => hay.includes(w)).length + listing - noise
       if (score > 0 && u.toString() !== base) scored.set(u.toString(), Math.max(scored.get(u.toString()) ?? 0, score))
     } catch {
       // Not a usable link.
     }
   }
-  return [...scored].sort((a, b) => b[1] - a[1]).map(([u]) => u).slice(0, 4)
+  return [...scored].sort((a, b) => b[1] - a[1]).slice(0, 6).map(([url, score]) => ({ url, score }))
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -421,11 +440,12 @@ export async function researchQuestion(input: ResearchInput, deps: ResearchDeps 
   let failure: string | null = null
   const topical = new Map<string, boolean>()
   const name = input.universities[0]?.name ?? input.universityName ?? null
+  const q = parseQualification(input.course)
   const query = name ? buildQuery(name, input.course, input.topics) : null
   try {
-    const queue: { url: string; via: ResearchSource['via']; publisher: string; depth: number }[] = []
+    const queue: { url: string; via: ResearchSource['via']; publisher: string; depth: number; score: number }[] = []
     for (const u of input.universities) {
-      for (const url of [...u.courseUrls.slice(0, 2), u.officialWebsite]) queue.push({ url, via: 'lockin_record', publisher: u.name, depth: 0 })
+      for (const url of [...u.courseUrls.slice(0, 2), u.officialWebsite]) queue.push({ url, via: 'lockin_record', publisher: u.name, depth: 0, score: 100 })
     }
     if (search && query) {
       try {
@@ -435,7 +455,7 @@ export async function researchQuestion(input: ResearchInput, deps: ResearchDeps 
           const h = new URL(u).hostname.replace(/^www\./, '')
           return known.some((k) => h === k || h.endsWith(`.${k}`)) || OFFICIAL_HOST.test(h)
         })
-        for (const url of (official.length ? official : found).slice(0, 3)) queue.push({ url, via: 'search', publisher: new URL(url).hostname, depth: 0 })
+        for (const url of (official.length ? official : found).slice(0, 3)) queue.push({ url, via: 'search', publisher: new URL(url).hostname, depth: 0, score: 90 })
       } catch {
         failure = 'The search service could not be reached.'
       }
@@ -444,12 +464,15 @@ export async function researchQuestion(input: ResearchInput, deps: ResearchDeps 
     const seen = new Set<string>()
     const topicWords = wordsFor(input.topics)
     // Pages are read three at a time, so the budget goes to more pages rather than waiting on one slow site.
-    let n = 0
-    while (n < queue.length && sources.length < RESEARCH.maxPages && !controller.signal.aborted) {
-      const batch = queue.slice(n, n + 3)
-      n += batch.length
-      const wave = batch.filter((q) => !seen.has(q.url))
-      wave.forEach((q) => seen.add(q.url))
+    let fetched = 0
+    let onTopicCount = 0 // pages about the asked topic; side pages read on the way do not use up the allowance
+    for (;;) {
+      if (onTopicCount >= RESEARCH.maxPages || fetched >= RESEARCH.maxFetches || controller.signal.aborted) break
+      // The most promising unread page goes next: a link that names the asked qualification beats a general admissions page.
+      const wave = queue.filter((x) => !seen.has(x.url)).sort((x, y) => y.score - x.score).slice(0, 3)
+      if (!wave.length) break
+      wave.forEach((x) => seen.add(x.url))
+      fetched += wave.length
       const pages = await Promise.all(wave.map((q) => get(q.url, controller.signal).catch(() => null)))
       wave.forEach((next, w) => {
         const page = pages[w]
@@ -457,14 +480,17 @@ export async function researchQuestion(input: ResearchInput, deps: ResearchDeps 
         const text = pageText(page.html)
         const published = pageDate(page.html, page.lastModified)
         const stale = isOutdated(published, now)
-        const passages = relevantPassages(text, input.topics, input.course)
-        // Follow the page's own links to the admissions, fees or deadlines page (up to two hops from a page LockIn holds).
-        if (next.depth < 2) for (const link of relevantLinks(page.html, page.url, input.topics, input.course)) queue.push({ url: link, via: 'linked_page', publisher: next.publisher, depth: next.depth + 1 })
         const title = pageTitle(page.html) || new URL(page.url).hostname
-        const onTopic = topicWords.some((word) => `${new URL(page.url).pathname} ${title}`.toLowerCase().includes(word))
+        // A page about another qualification is not read for evidence at all (and not followed from).
+        if (q && isOtherQualification(title, q)) return
+        const passages = relevantPassages(text, input.topics, input.course, /requirement|eligib|entry/.test(input.topics.join(' ')) ? 10 : RESEARCH.passagesPerPage, q)
+        // Follow the page's own links to the admissions, fees or deadlines page (up to two hops from a page LockIn holds).
+        if (next.depth < 3) for (const link of scoredLinks(page.html, page.url, input.topics, input.course, q)) queue.push({ url: link.url, via: 'linked_page', publisher: next.publisher, depth: next.depth + 1, score: link.score })
+        const onTopic = topicWords.some((word) => `${new URL(page.url).pathname} ${title}`.toLowerCase().includes(word)) || (q != null && matchesQualification(`${new URL(page.url).pathname} ${title}`, q))
         // A page about the topic is kept as a source even when its text gives no readable figure (tables and PDFs), so the answer can point to it.
         if (!passages.length && !onTopic) return
         topical.set(page.url, onTopic)
+        if (onTopic) onTopicCount++
         sources.push({ url: page.url, publisher: next.publisher, title, retrievedAt: today, published, outdated: stale, via: next.via })
         if (stale) outdated.push(`${new URL(page.url).hostname} (page last updated ${published})`)
         if (!passages.length)
@@ -498,7 +524,10 @@ export async function researchQuestion(input: ResearchInput, deps: ResearchDeps 
     for (let i = sources.length - 1; i >= 0; i--) if (!topical.get(sources[i].url)) sources.splice(i, 1)
     outdated.splice(0, outdated.length, ...sources.filter((x) => x.outdated).map((x) => `${new URL(x.url).hostname} (page last updated ${x.published})`))
   }
-  items.sort((a, b) => Number(/\d/.test(b.text)) - Number(/\d/.test(a.text)))
+  // Best first: lines from pages about the asked qualification, lines that say a programme is closed, then lines with figures.
+  const aboutAsked = new Set(sources.filter((x) => q != null && matchesQualification(`${new URL(x.url).pathname} ${x.title}`, q)).map((x) => x.url))
+  const rank = (i: EvidenceItem) => (aboutAsked.has(i.sourceUrl) ? 4 : 0) + (CLOSED_RE.test(i.text) ? 2 : 0) + (/english language|admission requirements/i.test(i.text) ? 2 : 0) + (/\d/.test(i.text) ? 1 : 0)
+  items.sort((x, y) => rank(y) - rank(x))
   if (!items.length && !failure) failure = 'The university pages that could be read did not state this.'
   return { items, record: { attempted: true, query, sources, conflicts: findConflicts(items, input.topics), outdated, official: input.universities.flatMap((u) => [...u.courseUrls.slice(0, 1), u.officialWebsite]), failure } }
 }

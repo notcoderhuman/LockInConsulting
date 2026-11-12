@@ -8,7 +8,7 @@ import { conversationHandler } from '@/lib/support/availability'
 import { autoReplyActive, getSupportSettings } from '@/lib/support/settings'
 import { TransitionError } from '@/lib/support/state'
 import { messageBody, reasonText } from '@/lib/support/validation'
-import { AUTO_REPLY_LIMITS, decideAutoReply, keepsQualifiers, NOT_CLEARED_HOLD, TEAM_ONLINE_HOLD } from './auto-reply'
+import { AUTO_REPLY_LIMITS, decideAutoReply, keepsQualifiers, maxCharsFor, NOT_CLEARED_HOLD, TEAM_ONLINE_HOLD } from './auto-reply'
 import { createProvider, derekDailyTokenLimit, derekMaxAttempts, getDerekStatus, type DerekStatus } from './config'
 import { loadEvidence } from './evidence'
 import { analyseQuestion, COMPARISON_TARGET_CHARS, studentPlanFromSubject } from './guidance'
@@ -16,6 +16,7 @@ import { commitAllowance, releaseAllowance, reserveAllowance } from './allowance
 import { DEREK_GENERATION_SECONDS } from '@/lib/support/state'
 import { evidenceCovers, findUniversitySites, researchQuestion, type ResearchResult } from './research'
 import { planFromSubject } from './suggestions'
+import { askedQualification, dropOtherCourseEvidence, parseQualification } from './qualification'
 import { DEREK_INSTRUCTIONS, type AiProvider, type DraftRequest, type EvidenceItem } from './provider'
 import { callProvider, MAX_ATTEMPTS, type CallOutcome } from './runtime'
 import { assessDraft, assessQuestion, combineRisk, MODEL_UNCERTAIN_REASON, redactPersonalData, trimUrl } from './safeguards'
@@ -128,7 +129,7 @@ export async function failAbandonedDrafts(pool: Pool, conversationId: number): P
 /** What the model is told about the research (it never sees the student; only what the pages said). */
 function researchNote(r: ResearchResult): string {
   if (!r.items.length) return `Web research: the university's own pages were checked and gave nothing usable (${r.record.failure ?? 'no relevant text'}). Start with [UNCERTAIN], say you could not verify this online, and that the LockIn team will confirm. Give no figure or date.`
-  const parts = ['Web research: the EVIDENCE lines marked UNVERIFIED from web pages are the university\'s own pages, read just now. Use them only on the UNVERIFIED line, name the page, give its link, and tell the student to confirm on the official page.']
+  const parts = ['Web research: the EVIDENCE lines marked UNVERIFIED from web pages are the university\'s own pages, read just now. Use them only on the UNVERIFIED line, name the page, give its link, and tell the student to confirm on the official page. When these lines state the answer, give it directly and completely, without [UNCERTAIN] and without saying LockIn has not verified it: the source is the university itself.']
   if (r.record.outdated.length) parts.push(`Some pages are old (${r.record.outdated.join('; ')}): say that the information may be out of date and start with [UNCERTAIN].`)
   if (r.record.conflicts.length) parts.push(`The sources disagree (${r.record.conflicts.join('; ')}): say so plainly, do not pick one as correct, and start with [UNCERTAIN].`)
   return parts.join(' ')
@@ -302,6 +303,9 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     // "What about Italy?" looks up evidence with the earlier question's context too.
     const lookup = analyseQuestion(question, [], earlier).isFollowUp ? `${earlier}\n${claim.question}` : claim.question
     evidence = await (deps.loadEvidence ?? loadEvidence)(pool, lookup)
+    // Records about another course of the university are not evidence for the asked qualification (lib/derek/qualification.ts).
+    const askedText = planFromSubject(claim.subject).course ?? askedQualification(claim.question)
+    evidence = dropOtherCourseEvidence(evidence, parseQualification(askedText))
     const analysed = analyseQuestion(question, evidence, earlier, history.filter((h) => h.role === 'team').at(-1)?.text)
     // On the free tier nothing about the student is sent beyond the question (the privacy notice says so): the chosen course and
     // destination are used on LockIn's side only (evidence lookup, research), never put in the text sent to Google.
@@ -318,7 +322,7 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     // Research: only for a factual question about a named university that LockIn's records do not answer, and never
     // for a high-risk topic (visa, legal, distress), which goes to a person. Nothing about the student leaves the server.
     // "Do not answer" is decided by what LockIn holds for THIS course: a fee for another course of the same university does not count.
-    const asked = planFromSubject(claim.subject).course
+    const asked = askedText
     if (guidance.kind === 'specific_fact' && !evidenceCovers(evidence, guidance.topics, asked) && assessQuestion(claim.question, evidence, { general: false }).level !== 'high') {
       const localEarlier = (await selectRows(pool, "SELECT body FROM messages WHERE conversation_id = ? AND author_kind = 'student' AND id < ? ORDER BY id DESC LIMIT 6", [conversationId, claim.firstPendingId])).map((m) => String(m.body)).join('\n')
       const universities = await findUniversitySites(pool, `${localEarlier}\n${claim.question}`).catch(() => [])
@@ -433,7 +437,7 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     const body = preliminary ? `${PRELIMINARY_NOTE}\n\n${text.data}${pointer}` : text.data
     if (preliminary) risk.reasons = [PRELIMINARY_REASON, ...flags]
     // Editorial findings are for the reviewer (and stop automatic sending); they do not raise the risk level.
-    if (!claim.fixed) risk.reasons.push(...styleIssues(body).map((s) => `Style: ${s}`))
+    if (!claim.fixed) risk.reasons.push(...styleIssues(body, { maxWords: maxCharsFor(evidence) > AUTO_REPLY_LIMITS.maxChars ? 450 : 220 }).map((s) => `Style: ${s}`))
     await conn.query(
       "INSERT INTO ai_draft_revisions (draft_id, revision, body, body_sha256, created_by_kind, created_by) VALUES (?, ?, ?, ?, 'derek', NULL)",
       [claim.draftId, Number(draft.current_revision) + 1, body, sha256(body)],
@@ -539,7 +543,7 @@ async function shortenIfTooLong(
   if (!outcome.ok) return outcome
   const original = tidyDraft(outcome.result.text)
   const budget = options.maxAttempts ?? MAX_ATTEMPTS
-  if (!request.guidance || original.length <= AUTO_REPLY_LIMITS.maxChars || outcome.attempts >= budget || !(await autoReplyPossible())) return outcome
+  if (!request.guidance || original.length <= maxCharsFor(request.evidence) || outcome.attempts >= budget || !(await autoReplyPossible())) return outcome
   const guidance = { ...request.guidance, note: `${request.guidance.note} ${shorteningInstruction(original)}` }
   const shorter = await callProvider(provider, { ...request, guidance }, { ...options, maxAttempts: 1 })
   const spent = { attempts: outcome.attempts + shorter.attempts, latencyMs: outcome.latencyMs + shorter.latencyMs }
@@ -548,7 +552,7 @@ async function shortenIfTooLong(
     outputTokens: (outcome.result.usage?.outputTokens ?? 0) + (shorter.ok ? (shorter.result.usage?.outputTokens ?? 0) : 0),
   }
   const text = shorter.ok ? tidyDraft(shorter.result.text) : ''
-  if (shorter.ok && text.length <= AUTO_REPLY_LIMITS.maxChars && keepsQualifiers(original, text))
+  if (shorter.ok && text.length <= maxCharsFor(request.evidence) && keepsQualifiers(original, text))
     return { ok: true, result: { ...shorter.result, uncertain: outcome.result.uncertain || shorter.result.uncertain, usage }, ...spent }
   return { ...outcome, result: { ...outcome.result, usage }, ...spent } // keep the original: it stays held for its length
 }
@@ -623,7 +627,7 @@ export async function handOffToDerek(pool: Pool, conversationId: number, deps: {
       text: String(revision.body),
       // The text is unchanged since it passed every check against its evidence when it was drafted (a team edit makes it ineligible
       // above), so its links are not re-judged against evidence this hand-off does not load.
-      evidence: (String(revision.body).match(/https?:\/\/\S+/gi) ?? []).map((u) => ({ ref: 'handoff', text: '', sourceUrl: trimUrl(u), publisher: '', checkedAt: '' })),
+      evidence: (String(revision.body).match(/https?:\/\/\S+/gi) ?? []).map((u) => ({ ref: parseResearch(draft.research)?.sources.length ? 'web:handoff' : 'handoff', text: '', sourceUrl: trimUrl(u), publisher: '', checkedAt: '' })),
       handoff: true,
     })
     if (!decision.send) return none

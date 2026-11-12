@@ -54,6 +54,9 @@ export function factTopicsIn(text: string): string[] {
 
 const INR_CONVERSION = 'Draft converts to INR'
 
+/** A guarantee that is denied ("does not guarantee", "no guarantee", "is not guaranteed", "cannot guarantee"). */
+const NEGATED_GUARANTEE = /\b(?:does|do|did|will|would|can|could|should)\s*(?:not|n['’]t)\s+(?:\w+\s+)?guarantee[ds]?\b|\b(?:cannot|can['’]t|won['’]t|doesn['’]t|don['’]t|never)\s+(?:\w+\s+)?guarantee[ds]?\b|\bno\s+(?:\w+\s+)?guarantee[ds]?\b|\b(?:is|are|was|were)(?:\s+not|n['’]t)\s+(?:\w+\s+)?guaranteed\b|\bnot\s+guaranteed\b/gi
+
 const FORBIDDEN_CLAIMS:[RegExp, string][] = [
   // Derek is the AI assistant; only staff messages carry a person's identity.
   [/\b(?:i am|i'm|i’m|as) (?:a |an )?(?:human|real person|counsell?or|advis[eo]r at lockin|member of (?:the )?lockin team|lockin (?:staff|employee|counsell?or))\b/i, 'Draft claims to be a person'],
@@ -168,8 +171,10 @@ export function assessDraft(
   const reasons = [...question.reasons]
   if (modelUncertain) (level = worst(level, 'uncertain')), reasons.push(MODEL_UNCERTAIN_REASON)
   const quotesInr = evidence.some((e) => e.ref.endsWith(':inr'))
+  // "Meeting the minimum does not guarantee admission" is the honest sentence, not a guarantee: negated forms are not scanned.
+  const claimText = draft.replace(NEGATED_GUARANTEE, ' ')
   for (const [re, label] of FORBIDDEN_CLAIMS)
-    if (re.test(draft) && !(label === INR_CONVERSION && quotesInr)) (level = worst(level, 'high')), reasons.push(label)
+    if (re.test(claimText) && !(label === INR_CONVERSION && quotesInr)) (level = worst(level, 'high')), reasons.push(label)
   // Every sourced fact names its source: each line under the directory label, and any figure at all.
   if (evidence.length) {
     const allowed = evidenceUrls(evidence)

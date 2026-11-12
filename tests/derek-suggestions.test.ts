@@ -86,5 +86,7 @@ describe('"has joined your chat" across tabs', () => {
     const src = read('components/support/team-presence.tsx')
     expect(src).toMatch(/new Notification\('LockIn', \{ body: joinedText\(name\), tag: TAG \}\)/) // no message text in the notification
     expect(src).not.toMatch(/requestPermission\(\)[^]*useEffect/) // permission is asked from a click, not on load
+    // A visible tab in an unfocused window still notifies (only a focused, visible tab counts as read).
+    expect(src).toMatch(/if \(!\(document\.visibilityState === 'visible' && document\.hasFocus\(\)\)\) \{/)
   })
 })

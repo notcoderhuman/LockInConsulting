@@ -97,7 +97,7 @@ export function TeamPresence() {
     let cancelled = false
     let timer: ReturnType<typeof setTimeout> | undefined
     const restoreTitle = () => {
-      if (document.visibilityState === 'visible' && baseTitle.current != null) {
+      if (document.visibilityState === 'visible' && document.hasFocus() && baseTitle.current != null) {
         document.title = baseTitle.current
         baseTitle.current = null
       }
@@ -113,7 +113,8 @@ export function TeamPresence() {
           lastJoin.current = body.joinedAt
           const who = { name: body.name, conversationId: body.conversationId ?? null }
           setJoined(who)
-          if (document.visibilityState === 'hidden') {
+          // "Looking at it" needs focus too: a visible tab in a window behind another app is not being read.
+          if (!(document.visibilityState === 'visible' && document.hasFocus())) {
             if (baseTitle.current == null) baseTitle.current = document.title
             document.title = `● ${joinedText(body.name)}`
             await onceAcrossTabs(body.joinedAt, () => systemNotify(who.name, who.conversationId))
@@ -137,11 +138,13 @@ export function TeamPresence() {
       if (document.visibilityState === 'visible') void load()
     }
     window.addEventListener('online', onBack)
+    window.addEventListener('focus', restoreTitle)
     document.addEventListener('visibilitychange', onBack)
     return () => {
       cancelled = true
       if (timer) clearTimeout(timer)
       restoreTitle()
+      window.removeEventListener('focus', restoreTitle)
       window.removeEventListener('online', onBack)
       document.removeEventListener('visibilitychange', onBack)
     }

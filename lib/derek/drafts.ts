@@ -426,7 +426,9 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     const preliminary =
       !claim.fixed && !outcome.result.incomplete && risk.level === 'uncertain' && (outcome.result.uncertain === true || flags.length > 0 || risk.reasons.some((r) => ORDINARY_UNCERTAIN_REASONS.has(r))) && risk.reasons.every((r) => r === MODEL_UNCERTAIN_REASON || flags.includes(r) || ORDINARY_UNCERTAIN_REASONS.has(r) || (research != null && r.startsWith('No verified evidence for')))
     // A preliminary answer always points to an official page: the one research found about the topic, else the university's own site that LockIn holds.
-    const officialPage = research ? (research.record.sources[0]?.url ?? research.record.official?.[0] ?? null) : null
+    // The general page about the topic beats a side page ("non-tuition fees"): prefer a source that is not a "non-" page, then the shortest address.
+    const bestSource = research ? [...research.record.sources].sort((x, y) => Number(/\bnon-/.test(x.url)) - Number(/\bnon-/.test(y.url)) || x.url.length - y.url.length)[0]?.url : undefined
+    const officialPage = research ? (bestSource ?? research.record.official?.[0] ?? null) : null
     const pointer = preliminary && officialPage && !text.data.includes(officialPage) ? `\n\nOfficial page to check: ${officialPage}` : ''
     const body = preliminary ? `${PRELIMINARY_NOTE}\n\n${text.data}${pointer}` : text.data
     if (preliminary) risk.reasons = [PRELIMINARY_REASON, ...flags]

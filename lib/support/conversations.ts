@@ -7,6 +7,7 @@ import type { StudentActor } from '@/lib/student/access'
 import { attributionLabel, type AuthorKind } from './attribution'
 import { assertActor, inTransaction, isDuplicate, selectRows, sha256, SupportError, type Row } from './db'
 import { createNotification, markConversationNotificationsRead, staffViewer } from './notifications'
+import { ALLOWANCE_NOTICE, getAllowance } from '@/lib/derek/allowance'
 import { suggestQuestions } from '@/lib/derek/suggestions'
 import { conversationHandler } from './availability'
 import { autoReplyActive, getSupportSettings } from './settings'
@@ -349,10 +350,13 @@ export async function getStudentMessages(db: Db, student: StudentActor, conversa
     derekWriting =
       derek.state === 'ready' && settings.autoReplyEnabled && (fixed || autoReplyActive(settings, derek)) && !(await conversationHandler(db, conversationId)) // else the team member in this chat answers
   }
+  // The student's daily Derek allowance: shown in the chat, and what the waiting notice says once it is used up.
+  const allowance = await getAllowance(db, student.profileId)
+  const exhausted = allowance.remaining === 0 && !derekWriting && !(await conversationHandler(db, conversationId))
   // After Derek's latest answer, two or three follow-up questions built from this student's own course, university
   // and question (lib/derek/suggestions.ts). Nothing while a reply is pending or after a person answered.
   let suggestions: string[] = []
-  if (!waiting && before == null) {
+  if (!waiting && before == null && allowance.remaining > 0) {
     const [latest] = await selectRows(db, 'SELECT author_kind FROM messages WHERE conversation_id = ? ORDER BY id DESC LIMIT 1', [conversationId])
     if (latest?.author_kind === 'derek') {
       const asked = await selectRows(db, "SELECT body FROM messages WHERE conversation_id = ? AND author_kind = 'student' ORDER BY id DESC LIMIT 10", [conversationId])
@@ -365,7 +369,8 @@ export async function getStudentMessages(db: Db, student: StudentActor, conversa
       subject: String(conv[0].subject),
       suggestions,
       statusLabel: isConversationStatus(status) ? STUDENT_STATUS_LABEL[status] : 'Waiting for the LockIn team',
-      acknowledgement: !waiting ? null : derekWriting ? DEREK_WRITING : draft === 'failed' ? DEREK_FAILED : STUDENT_ACKNOWLEDGEMENT,
+      acknowledgement: !waiting ? null : derekWriting ? DEREK_WRITING : exhausted ? ALLOWANCE_NOTICE : draft === 'failed' ? DEREK_FAILED : STUDENT_ACKNOWLEDGEMENT,
+      allowance,
       /** The client checks back quickly while true. */
       replyPending: derekWriting,
     },

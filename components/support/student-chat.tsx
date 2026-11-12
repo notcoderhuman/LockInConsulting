@@ -29,6 +29,11 @@ interface Message {
   createdAt: string
 }
 
+interface Allowance {
+  limit: number
+  remaining: number
+}
+
 interface Pending {
   key: string
   body: string
@@ -91,6 +96,7 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
   const [acknowledgement, setAcknowledgement] = useState<string | null>(null)
   const [replyPending, setReplyPending] = useState(false)
   const [suggestions, setSuggestions] = useState<string[]>([])
+  const [allowance, setAllowance] = useState<Allowance | null>(null)
   const [pending, setPending] = useState<Pending[]>([])
   const [draft, setDraft] = useState('')
   const [loadingOlder, setLoadingOlder] = useState(false)
@@ -112,6 +118,7 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
     const r = await api('/api/student/conversations')
     if (!r.ok) return setListState(stateFor(r.status))
     setList((r.data.conversations as Summary[]) ?? [])
+    if (r.data.allowance) setAllowance(r.data.allowance as Allowance)
     setListState('ready')
   }, [])
 
@@ -126,12 +133,13 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
       if (r.status === 401) setListState('signed_out')
       return false
     }
-    const conv = r.data.conversation as { subject: string; statusLabel: string; acknowledgement?: string | null; replyPending?: boolean; suggestions?: string[] }
+    const conv = r.data.conversation as { subject: string; statusLabel: string; acknowledgement?: string | null; replyPending?: boolean; suggestions?: string[]; allowance?: Allowance }
     setSubject(conv.subject)
     setStatusLabel(conv.statusLabel)
     setAcknowledgement(conv.acknowledgement ?? null)
     setReplyPending(conv.replyPending === true)
     setSuggestions(Array.isArray(conv.suggestions) ? conv.suggestions.slice(0, 3) : [])
+    if (conv.allowance) setAllowance(conv.allowance)
     const incoming = r.data.messages as Message[]
     // Never shows a message twice (a send's own reload and a poll can both return it) and keeps id order.
     const fresh = incoming.filter((m) => !messagesRef.current.some((s) => s.id === m.id))
@@ -443,6 +451,12 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
             aria-describedby="student-message-hint"
             className={controlClass}
           />
+          {allowance ? (
+            <p role="status" aria-live="polite" className={cn('text-xs', allowance.remaining === 0 ? 'text-foreground' : 'text-muted-foreground')}>
+              {`Derek responses remaining today: ${allowance.remaining}/${allowance.limit}`}
+              {allowance.remaining === 0 ? ' · Derek is paused until midnight India time (12:00 am IST). You can keep messaging: Dev and the team still reply.' : ''}
+            </p>
+          ) : null}
           <div className="flex items-center justify-between gap-3">
             <span id="student-message-hint" className="text-xs text-muted-foreground">{`Enter to send, Shift+Enter for a new line · ${draft.length}/${MAX}`}</span>
             <Button type="submit" disabled={!draft.trim() || pending.some((p) => p.state === 'sending')}>

@@ -15,7 +15,6 @@ import { styleIssues } from './style'
 export const AUTO_REPLY_LIMITS = {
   /** Auto replies are for short, ordinary answers; anything longer waits for a person. */
   maxChars: 900,
-  perStudentPerDay: 10,
   globalPerHour: 60,
   globalPerDay: 300,
 }
@@ -93,15 +92,11 @@ export async function decideAutoReply(
   const [usage] = await selectRows(
     conn,
     `SELECT COUNT(*) AS day,
-            COALESCE(SUM(m.created_at > UTC_TIMESTAMP(3) - INTERVAL 1 HOUR), 0) AS hour,
-            COALESCE(SUM(s.user_id = ?), 0) AS student
+            COALESCE(SUM(m.created_at > UTC_TIMESTAMP(3) - INTERVAL 1 HOUR), 0) AS hour
        FROM messages m
-       JOIN conversations c ON c.id = m.conversation_id
-       JOIN student_profiles s ON s.id = c.student_profile_id
       WHERE m.author_kind = 'derek' AND m.reviewed_by IS NULL AND m.created_at > UTC_TIMESTAMP(3) - INTERVAL 1 DAY`,
-    [String(conv.student_user_id)],
   )
-  if (Number(usage.student) >= AUTO_REPLY_LIMITS.perStudentPerDay) return hold('daily automatic-reply limit for this student reached')
+  // The per-student limit is the daily allowance (lib/derek/allowance.ts), taken when the answer is saved.
   if (Number(usage.hour) >= AUTO_REPLY_LIMITS.globalPerHour) return hold('hourly automatic-reply limit reached')
   if (Number(usage.day) >= AUTO_REPLY_LIMITS.globalPerDay) return hold('daily automatic-reply limit reached')
   // Last, so a draft held for this reason passed every other check: while a team member is actively handling

@@ -2,6 +2,7 @@ import { getAdminPool } from '@/lib/db/pool'
 import { scheduleDerekDraft } from '@/lib/derek/schedule'
 import { requireStudentApi } from '@/lib/student/access'
 import { handleError, json, readJson } from '@/lib/student/http'
+import { getAllowance } from '@/lib/derek/allowance'
 import { createConversation, listStudentConversations } from '@/lib/support/conversations'
 
 // The signed-in student's own conversations. The student is derived from the session only.
@@ -10,7 +11,8 @@ export async function GET(request: Request) {
   const student = await requireStudentApi(request)
   if (student instanceof Response) return student
   try {
-    return json({ conversations: await listStudentConversations(getAdminPool(), student) })
+    const db = getAdminPool()
+    return json({ conversations: await listStudentConversations(db, student), allowance: await getAllowance(db, student.profileId) })
   } catch (error) {
     return handleError(error, 'Your conversations could not be loaded.')
   }

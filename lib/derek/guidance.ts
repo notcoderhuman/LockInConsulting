@@ -52,6 +52,10 @@ export function studentPlanFromSubject(subject: string): string | null {
   return `I plan to study ${course} in ${destination.shortName}.`
 }
 
+/** LockIn already holds a fact (not just a university's listing) that may answer a factual question. */
+export const hasFactEvidence = (evidence: EvidenceItem[]) =>
+  evidence.some((e) => !/^(draft_)?university:/.test(e.ref) || /tuition|fee|rank|intake|deadline|acceptance|requirement/i.test(e.text))
+
 /** Target length for a country comparison: inside the 900-character automatic-send limit with room to spare. */
 export const COMPARISON_TARGET_CHARS = { min: 500, max: 700 } as const
 
@@ -75,7 +79,7 @@ export function analyseQuestion(question: string, evidence: EvidenceItem[], earl
   // A university's identity line (verified or draft) is a listing, not a fact.
   const isListing = (e: EvidenceItem) => /^(draft_)?university:/.test(e.ref)
   const hasUniversityEvidence = evidence.some(isListing)
-  const hasFactEvidence = evidence.some((e) => !isListing(e) || /tuition|fee|rank|intake|deadline|acceptance|requirement/i.test(e.text))
+  const hasFactEvidenceNow = hasFactEvidence(evidence)
   const knowsLevel = STUDY_LEVEL.test(all)
   const knowsSubject = SUBJECT.test(all)
 
@@ -87,7 +91,7 @@ export function analyseQuestion(question: string, evidence: EvidenceItem[], earl
   // Concept questions ("What is a conditional offer?") need no follow-up; open-ended planning ones do.
   const openEnded = OPEN_ENDED.test(question) && !CONCEPT.test(question)
   const askFollowUp =
-    (kind === 'specific_fact' && !hasFactEvidence) ||
+    (kind === 'specific_fact' && !hasFactEvidenceNow) ||
     (kind === 'broad_destination' && !(knowsLevel && knowsSubject)) ||
     (kind === 'general' && openEnded && !(knowsLevel && knowsSubject))
 
@@ -126,7 +130,7 @@ export function analyseQuestion(question: string, evidence: EvidenceItem[], earl
     )
   if (kind === 'specific_fact')
     notes.push(
-      hasFactEvidence
+      hasFactEvidenceNow
         ? `The student asks about ${topics.join(', ')}. Use ONLY the matching EVIDENCE lines for these facts, with their sources: verified ones on the "${DIRECTORY_LABEL}" line, UNVERIFIED ones only on the "${UNVERIFIED_LABEL}" line. Anything not in EVIDENCE is unknown.`
         : `The student asks about ${topics.join(', ')}${where}, but LockIn has no verified record for it. Start with [UNCERTAIN]. Say in one sentence that LockIn has not verified this yet, give brief general guidance on where to check (the official university course page), and do not give any figure, date or range.`,
     )

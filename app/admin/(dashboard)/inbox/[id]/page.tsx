@@ -164,6 +164,30 @@ export default async function ConversationPage({ params, searchParams }: { param
                         ))}
                       </ul>
                     ) : null}
+                    {d.research ? (
+                      <div className="flex flex-col gap-1 rounded-md border border-border bg-background px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+                        <span className="font-medium text-foreground">
+                          {d.research.failure ? `Web research: ${d.research.failure}` : `Web research: ${d.research.sources.length} page${d.research.sources.length === 1 ? '' : 's'} read`}
+                        </span>
+                        {d.research.conflicts.map((c) => (
+                          <span key={c} className="font-medium text-destructive">{`Conflict: ${c}`}</span>
+                        ))}
+                        {d.research.outdated.map((o) => (
+                          <span key={o} className="font-medium text-destructive">{`Outdated: ${o}`}</span>
+                        ))}
+                        <ul className="flex flex-col gap-0.5">
+                          {d.research.sources.map((src) => (
+                            <li key={src.url}>
+                              <a href={src.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                                {src.title}
+                              </a>
+                              {` · ${src.publisher} · read ${src.retrievedAt}${src.published ? ` · page dated ${src.published}` : ''}`}
+                            </li>
+                          ))}
+                        </ul>
+                        {d.research.query ? <span>{`Search wording: ${d.research.query}`}</span> : null}
+                      </div>
+                    ) : null}
                     {d.status === 'ready' && canReviewAi && d.body && d.bodySha256 ? (
                       <DraftReviewForms key={d.id} draftId={d.id} revision={d.revision} bodySha256={d.bodySha256} body={d.body} />
                     ) : d.body ? (

@@ -11,7 +11,10 @@ import { messageBody, reasonText } from '@/lib/support/validation'
 import { AUTO_REPLY_LIMITS, decideAutoReply, keepsQualifiers, TEAM_ONLINE_HOLD } from './auto-reply'
 import { createProvider, derekDailyTokenLimit, derekMaxAttempts, getDerekStatus, type DerekStatus } from './config'
 import { loadEvidence } from './evidence'
-import { analyseQuestion, COMPARISON_TARGET_CHARS, studentPlanFromSubject } from './guidance'
+import { analyseQuestion, COMPARISON_TARGET_CHARS, hasFactEvidence, studentPlanFromSubject } from './guidance'
+import { commitAllowance, releaseAllowance, reserveAllowance } from './allowance'
+import { findUniversitySites, researchQuestion, type ResearchResult } from './research'
+import { planFromSubject } from './suggestions'
 import { DEREK_INSTRUCTIONS, type AiProvider, type DraftRequest, type EvidenceItem } from './provider'
 import { callProvider, MAX_ATTEMPTS, type CallOutcome } from './runtime'
 import { assessDraft, assessQuestion, combineRisk, MODEL_UNCERTAIN_REASON, redactPersonalData } from './safeguards'
@@ -47,6 +50,7 @@ export type WorkerOutcome =
   | { state: 'stale' }
   | { state: 'ineligible' } // provider policy forbids this student (no recorded 18+ confirmation)
   | { state: 'quota' } // provider's daily draft cap reached
+  | { state: 'allowance' } // the student's 10 Derek answers for today are used: a person answers
   | { state: 'taken_over' } // a team member is handling this conversation; Derek stays out
   | { state: 'deferred' } // small talk after an unanswered message: that message is answered instead
   | { state: 'superseded'; draftId: number }
@@ -61,9 +65,44 @@ export interface WorkerDeps {
   loadEvidence?: (db: Pool, question: string) => Promise<EvidenceItem[]>
   /** A team member asked for this draft, so it is prepared even in a taken-over conversation. */
   manual?: boolean
+  /** Web research for a factual question LockIn's records cannot answer. Tests inject a fake; production reads the university's own pages. */
+  research?: (input: Parameters<typeof researchQuestion>[0]) => Promise<ResearchResult>
+  /** The clock for the daily allowance (tests move it across midnight IST). */
+  now?: () => Date
 }
 
 const HISTORY_TURNS = 6
+
+/** What the model is told about the research (it never sees the student; only what the pages said). */
+function researchNote(r: ResearchResult): string {
+  if (!r.items.length) return `Web research: the university's own pages were checked and gave nothing usable (${r.record.failure ?? 'no relevant text'}). Start with [UNCERTAIN], say you could not verify this online, and that the LockIn team will confirm. Give no figure or date.`
+  const parts = ['Web research: the EVIDENCE lines marked UNVERIFIED from web pages are the university\'s own pages, read just now. Use them only on the UNVERIFIED line, name the page, give its link, and tell the student to confirm on the official page.']
+  if (r.record.outdated.length) parts.push(`Some pages are old (${r.record.outdated.join('; ')}): say that the information may be out of date and start with [UNCERTAIN].`)
+  if (r.record.conflicts.length) parts.push(`The sources disagree (${r.record.conflicts.join('; ')}): say so plainly, do not pick one as correct, and start with [UNCERTAIN].`)
+  return parts.join(' ')
+}
+
+/** Reasons a researched answer is flagged for the team (empty: the sources agree and are recent, or no research was needed). */
+export function researchFlags(r: ResearchResult): string[] {
+  const flags: string[] = []
+  if (!r.items.length) flags.push(`Web research could not verify this: ${r.record.failure ?? 'nothing relevant was found'}`)
+  for (const c of r.record.conflicts) flags.push(`Sources conflict: ${c}`)
+  for (const o of r.record.outdated) flags.push(`Outdated source: ${o}`)
+  return flags
+}
+
+async function notifyPreliminary(conn: PoolConnection, conversationId: number, draftId: number, flags: string[]) {
+  const why = flags.some((f) => f.startsWith('Sources conflict')) ? 'the sources conflict' : flags.some((f) => f.startsWith('Outdated')) ? 'the only source is out of date' : flags.some((f) => f.startsWith('Web research')) ? 'web research found nothing' : 'he was not sure'
+  // One notification per draft, however many paths send it.
+  await createNotification(conn, {
+    audience: 'staff_support',
+    kind: 'high_risk',
+    conversationId,
+    title: `Derek sent a preliminary answer in conversation #${conversationId} (${why}) — please confirm or correct it`,
+    targetPath: `/admin/inbox/${conversationId}`,
+    dedupeKey: `derek-preliminary:${draftId}`,
+  })
+}
 
 export async function prepareDerekDraft(pool: Pool, conversationId: number, triggerMessageId: number, deps: WorkerDeps = {}): Promise<WorkerOutcome> {
   const status = deps.status ?? getDerekStatus()
@@ -112,7 +151,7 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
         throw e
       })
       if (res === 'duplicate') return 'duplicate' as const
-      return { draftId: Number((res as { insertId: number }).insertId), question: classification.question, classification, fixed, firstPendingId, plan: studentPlanFromSubject(String(conv.subject ?? '')), identity: undefined }
+      return { draftId: Number((res as { insertId: number }).insertId), question: classification.question, classification, fixed, firstPendingId, plan: studentPlanFromSubject(String(conv.subject ?? '')), subject: String(conv.subject ?? ''), identity: undefined }
     }
 
     // 18+ gate, for every provider whatever its adapter declares: no recorded 18+ confirmation, no
@@ -142,7 +181,25 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
         provider.id,
         provider.model,
       ])
-      return { draftId: Number((res as { insertId: number }).insertId), question: classification.question, classification, fixed: null, firstPendingId, plan: studentPlanFromSubject(String(conv.subject ?? '')), identity }
+      const draftId = Number((res as { insertId: number }).insertId)
+      // The student's daily allowance (lib/derek/allowance.ts): a slot is taken before anything is generated.
+      // None left: no provider call, no search; the question waits in the Live Inbox for a person.
+      if (!(await reserveAllowance(conn, Number(conv.student_profile_id), draftId, deps.now?.()))) {
+        await conn.query("UPDATE ai_drafts SET status = 'failed', error_code = 'allowance_reached' WHERE id = ?", [draftId])
+        await applyEvent(conn, { id: conversationId, status: conv.status }, { type: 'ai_failed' }, { kind: 'system', id: null }, 'Derek daily allowance reached').catch((e) => {
+          if (!(e instanceof TransitionError)) throw e
+        })
+        await createNotification(conn, {
+          audience: 'staff_support',
+          kind: 'ai_failure',
+          conversationId,
+          title: `The student in conversation #${conversationId} has used today’s 10 Derek answers — a person needs to answer`,
+          targetPath: `/admin/inbox/${conversationId}`,
+          dedupeKey: `allowance:${conversationId}:${triggerMessageId}`,
+        })
+        return 'allowance' as const
+      }
+      return { draftId, question: classification.question, classification, fixed: null, firstPendingId, plan: studentPlanFromSubject(String(conv.subject ?? '')), subject: String(conv.subject ?? ''), identity }
     } catch (e) {
       if (isDuplicate(e)) return 'duplicate' as const
       throw e
@@ -151,6 +208,7 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
   if (claim === 'duplicate') return { state: 'duplicate' }
   if (claim === 'ineligible') return { state: 'ineligible' }
   if (claim === 'quota') return { state: 'quota' }
+  if (claim === 'allowance') return { state: 'allowance' }
   if (claim === 'taken_over') return { state: 'taken_over' }
   if (claim === 'deferred') return { state: 'deferred' }
   if (!claim) return { state: 'stale' }
@@ -160,6 +218,7 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
   let evidence: EvidenceItem[] = []
   let outcome: CallOutcome
   let general = false
+  let research: ResearchResult | null = null
   let held: string | null = null
   if (claim.fixed) outcome = { ok: true, result: { text: claim.fixed, model: RULES_MODEL }, attempts: 0, latencyMs: 0 }
   else if (freeTier && (held = screenForFreeTier(claim.question, { displayName: claim.identity?.displayName == null ? null : String(claim.identity.displayName), email: claim.identity?.email == null ? null : String(claim.identity.email) }))) {
@@ -180,10 +239,30 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     const lookup = analyseQuestion(question, [], earlier).isFollowUp ? `${earlier}\n${claim.question}` : claim.question
     evidence = await (deps.loadEvidence ?? loadEvidence)(pool, lookup)
     const analysed = analyseQuestion(question, evidence, earlier, history.filter((h) => h.role === 'team').at(-1)?.text)
-    const guidance = claim.plan && !freeTier
-      ? { ...analysed, note: `${analysed.note} The student told LockIn before asking: "${redactPersonalData(claim.plan)}" Use this and do not ask for it again.` }
+    // The student's chosen destination and course are not personal details: on the free tier they are sent too, unless the screening objects.
+    const planOk = Boolean(claim.plan) && (!freeTier || screenForFreeTier(claim.plan ?? '') === null)
+    let guidance = planOk
+      ? { ...analysed, note: `${analysed.note} The student told LockIn before asking: "${redactPersonalData(claim.plan ?? '')}" Use this and do not ask for it again.` }
       : analysed
     general = guidance.kind !== 'specific_fact'
+    // Research: only for a factual question about a named university that LockIn's records do not answer, and never
+    // for a high-risk topic (visa, legal, distress), which goes to a person. Nothing about the student leaves the server.
+    if (guidance.kind === 'specific_fact' && !hasFactEvidence(evidence) && assessQuestion(claim.question, evidence, { general: false }).level !== 'high') {
+      const localEarlier = (await selectRows(pool, "SELECT body FROM messages WHERE conversation_id = ? AND author_kind = 'student' AND id < ? ORDER BY id DESC LIMIT 6", [conversationId, claim.firstPendingId])).map((m) => String(m.body)).join('\n')
+      const universities = await findUniversitySites(pool, `${localEarlier}\n${claim.question}`).catch(() => [])
+      // Tests never reach the network unless they inject a research function; DEREK_WEB_RESEARCH=off switches it off in production.
+      const doResearch = deps.research ?? (process.env.NODE_ENV === 'test' || process.env.DEREK_WEB_RESEARCH === 'off' ? null : researchQuestion)
+      research = await doResearch?.({ topics: guidance.topics, course: planFromSubject(claim.subject).course, universities })?.catch(() => null) ?? null
+      if (research) {
+        evidence = [...evidence, ...research.items].slice(0, 30)
+        // What was read now counts as evidence, so the guidance is built again: it must not still say LockIn has nothing.
+        const again = analyseQuestion(question, evidence, earlier, history.filter((h) => h.role === 'team').at(-1)?.text)
+        guidance = {
+          ...again,
+          note: `${again.note}${planOk ? ` The student told LockIn before asking: "${redactPersonalData(claim.plan ?? '')}" Use this and do not ask for it again.` : ''} ${researchNote(research)}`,
+        }
+      }
+    }
     const request = { question, history, evidence, instructions: DEREK_INSTRUCTIONS, guidance }
     const options = deps.callOptions ?? { maxAttempts: derekMaxAttempts() }
     outcome = await callProvider(provider, request, options)
@@ -192,20 +271,26 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     outcome = await shortenIfTooLong(provider, request, options, outcome, autoReplyPossible)
   }
 
-  // 3. Record the result under the conversation lock.
-  return inTransaction(pool, async (conn) => {
+  // 3. Record the result under the conversation lock. If saving fails, the draft's allowance slot goes back.
+  try {
+  return await inTransaction(pool, async (conn) => {
     const conv = await lockConversation(conn, conversationId)
     const [draft] = await selectRows(conn, 'SELECT * FROM ai_drafts WHERE id = ? FOR UPDATE', [claim.draftId])
-    if (!draft || draft.status !== 'generating') return { state: 'superseded', draftId: claim.draftId }
+    if (!draft || draft.status !== 'generating') {
+      await releaseAllowance(conn, claim.draftId)
+      return { state: 'superseded', draftId: claim.draftId }
+    }
     const [answered] = await selectRows(conn, "SELECT id FROM messages WHERE conversation_id = ? AND id > ? AND author_kind <> 'student' LIMIT 1", [conversationId, triggerMessageId])
     // A newer question overtakes this draft (its own draft answers both); small talk does not.
     const newer = await selectRows(conn, "SELECT body FROM messages WHERE conversation_id = ? AND id > ? AND author_kind = 'student'", [conversationId, triggerMessageId])
     if (answered || newer.some((m) => !isSmallTalk(classifyMessage(String(m.body))))) {
       await conn.query("UPDATE ai_drafts SET status = 'superseded' WHERE id = ?", [claim.draftId])
+      await releaseAllowance(conn, claim.draftId)
       return { state: 'superseded', draftId: claim.draftId }
     }
 
     if (!outcome.ok) {
+      await releaseAllowance(conn, claim.draftId) // a failed generation never costs the student a slot
       await conn.query("UPDATE ai_drafts SET status = 'failed', error_code = ?, attempts = ?, latency_ms = ? WHERE id = ?", [
         outcome.code,
         outcome.attempts,
@@ -230,6 +315,7 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     // LockIn's fixed wording is sent exactly as written; only model text is tidied.
     const text = messageBody.safeParse(claim.fixed ?? tidyDraft(outcome.result.text))
     if (!text.success) {
+      await releaseAllowance(conn, claim.draftId)
       await conn.query("UPDATE ai_drafts SET status = 'failed', error_code = 'invalid_response', attempts = ? WHERE id = ?", [outcome.attempts, claim.draftId])
       await applyEvent(conn, { id: conversationId, status: conv.status }, { type: 'ai_failed' }, { kind: 'system', id: null }, 'Derek invalid_response').catch((e) => {
         if (!(e instanceof TransitionError)) throw e
@@ -240,16 +326,17 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     const asked = assessQuestion(claim.question, evidence, { general })
     const questionRisk = claim.fixed && asked.level !== 'high' ? { level: 'low' as const, reasons: [] } : asked
     const risk = combineRisk(assessDraft(text.data, questionRisk, evidence, { modelUncertain: outcome.result.uncertain }), scopeRisk(claim.classification))
-    // Owner rule (12 Nov 2026): when Derek himself is not sure, and nothing else about the question or the draft is
-    // risky, he still answers, opening with a plain statement that it is preliminary, and the team is asked to
-    // follow up. A truncated answer, a risky topic or any failed check still waits for a person.
+    // Web research that found a conflict, an outdated page or nothing at all is flagged for a person (Owner request, 12 Nov 2026).
+    const flags = research ? researchFlags(research) : []
+    for (const f of flags) risk.reasons.push(f)
+    if (flags.length && risk.level === 'low') risk.level = 'uncertain'
+    // Owner rule (12 Nov 2026): when Derek himself is not sure, or research could not settle it, and nothing else about the
+    // question or the draft is risky, he still answers, opening with a plain statement that it is preliminary, and the
+    // team is asked to follow up. A truncated answer, a risky topic or any failed check still waits for a person.
     const preliminary =
-      !claim.fixed && outcome.result.uncertain === true && !outcome.result.incomplete && risk.level === 'uncertain' && risk.reasons.every((r) => r === MODEL_UNCERTAIN_REASON)
+      !claim.fixed && !outcome.result.incomplete && risk.level === 'uncertain' && (outcome.result.uncertain === true || flags.length > 0) && risk.reasons.every((r) => r === MODEL_UNCERTAIN_REASON || flags.includes(r) || (research != null && r.startsWith('No verified evidence for')))
     const body = preliminary ? `${PRELIMINARY_NOTE}\n\n${text.data}` : text.data
-    if (preliminary) {
-      risk.level = 'low'
-      risk.reasons = [PRELIMINARY_REASON]
-    }
+    if (preliminary) risk.reasons = [PRELIMINARY_REASON, ...flags]
     // Editorial findings are for the reviewer (and stop automatic sending); they do not raise the risk level.
     if (!claim.fixed) risk.reasons.push(...styleIssues(body).map((s) => `Style: ${s}`))
     await conn.query(
@@ -257,12 +344,13 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
       [claim.draftId, body, sha256(body)],
     )
     await conn.query(
-      `UPDATE ai_drafts SET status = 'ready', current_revision = 1, risk_level = ?, risk_reasons = ?, evidence_refs = ?, model = ?,
+      `UPDATE ai_drafts SET status = 'ready', current_revision = 1, risk_level = ?, risk_reasons = ?, evidence_refs = ?, research = ?, model = ?,
               input_tokens = ?, output_tokens = ?, latency_ms = ?, attempts = ? WHERE id = ?`,
       [
         risk.level,
         JSON.stringify(risk.reasons),
         JSON.stringify(evidence.map((e) => e.ref)),
+        research ? JSON.stringify(research.record) : null,
         outcome.result.model.slice(0, 120),
         outcome.result.usage?.inputTokens ?? null,
         outcome.result.usage?.outputTokens ?? null,
@@ -280,26 +368,19 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
       provider,
       builtIn: claim.fixed != null,
       conv,
-      risk: risk.level,
+      risk: preliminary ? 'low' : risk.level,
       text: body,
       evidence,
     })
-    if (decision.send) {
-      const messageId = await deliverDraft(conn, conv, claim.draftId, body, null, {
-        provider: claim.fixed ? RULES_PROVIDER_ID : provider.id,
-        model: outcome.result.model.slice(0, 120),
-      })
-      if (preliminary)
-        await createNotification(conn, {
-          audience: 'staff_support',
-          kind: 'high_risk',
-          conversationId,
-          title: `Derek sent a preliminary answer he was not sure about in conversation #${conversationId} — please confirm or correct it`,
-          targetPath: `/admin/inbox/${conversationId}`,
-        })
+    const messageId = decision.send
+      ? await deliverDraft(conn, conv, claim.draftId, body, null, { provider: claim.fixed ? RULES_PROVIDER_ID : provider.id, model: outcome.result.model.slice(0, 120) }, deps.now?.())
+      : null
+    if (decision.send && messageId != null) {
+      if (preliminary) await notifyPreliminary(conn, conversationId, claim.draftId, flags)
       return { state: 'auto_sent', draftId: claim.draftId, messageId }
     }
-    const held = decision.heldReason
+    await releaseAllowance(conn, claim.draftId) // held for a person: nothing was delivered, so no slot is used
+    const held = decision.send ? 'the student’s daily Derek allowance was used up' : decision.heldReason
     if (held) await conn.query('UPDATE ai_drafts SET hold_reason = ? WHERE id = ?', [held.slice(0, 300), claim.draftId])
 
     try {
@@ -326,6 +407,10 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     })
     return { state: 'review', draftId: claim.draftId, risk: risk.level }
   })
+  } catch (error) {
+    await releaseAllowance(pool, claim.draftId).catch(() => {})
+    throw error
+  }
 }
 
 /**
@@ -399,7 +484,7 @@ export type HandoffOutcome = { state: 'none' } | { state: 'sent'; draftId: numbe
  * it send at most once. Everything is re-checked inside the lock: takeover, newer replies or
  * questions, risk, provider clearance, the kill switch, caps and the team still being offline.
  */
-export async function handOffToDerek(pool: Pool, conversationId: number, deps: { status?: DerekStatus } = {}): Promise<HandoffOutcome> {
+export async function handOffToDerek(pool: Pool, conversationId: number, deps: { status?: DerekStatus; now?: () => Date } = {}): Promise<HandoffOutcome> {
   const status = deps.status ?? getDerekStatus()
   const none = { state: 'none' } as const
   if (status.state !== 'ready') return none
@@ -438,15 +523,9 @@ export async function handOffToDerek(pool: Pool, conversationId: number, deps: {
       handoff: true,
     })
     if (!decision.send) return none
-    const messageId = await deliverDraft(conn, conv, Number(draft.id), String(revision.body), null, { provider: String(draft.provider), model: String(draft.model) })
-    if (String(draft.risk_reasons ?? '').includes(PRELIMINARY_REASON))
-      await createNotification(conn, {
-        audience: 'staff_support',
-        kind: 'high_risk',
-        conversationId,
-        title: `Derek sent a preliminary answer he was not sure about in conversation #${conversationId} — please confirm or correct it`,
-        targetPath: `/admin/inbox/${conversationId}`,
-      })
+    const messageId = await deliverDraft(conn, conv, Number(draft.id), String(revision.body), null, { provider: String(draft.provider), model: String(draft.model) }, deps.now?.())
+    if (messageId == null) return none // the student's allowance for today is used up: it stays with a person
+    if (String(draft.risk_reasons ?? '').includes(PRELIMINARY_REASON)) await notifyPreliminary(conn, conversationId, Number(draft.id), parseList(draft.risk_reasons).filter((r) => r !== PRELIMINARY_REASON && r !== MODEL_UNCERTAIN_REASON))
     return { state: 'sent', draftId: Number(draft.id), messageId }
   })
 }
@@ -459,8 +538,13 @@ async function deliverDraft(
   body: string,
   reviewer: AdminActor | null,
   automatic?: { provider: string; model: string },
-): Promise<number> {
+  now?: Date,
+): Promise<number | null> {
   const conversationId = Number(conv.id)
+  // Derek's AI answers count against the student's daily allowance; a team member's send, and LockIn's fixed replies, never do.
+  const countable = !reviewer && automatic?.provider !== RULES_PROVIDER_ID
+  const profileId = Number(conv.student_profile_id)
+  if (countable && !(await reserveAllowance(conn, profileId, draftId, now))) return null
   // Derek's first unreviewed answer after a person (or nobody) last replied says that he is taking over.
   if (!reviewer) {
     const notice = await handoffNotice(conn, conversationId)
@@ -479,6 +563,8 @@ async function deliverDraft(
     if (isDuplicate(e)) throw new SupportError(409, 'This draft has already been sent.')
     throw e
   }
+  // Counted in the same transaction as the message: both are saved, or neither.
+  if (countable && !(await commitAllowance(conn, profileId, draftId, now))) throw new SupportError(409, 'The daily Derek allowance is used up.')
   await conn.query("UPDATE ai_drafts SET status = 'sent' WHERE id = ?", [draftId])
   // Other open drafts in this conversation are now out of date.
   await conn.query("UPDATE ai_drafts SET status = 'superseded' WHERE conversation_id = ? AND id <> ? AND status IN ('generating', 'ready')", [conversationId, draftId])
@@ -605,7 +691,7 @@ export async function sendApprovedDraft(pool: Pool, actor: AdminActor, draftId: 
     )
     if (!approval) throw new SupportError(409, 'The current version of this draft has not been approved.')
     if (conv.student_status !== 'active') throw new SupportError(409, 'This student account is no longer active.')
-    return deliverDraft(conn, conv, draftId, String(revision.body), actor)
+    return (await deliverDraft(conn, conv, draftId, String(revision.body), actor)) as number
   })
 }
 
@@ -619,7 +705,7 @@ export async function approveAndSendDraft(pool: Pool, actor: AdminActor, draftId
     if (!revision || revision.body_sha256 !== input.bodySha256) throw new SupportError(409, 'The draft text changed since you reviewed it. Reload and review it again.')
     if (conv.student_status !== 'active') throw new SupportError(409, 'This student account is no longer active.')
     await recordApproval(conn, actor, draftId, revision)
-    return deliverDraft(conn, conv, draftId, String(revision.body), actor)
+    return (await deliverDraft(conn, conv, draftId, String(revision.body), actor)) as number
   })
 }
 
@@ -655,6 +741,17 @@ export async function rejectDraft(pool: Pool, actor: AdminActor, draftId: number
   })
 }
 
+export type ResearchView = Pick<import('./research').ResearchRecord, 'sources' | 'conflicts' | 'outdated' | 'failure' | 'query'>
+
+function parseResearch(raw: unknown): ResearchView | null {
+  try {
+    const v = typeof raw === 'string' ? JSON.parse(raw) : raw
+    return v && typeof v === 'object' && Array.isArray((v as ResearchView).sources) ? (v as ResearchView) : null
+  } catch {
+    return null
+  }
+}
+
 export interface DraftView {
   id: number
   status: string
@@ -663,6 +760,7 @@ export interface DraftView {
   bodySha256: string | null
   risk: string | null
   riskReasons: string[]
+  research: ResearchView | null
   evidenceRefs: string[]
   provider: string
   model: string | null
@@ -711,6 +809,7 @@ export async function listDrafts(db: Pick<Pool, 'query'>, actor: AdminActor, con
     bodySha256: r.body_sha256 == null ? null : String(r.body_sha256),
     risk: r.risk_level == null ? null : String(r.risk_level),
     riskReasons: parseList(r.risk_reasons),
+    research: parseResearch(r.research),
     evidenceRefs: parseList(r.evidence_refs),
     provider: String(r.provider),
     model: r.model == null ? null : String(r.model),

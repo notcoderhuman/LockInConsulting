@@ -25,6 +25,9 @@ type AdminActor = import('@/lib/admin/roles').AdminActor
 type StudentActor = import('@/lib/student/access').StudentActor
 type DerekStatus = import('@/lib/derek/config').DerekStatus
 type AiProvider = import('@/lib/derek/provider').AiProvider
+type EvidenceItem = import('@/lib/derek/provider').EvidenceItem
+type ResearchRecord = import('@/lib/derek/research').ResearchRecord
+type ResearchResult = import('@/lib/derek/research').ResearchResult
 const C = await import('@/lib/support/conversations')
 const N = await import('@/lib/support/notifications')
 const S = await import('@/lib/support/settings')
@@ -33,11 +36,12 @@ const T = await import('@/lib/admin/team')
 const W = await import('@/lib/admin/workflow')
 const { loadEvidence } = await import('@/lib/derek/evidence')
 const { MockProvider } = await import('@/lib/derek/providers/mock')
+const AL = await import('@/lib/derek/allowance')
 const AR = await import('@/lib/derek/auto-reply')
 const { AUTO_REPLY_LIMITS } = AR
 const { getDerekStatus } = await import('@/lib/derek/config')
 const { GREETING_REPLY, OFF_TOPIC_REPLY, THANKS_REPLY } = await import('@/lib/derek/scope')
-const { DIRECTORY_LABEL } = await import('@/lib/derek/provider')
+const { DIRECTORY_LABEL, UNVERIFIED_TAG } = await import('@/lib/derek/provider')
 const { unsupportedFigures } = await import('@/lib/derek/safeguards')
 const { CONVERSATION_STATUSES } = await import('@/lib/support/state')
 const { verifyAuditChain } = await import('@/lib/admin/audit')
@@ -1060,19 +1064,11 @@ describe('Derek Auto Mode (offline, mock providers only)', () => {
     })
   })
 
-  it('holds replies past the per-student and global caps for a person', async () => {
+  it('holds replies past the global caps for a person', async () => {
     const reply = 'A statement of purpose explains your goals and why you chose the course.'
-    // Lowered caps keep this under the separate per-student message rate limit.
     const saved = { ...AUTO_REPLY_LIMITS }
-    AUTO_REPLY_LIMITS.perStudentPerDay = 2
     try {
-      const s = await makeStudent()
-      for (let i = 0; i < 2; i++) expect((await run(await ask(s, general), fixed(reply))).state).toBe('auto_sent')
-      const over = await ask(s, general)
-      expect((await run(over, fixed(reply))).state).toBe('review')
-      expect(await lastReason(over.conversationId)).toBe('Automatic reply held: daily automatic-reply limit for this student reached')
-      expect(await rows("SELECT id FROM notifications WHERE conversation_id = ? AND kind = 'draft_ready' AND title LIKE '%was held%'", [over.conversationId])).toHaveLength(1)
-      expect((await run(await ask(await makeStudent(), general), fixed(reply))).state).toBe('auto_sent') // other students unaffected
+      expect((await run(await ask(await makeStudent(), general), fixed(reply))).state).toBe('auto_sent')
 
       AUTO_REPLY_LIMITS.globalPerHour = 0
       const another = await ask(await makeStudent(), general)
@@ -1914,7 +1910,7 @@ describe('team presence and the human-to-Derek handoff', () => {
     const [body] = await derekBodies(q.conversationId)
     expect(body).toContain(`${D.PRELIMINARY_NOTE}\n\nA conditional offer usually depends on your final results.`)
     const flagged = await rows<{ title: string }>("SELECT title FROM notifications WHERE conversation_id = ? AND kind = 'high_risk'", [q.conversationId])
-    expect(flagged.map((n) => n.title)).toEqual([expect.stringMatching(/preliminary answer he was not sure about/)])
+    expect(flagged.map((n) => n.title)).toEqual([expect.stringMatching(/preliminary answer in conversation .*he was not sure/)])
     // The question and the whole exchange stay in the conversation for the team.
     expect((await C.getStudentMessages(pool(), s, q.conversationId)).messages.map((m) => m.authorKind)).toEqual(['student', 'derek'])
     // Suggestions follow Derek's answer, built from this student's question.
@@ -1988,5 +1984,333 @@ describe('team presence and the human-to-Derek handoff', () => {
     expect(await D.handOffToDerek(pool(), q.conversationId, { status: { ...READY, autoReply: { permitted: false, blockers: ['x'] } } })).toEqual({ state: 'none' })
     expect(await derekBodies(q.conversationId)).toEqual([]) // not cleared → nothing pretends to hand over
     expect(await D.handOffToDerek(pool(), q.conversationId)).toMatchObject({ state: 'sent' })
+  })
+})
+
+describe('Derek daily allowance, web research and routing', () => {
+  const env = { DEREK_AI_ENABLED: 'true', DEREK_PROVIDER: 'mock', DEREK_AUTO_REPLY_CLEARED: 'mock' }
+  const answer = 'A statement of purpose explains your goals and why you chose the course.'
+  const ordinary = 'What is a statement of purpose?'
+  const feeQuestion = 'What are the tuition fees at Synthetic Thames University?'
+  const fixed = (text = answer, uncertain?: boolean) => new MockProvider({ kind: 'fixed', text, uncertain })
+  const run = (q: { conversationId: number; triggerMessageId: number | null }, provider: AiProvider, deps: Parameters<typeof D.prepareDerekDraft>[3] = {}) =>
+    D.prepareDerekDraft(pool(), q.conversationId, q.triggerMessageId!, { provider, ...deps })
+  const left = async (s: StudentActor, now?: Date) => (await AL.getAllowance(pool(), s.profileId, now)).remaining
+  const derekBodies = async (id: number) => (await rows<{ body: string }>("SELECT body FROM messages WHERE conversation_id = ? AND author_kind = 'derek' ORDER BY id", [id])).map((r) => r.body)
+  const dev: AdminActor = { userId: 'u-allow-dev', name: 'Dev Allowance', email: 'allow-dev@test.example', role: 'reviewer' }
+  const savedLimits = { ...AUTO_REPLY_LIMITS }
+  // One conversation per call, many messages in it: the per-student conversation limit is a different rule.
+  const thread = (s: StudentActor) => {
+    let conversationId: number | null = null
+    return async (body = ordinary) => {
+      if (conversationId == null) {
+        const first = await ask(s, body)
+        conversationId = first.conversationId
+        return first
+      }
+      return C.sendStudentMessage(pool(), s, conversationId, { body, clientRequestId: rid() }).then((r) => ({ conversationId: conversationId as number, triggerMessageId: r.triggerMessageId, messageId: r.messageId }))
+    }
+  }
+  const answers = async (s: StudentActor, n: number, deps: Parameters<typeof D.prepareDerekDraft>[3] = {}) => {
+    const say = thread(s)
+    for (let i = 0; i < n; i++) expect((await run(await say(), fixed(), deps)).state).toBe('auto_sent')
+    return say
+  }
+  const web = (url: string, text: string): EvidenceItem => ({ ref: `web:${url.length}:0`, text: `${UNVERIFIED_TAG}: from the web page "Fees": ${text}`, sourceUrl: url, publisher: 'Synthetic Thames University', checkedAt: TODAY, unverified: true })
+  const researchOf = (items: EvidenceItem[], extra: Partial<ResearchRecord> = {}) =>
+    vi.fn(async (_input: unknown): Promise<ResearchResult> => ({
+      items,
+      record: {
+        attempted: true,
+        query: 'Synthetic Thames University fees or costs official',
+        sources: items.map((i) => ({ url: i.sourceUrl, publisher: i.publisher, title: 'Fees', retrievedAt: TODAY, published: null, outdated: false, via: 'lockin_record' as const })),
+        conflicts: [],
+        outdated: [],
+        failure: items.length ? null : 'The university pages that could be read did not state this.',
+        ...extra,
+      },
+    }))
+
+  beforeAll(async () => {
+    await db.query('INSERT INTO auth_user (id, name, email, emailVerified, updatedAt) VALUES (?, ?, ?, 0, UTC_TIMESTAMP(3))', [dev.userId, dev.name, dev.email])
+    await db.query("INSERT INTO admin_members (user_id, role, status, granted_by) VALUES (?, 'reviewer', 'active', 'cli:test')", [dev.userId])
+  })
+  beforeEach(async () => {
+    Object.assign(process.env, env)
+    AUTO_REPLY_LIMITS.globalPerHour = 100_000
+    AUTO_REPLY_LIMITS.globalPerDay = 100_000
+    await S.updateSupportSettings(pool(), owner, { autoReplyEnabled: true })
+  })
+  afterEach(async () => {
+    for (const k of Object.keys(env)) delete process.env[k]
+    Object.assign(AUTO_REPLY_LIMITS, savedLimits)
+    await db.query('DELETE FROM staff_presence')
+    await db.query('DELETE FROM conversation_presence')
+    await db.query("UPDATE support_settings SET support_mode = 'online', auto_reply_enabled = FALSE WHERE id = 1")
+  })
+  afterAll(async () => {
+    await db.query('DELETE FROM admin_members WHERE user_id = ?', [dev.userId])
+  })
+
+  it('gives a new student 10 answers, counts each delivered one, lets the tenth through and blocks the eleventh before any generation', async () => {
+    const s = await makeStudent()
+    expect(await AL.getAllowance(pool(), s.profileId)).toMatchObject({ limit: 10, used: 0, remaining: 10 })
+    const provider = fixed()
+    const say = thread(s)
+    for (let i = 1; i <= 10; i++) {
+      expect((await run(await say(), provider)).state, `answer ${i}`).toBe('auto_sent')
+      expect(await left(s)).toBe(10 - i)
+    }
+    const calls = provider.calls
+    const eleventh = await say()
+    expect(await run(eleventh, provider)).toEqual({ state: 'allowance' })
+    expect(provider.calls).toBe(calls) // nothing was generated
+    // The student is told, with a static notice that is not a Derek answer and not stored as a message.
+    const view = await C.getStudentMessages(pool(), s, eleventh.conversationId)
+    expect(view.conversation).toMatchObject({ acknowledgement: AL.ALLOWANCE_NOTICE, replyPending: false, suggestions: [], allowance: { remaining: 0, limit: 10 } })
+    expect(view.messages.at(-1)?.authorKind).toBe('student') // the notice is not a stored message
+    expect(await left(s)).toBe(0)
+    // The team is told once, and the question waits for a person.
+    expect((await rows<{ title: string }>("SELECT title FROM notifications WHERE conversation_id = ? AND kind = 'ai_failure'", [eleventh.conversationId])).map((n) => n.title)).toEqual([expect.stringMatching(/used today’s 10 Derek answers/)])
+    expect((await derekBodies(eleventh.conversationId)).length).toBe(10) // only the ten earlier answers
+    // The database itself refuses an eleventh counted answer.
+    await expect(db.query('UPDATE derek_allowance_days SET delivered = 11 WHERE student_profile_id = ?', [s.profileId])).rejects.toThrow()
+  })
+
+  it('does not count failed generation, held answers or a failed save', async () => {
+    const s = await makeStudent()
+    expect(await run(await ask(s, ordinary), new MockProvider({ kind: 'fail', code: 'unavailable', retryable: false }))).toMatchObject({ state: 'failed' })
+    expect(await left(s)).toBe(10)
+    expect(await run(await ask(s, 'My student visa was refused, what should I do?'), fixed('A LockIn team member will follow up.'))).toMatchObject({ state: 'review', risk: 'high' })
+    expect(await left(s)).toBe(10)
+    // A save that fails after the slot was taken gives it back.
+    await db.query("CREATE TRIGGER t_block_derek BEFORE INSERT ON messages FOR EACH ROW BEGIN IF NEW.author_kind = 'derek' AND NEW.body LIKE '%BLOCKME%' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'blocked'; END IF; END")
+    try {
+      const q = await ask(s, ordinary)
+      await expect(run(q, fixed(`${answer} BLOCKME`))).rejects.toThrow()
+      expect(await left(s)).toBe(10)
+      expect(await derekBodies(q.conversationId)).toEqual([])
+    } finally {
+      await db.query('DROP TRIGGER t_block_derek')
+    }
+    expect(await rows("SELECT id FROM derek_allowance_holds WHERE student_profile_id = ? AND status = 'committed'", [s.profileId])).toHaveLength(0)
+  })
+
+  it('never counts human replies, suggestions or fixed replies, and an exhausted student keeps messaging while Dev replies freely', async () => {
+    const s = await makeStudent()
+    const say = await answers(s, 10)
+    expect(await left(s)).toBe(0)
+    // Unlimited messages to the team, unlimited human replies, regardless of the allowance.
+    const q = await say('Can someone from the team help me with my application?')
+    for (let i = 0; i < 3; i++) await C.sendStudentMessage(pool(), s, q.conversationId, { body: `Another message ${i}`, clientRequestId: rid() })
+    await C.staffReply(pool(), dev, q.conversationId, { body: 'Hi, Dev here.', clientRequestId: rid() })
+    await C.staffReply(pool(), dev, q.conversationId, { body: 'Following up.', clientRequestId: rid() })
+    expect((await C.getStudentMessages(pool(), s, q.conversationId)).messages.filter((m) => m.authorKind === 'staff')).toHaveLength(2)
+    // LockIn's own greeting is not an AI answer: still delivered, still not counted.
+    expect(await run(await ask(s, 'Hello'), fixed())).toMatchObject({ state: 'auto_sent' })
+    expect(await left(s)).toBe(0)
+    expect(await rows('SELECT delivered FROM derek_allowance_days WHERE student_profile_id = ?', [s.profileId])).toEqual([{ delivered: 10 }])
+    // A suggestion click is just a message: it takes no slot until Derek answers it.
+    const t = await makeStudent()
+    const first = await ask(t, ordinary)
+    expect(await run(first, fixed(answer))).toMatchObject({ state: 'auto_sent' })
+    const view = await C.getStudentMessages(pool(), t, first.conversationId)
+    expect(view.conversation.suggestions.length).toBeGreaterThanOrEqual(2)
+    const before = await left(t)
+    await C.sendStudentMessage(pool(), t, first.conversationId, { body: view.conversation.suggestions[0], clientRequestId: rid() })
+    expect(await left(t)).toBe(before)
+  })
+
+  it('shares one allowance between a student’s conversations and tabs, and concurrent requests cannot pass 10', async () => {
+    const s = await makeStudent()
+    await answers(s, 8) // eight answers in one conversation
+    const racers = await Promise.all(Array.from({ length: 3 }, () => ask(s, ordinary))) // three more conversations, answered at once
+    const results = await Promise.all(racers.map((q) => run(q, fixed())))
+    expect(results.filter((r) => r.state === 'auto_sent')).toHaveLength(2)
+    expect(results.filter((r) => r.state === 'allowance')).toHaveLength(1)
+    expect(await left(s)).toBe(0)
+    expect(await rows('SELECT delivered FROM derek_allowance_days WHERE student_profile_id = ?', [s.profileId])).toEqual([{ delivered: 10 }])
+    expect(Number((await rows<{ n: number }>("SELECT COUNT(*) AS n FROM messages m JOIN conversations c ON c.id = m.conversation_id WHERE c.student_profile_id = ? AND m.author_kind = 'derek'", [s.profileId]))[0].n)).toBe(10)
+    // Another student is unaffected.
+    expect(await left(await makeStudent())).toBe(10)
+  })
+
+  it('never double-counts a retried or duplicated request', async () => {
+    const s = await makeStudent()
+    const q = await ask(s, ordinary)
+    const provider = fixed()
+    const [a, b] = await Promise.all([run(q, provider), run(q, provider)])
+    expect([a.state, b.state].filter((x) => x === 'auto_sent')).toHaveLength(1)
+    expect(await run(q, provider)).not.toMatchObject({ state: 'auto_sent' })
+    expect(await left(s)).toBe(9)
+    expect(Number((await rows<{ n: number }>('SELECT COUNT(*) AS n FROM derek_allowance_holds WHERE student_profile_id = ?', [s.profileId]))[0].n)).toBe(1)
+    await expect(
+      db.query('INSERT INTO derek_allowance_holds (student_profile_id, quota_date, draft_id, expires_at) SELECT student_profile_id, quota_date, draft_id, expires_at FROM derek_allowance_holds WHERE student_profile_id = ?', [s.profileId]),
+    ).rejects.toThrow()
+  })
+
+  it('holds a slot while Derek is still generating, so pending answers cannot overshoot, and recovers a slot a crashed worker left', async () => {
+    const s = await makeStudent()
+    await answers(s, 9)
+    let open!: () => void
+    const gate = new Promise<void>((resolve) => (open = resolve))
+    const slow: AiProvider = { id: 'mock', model: 'mock-derek-1', autoReply: { permitted: true }, async generate() { await gate; return { text: answer, model: 'mock-derek-1' } } }
+    const first = await ask(s, ordinary)
+    const pending = run(first, slow)
+    await vi.waitFor(async () => expect(await rows("SELECT id FROM derek_allowance_holds WHERE student_profile_id = ? AND status = 'held'", [s.profileId])).toHaveLength(1))
+    expect(await left(s)).toBe(0) // the in-flight answer already holds the last slot
+    expect(await run(await ask(s, ordinary), fixed())).toEqual({ state: 'allowance' })
+    open()
+    expect(await pending).toMatchObject({ state: 'auto_sent' })
+    expect(await left(s)).toBe(0)
+
+    // A worker that died: its hold expires and the slot is usable again.
+    const t = await makeStudent()
+    await answers(t, 9)
+    let wake!: () => void
+    const stuck = new Promise<void>((resolve) => (wake = resolve))
+    const dead: AiProvider = { id: 'mock', model: 'mock-derek-1', autoReply: { permitted: true }, async generate() { await stuck; return { text: answer, model: 'mock-derek-1' } } }
+    const lost = run(await ask(t, ordinary), dead)
+    await vi.waitFor(async () => expect(await rows("SELECT id FROM derek_allowance_holds WHERE student_profile_id = ? AND status = 'held'", [t.profileId])).toHaveLength(1))
+    await db.query("UPDATE derek_allowance_holds SET expires_at = UTC_TIMESTAMP(3) - INTERVAL 1 SECOND WHERE student_profile_id = ? AND status = 'held'", [t.profileId])
+    expect(await left(t)).toBe(1)
+    expect(await run(await ask(t, ordinary), fixed())).toMatchObject({ state: 'auto_sent' })
+    wake() // the stale worker wakes up after the day is full: it may not send
+    expect(await lost).toMatchObject({ state: 'review' })
+    expect(await left(t)).toBe(0)
+    expect(await rows('SELECT delivered FROM derek_allowance_days WHERE student_profile_id = ?', [t.profileId])).toEqual([{ delivered: 10 }])
+  })
+
+  it('resets at midnight India time', async () => {
+    const s = await makeStudent()
+    const before = new Date('2026-11-12T18:29:30Z') // 11:59:30 pm IST
+    const after = new Date('2026-11-12T18:30:01Z') // 12:00:01 am IST
+    await answers(s, 10, { now: () => before })
+    expect(await run(await ask(s, ordinary), fixed(), { now: () => new Date('2026-11-12T18:29:59Z') })).toEqual({ state: 'allowance' })
+    expect(await left(s, before)).toBe(0)
+    expect(await left(s, after)).toBe(10)
+    expect(await run(await ask(s, ordinary), fixed(), { now: () => after })).toMatchObject({ state: 'auto_sent' })
+    expect(await left(s, after)).toBe(9)
+    expect(await left(s, before)).toBe(0) // yesterday's count is untouched
+  })
+
+  it('routes by Dev’s claim: Derek pauses while Dev holds the chat and resumes on release, but only with allowance left', async () => {
+    const s = await makeStudent()
+    const q = await ask(s, ordinary)
+    await handleChat(db, dev.userId, q.conversationId)
+    expect(await run(q, fixed())).toMatchObject({ state: 'review' }) // Dev is in this chat: held for him
+    expect(await left(s)).toBe(10) // nothing delivered, nothing used
+    await chatLastSeen(db, 600) // Dev leaves
+    expect(await D.handOffToDerek(pool(), q.conversationId)).toMatchObject({ state: 'sent' })
+    expect(await left(s)).toBe(9)
+    expect(await D.handOffToDerek(pool(), q.conversationId)).toEqual({ state: 'none' }) // never twice
+
+    // The same handoff for a student whose day is full stays with a person.
+    const t = await makeStudent()
+    const held = await ask(t, ordinary)
+    await handleChat(db, dev.userId, held.conversationId)
+    await run(held, fixed())
+    await answers(t, 10)
+    await chatLastSeen(db, 600)
+    expect(await D.handOffToDerek(pool(), held.conversationId)).toEqual({ state: 'none' })
+    expect(await derekBodies(held.conversationId)).toEqual([])
+  })
+
+  it('ignores any allowance a client tries to send', async () => {
+    const s = await makeStudent()
+    const q = await C.createConversation(pool(), s, { body: ordinary, clientRequestId: rid(), allowance: { remaining: 99 }, delivered: -50 } as never)
+    expect(await left(s)).toBe(10)
+    const other = await makeStudent()
+    await expect(C.getStudentMessages(pool(), other, q.conversationId)).rejects.toMatchObject({ status: 404 })
+  })
+
+  describe('research', () => {
+    const feeItem: EvidenceItem = { ref: 'tuition_fee:9001', text: 'MSc tuition fee (international): EUR 3000 per year, academic year 2026/27', sourceUrl: 'https://thames.example/fees', publisher: 'Synthetic Thames University', checkedAt: TODAY }
+
+    it('uses LockIn’s verified information first and does not search when it answers the question', async () => {
+      const research = researchOf([web('https://thames.example/web', 'EUR 9999')])
+      const q = await ask(await makeStudent(), feeQuestion)
+      expect(await run(q, new MockProvider(), { loadEvidence: async () => [feeItem], research })).toMatchObject({ state: 'auto_sent' })
+      expect(research).not.toHaveBeenCalled()
+      const [body] = await derekBodies(q.conversationId)
+      expect(body).toContain('EUR 3000')
+      expect(body).toContain('https://thames.example/fees')
+    })
+
+    it('reads the official pages when LockIn has nothing, cites the page, and records the sources', async () => {
+      const item = web('https://thames.example/admissions/fees', 'Tuition fee for the MSc is EUR 3,200 per year.')
+      const research = researchOf([item])
+      const s = await makeStudent('Asha Rao')
+      const q = await C.createConversation(pool(), s, { body: feeQuestion, clientRequestId: rid(), subject: 'Poland · MSc Computer Science' })
+      expect(await run(q, new MockProvider(), { loadEvidence: async () => [], research })).toMatchObject({ state: 'auto_sent' })
+      expect(research).toHaveBeenCalledTimes(1)
+      // Only the general question reaches the research step: topics, the course, and the university pages LockIn holds. Nothing about the student.
+      const input = research.mock.calls[0][0] as { topics: string[]; course: string | null; universities: unknown[] }
+      expect(input.topics).toEqual(['fees or costs'])
+      expect(input.course).toBe('MSc Computer Science')
+      expect(Object.keys(input).sort()).toEqual(['course', 'topics', 'universities'])
+      expect(JSON.stringify(input)).not.toMatch(/Asha|Rao|student\d+@test|@/)
+      // The answer is labelled as not yet checked by LockIn and links the page; the review record keeps the source.
+      const [body] = await derekBodies(q.conversationId)
+      expect(body).toContain('Not yet checked by LockIn (unverified):')
+      expect(body).toContain('EUR 3,200')
+      expect(body).toContain('https://thames.example/admissions/fees')
+      const [draft] = await D.listDrafts(pool(), owner, q.conversationId)
+      expect(draft.research).toMatchObject({ failure: null, conflicts: [], sources: [{ url: 'https://thames.example/admissions/fees', retrievedAt: TODAY }] })
+      expect(draft.evidenceRefs).toEqual([item.ref])
+      // Clean research does not escalate.
+      expect(await rows("SELECT id FROM notifications WHERE conversation_id = ? AND kind IN ('high_risk', 'ai_failure')", [q.conversationId])).toHaveLength(0)
+    })
+
+    it('says so and flags the team when sources conflict or are out of date', async () => {
+      const conflict = researchOf(
+        [web('https://a.example/fees', 'Tuition fee is EUR 3,200 per year.'), web('https://b.example/fees', 'Tuition fee is EUR 4,100 per year.')],
+        { conflicts: ['Fee figures differ between a.example and b.example'] },
+      )
+      const q = await ask(await makeStudent(), feeQuestion)
+      expect(await run(q, new MockProvider(), { loadEvidence: async () => [], research: conflict })).toMatchObject({ state: 'auto_sent' })
+      const [body] = await derekBodies(q.conversationId)
+      expect(body).toContain(D.PRELIMINARY_NOTE)
+      const [draft] = await D.listDrafts(pool(), owner, q.conversationId)
+      expect(draft).toMatchObject({ risk: 'uncertain', status: 'sent' })
+      expect(draft.riskReasons).toContain('Sources conflict: Fee figures differ between a.example and b.example')
+      expect(draft.research?.conflicts).toEqual(['Fee figures differ between a.example and b.example'])
+      const flagged = await rows<{ title: string }>("SELECT title FROM notifications WHERE conversation_id = ? AND kind = 'high_risk'", [q.conversationId])
+      expect(flagged.map((n) => n.title)).toEqual([expect.stringMatching(/the sources conflict/)])
+
+      const stale = researchOf([web('https://old.example/fees', 'Tuition fee is EUR 2,000 per year.')], { outdated: ['old.example (page last updated 2023-03-01)'] })
+      const q2 = await ask(await makeStudent(), feeQuestion)
+      expect(await run(q2, new MockProvider(), { loadEvidence: async () => [], research: stale })).toMatchObject({ state: 'auto_sent' })
+      expect((await D.listDrafts(pool(), owner, q2.conversationId))[0].riskReasons).toContain('Outdated source: old.example (page last updated 2023-03-01)')
+    })
+
+    it('admits it could not verify, invents nothing and flags the question when research finds nothing or fails', async () => {
+      const empty = researchOf([])
+      const q = await ask(await makeStudent(), feeQuestion)
+      expect(await run(q, new MockProvider(), { loadEvidence: async () => [], research: empty })).toMatchObject({ state: 'auto_sent' })
+      const [body] = await derekBodies(q.conversationId)
+      expect(body).toContain(D.PRELIMINARY_NOTE)
+      expect(body).toMatch(/has not verified/)
+      expect(body.split(D.PRELIMINARY_NOTE)[1]).not.toMatch(/\d/) // no figure or date was made up
+      expect(body).not.toMatch(/https?:/)
+      const [draft] = await D.listDrafts(pool(), owner, q.conversationId)
+      expect(draft.research?.failure).toMatch(/did not state this/)
+      expect((await rows<{ title: string }>("SELECT title FROM notifications WHERE conversation_id = ? AND kind = 'high_risk'", [q.conversationId])).map((n) => n.title)).toEqual([expect.stringMatching(/web research found nothing/)])
+
+      // The research step itself breaking behaves like no research: the answer waits for a person, nothing is sent.
+      const broken = vi.fn(async () => {
+        throw new Error('network down')
+      })
+      const q2 = await ask(await makeStudent(), feeQuestion)
+      expect(await run(q2, new MockProvider(), { loadEvidence: async () => [], research: broken as never })).toMatchObject({ state: 'review' })
+      expect(await derekBodies(q2.conversationId)).toEqual([])
+    })
+
+    it('does not research greetings, general concepts or high-risk topics', async () => {
+      const research = researchOf([web('https://thames.example/x', 'EUR 1')])
+      for (const text of ['Hello', ordinary, 'My student visa for Synthetic Thames University was refused, what are the fees to appeal?'])
+        await run(await ask(await makeStudent(), text), new MockProvider(), { loadEvidence: async () => [], research })
+      expect(research).not.toHaveBeenCalled()
+    })
   })
 })

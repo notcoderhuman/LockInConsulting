@@ -328,7 +328,9 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
       if (doResearch) await setPhase('researching')
       research = await doResearch?.({ topics: guidance.topics, course: asked, universities })?.catch(() => null) ?? null
       if (research) {
-        evidence = [...evidence, ...research.items].slice(0, 30)
+        // The official pages LockIn holds are listings, not facts: they only make the university's own link citable.
+        const officialPages = (research.record.official ?? []).slice(0, 2).map((url, i) => ({ ref: `university:official:${i}`, text: `The university's official page: ${url}`, sourceUrl: url, publisher: 'University website', checkedAt: new Date().toISOString().slice(0, 10), unverified: true as const }))
+        evidence = [...evidence, ...research.items, ...officialPages].slice(0, 30)
         // What was read now counts as evidence, so the guidance is built again: it must not still say LockIn has nothing.
         const again = analyseQuestion(question, evidence, earlier, history.filter((h) => h.role === 'team').at(-1)?.text)
         guidance = {
@@ -423,7 +425,10 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     // team is asked to follow up. A truncated answer, a risky topic or any failed check still waits for a person.
     const preliminary =
       !claim.fixed && !outcome.result.incomplete && risk.level === 'uncertain' && (outcome.result.uncertain === true || flags.length > 0 || risk.reasons.some((r) => ORDINARY_UNCERTAIN_REASONS.has(r))) && risk.reasons.every((r) => r === MODEL_UNCERTAIN_REASON || flags.includes(r) || ORDINARY_UNCERTAIN_REASONS.has(r) || (research != null && r.startsWith('No verified evidence for')))
-    const body = preliminary ? `${PRELIMINARY_NOTE}\n\n${text.data}` : text.data
+    // A preliminary answer always points to an official page: the one research found about the topic, else the university's own site that LockIn holds.
+    const officialPage = research ? (research.record.sources[0]?.url ?? research.record.official?.[0] ?? null) : null
+    const pointer = preliminary && officialPage && !text.data.includes(officialPage) ? `\n\nOfficial page to check: ${officialPage}` : ''
+    const body = preliminary ? `${PRELIMINARY_NOTE}\n\n${text.data}${pointer}` : text.data
     if (preliminary) risk.reasons = [PRELIMINARY_REASON, ...flags]
     // Editorial findings are for the reviewer (and stop automatic sending); they do not raise the risk level.
     if (!claim.fixed) risk.reasons.push(...styleIssues(body).map((s) => `Style: ${s}`))

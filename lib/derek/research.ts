@@ -21,7 +21,7 @@ import { UNVERIFIED_TAG, type EvidenceItem } from './provider'
 
 export const RESEARCH = {
   pageTimeoutMs: 6_000,
-  totalBudgetMs: 14_000,
+  totalBudgetMs: 18_000,
   maxBytes: 400_000,
   maxPages: 6,
   maxRedirects: 3,
@@ -48,6 +48,8 @@ export interface ResearchRecord {
   sources: ResearchSource[]
   conflicts: string[]
   outdated: string[]
+  /** The official pages LockIn holds for the universities asked about (their website and course pages). */
+  official?: string[]
   /** Why nothing could be used (no site known, fetch failed, no relevant text); null when something was found. */
   failure: string | null
 }
@@ -441,33 +443,50 @@ export async function researchQuestion(input: ResearchInput, deps: ResearchDeps 
     if (!queue.length && !failure) failure = 'LockIn holds no official page for this university, so there was nothing to read.'
     const seen = new Set<string>()
     const topicWords = wordsFor(input.topics)
-    for (let n = 0; n < queue.length && sources.length < RESEARCH.maxPages && !controller.signal.aborted; n++) {
-      const next = queue[n]
-      if (seen.has(next.url)) continue
-      seen.add(next.url)
-      const page = await get(next.url, controller.signal)
-      if (!page) continue
-      const text = pageText(page.html)
-      const published = pageDate(page.html, page.lastModified)
-      const stale = isOutdated(published, now)
-      const passages = relevantPassages(text, input.topics, input.course)
-      // Follow the page's own links to the admissions, fees or deadlines page (up to two hops from a page LockIn holds).
-      if (next.depth < 2) for (const link of relevantLinks(page.html, page.url, input.topics, input.course)) queue.push({ url: link, via: 'linked_page', publisher: next.publisher, depth: next.depth + 1 })
-      if (!passages.length) continue
-      const title = pageTitle(page.html) || new URL(page.url).hostname
-      topical.set(page.url, topicWords.some((w) => `${new URL(page.url).pathname} ${title}`.toLowerCase().includes(w)))
-      sources.push({ url: page.url, publisher: next.publisher, title, retrievedAt: today, published, outdated: stale, via: next.via })
-      if (stale) outdated.push(`${new URL(page.url).hostname} (page last updated ${published})`)
-      passages.forEach((p, i) =>
-        items.push({
-          ref: ref(page.url, i),
-          text: `${UNVERIFIED_TAG}: from the web page "${title}"${stale ? ` (last updated ${published}, possibly out of date)` : ''}: ${p}`,
-          sourceUrl: page.url,
-          publisher: next.publisher,
-          checkedAt: today,
-          unverified: true,
-        }),
-      )
+    // Pages are read three at a time, so the budget goes to more pages rather than waiting on one slow site.
+    let n = 0
+    while (n < queue.length && sources.length < RESEARCH.maxPages && !controller.signal.aborted) {
+      const batch = queue.slice(n, n + 3)
+      n += batch.length
+      const wave = batch.filter((q) => !seen.has(q.url))
+      wave.forEach((q) => seen.add(q.url))
+      const pages = await Promise.all(wave.map((q) => get(q.url, controller.signal).catch(() => null)))
+      wave.forEach((next, w) => {
+        const page = pages[w]
+        if (!page) return
+        const text = pageText(page.html)
+        const published = pageDate(page.html, page.lastModified)
+        const stale = isOutdated(published, now)
+        const passages = relevantPassages(text, input.topics, input.course)
+        // Follow the page's own links to the admissions, fees or deadlines page (up to two hops from a page LockIn holds).
+        if (next.depth < 2) for (const link of relevantLinks(page.html, page.url, input.topics, input.course)) queue.push({ url: link, via: 'linked_page', publisher: next.publisher, depth: next.depth + 1 })
+        const title = pageTitle(page.html) || new URL(page.url).hostname
+        const onTopic = topicWords.some((word) => `${new URL(page.url).pathname} ${title}`.toLowerCase().includes(word))
+        // A page about the topic is kept as a source even when its text gives no readable figure (tables and PDFs), so the answer can point to it.
+        if (!passages.length && !onTopic) return
+        topical.set(page.url, onTopic)
+        sources.push({ url: page.url, publisher: next.publisher, title, retrievedAt: today, published, outdated: stale, via: next.via })
+        if (stale) outdated.push(`${new URL(page.url).hostname} (page last updated ${published})`)
+        if (!passages.length)
+          items.push({
+            ref: ref(page.url, 0),
+            text: `${UNVERIFIED_TAG}: the university's page "${title}" is about this topic, but its text gave no figure or date that could be read automatically; the student must check the page itself`,
+            sourceUrl: page.url,
+            publisher: next.publisher,
+            checkedAt: today,
+            unverified: true,
+          })
+        passages.forEach((pass, i) =>
+          items.push({
+            ref: ref(page.url, i),
+            text: `${UNVERIFIED_TAG}: from the web page "${title}"${stale ? ` (last updated ${published}, possibly out of date)` : ''}: ${pass}`,
+            sourceUrl: page.url,
+            publisher: next.publisher,
+            checkedAt: today,
+            unverified: true,
+          }),
+        )
+      })
     }
   } finally {
     clearTimeout(budget)
@@ -481,5 +500,5 @@ export async function researchQuestion(input: ResearchInput, deps: ResearchDeps 
   }
   items.sort((a, b) => Number(/\d/.test(b.text)) - Number(/\d/.test(a.text)))
   if (!items.length && !failure) failure = 'The university pages that could be read did not state this.'
-  return { items, record: { attempted: true, query, sources, conflicts: findConflicts(items, input.topics), outdated, failure } }
+  return { items, record: { attempted: true, query, sources, conflicts: findConflicts(items, input.topics), outdated, official: input.universities.flatMap((u) => [...u.courseUrls.slice(0, 1), u.officialWebsite]), failure } }
 }

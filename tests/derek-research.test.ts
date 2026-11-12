@@ -88,6 +88,15 @@ describe('web research', () => {
     expect(out.record).toMatchObject({ attempted: true, failure: null, conflicts: [], outdated: [], sources: [{ url: 'https://www.example.edu/admissions/fees', published: '2026-09-05', outdated: false, via: 'linked_page' }] })
   })
 
+  it('keeps a page about the topic as a source even when it gives no readable figure, so the answer can point to it', async () => {
+    const feesPage = page('https://www.example.edu/study/tuition-fees/', '<p>See the fee table below for your programme.</p>', 'Tuition fees for international students')
+    const out = await researchQuestion({ topics: ['fees or costs'], course: null, universities: [site] }, { fetchPage: fetcher({ 'https://www.example.edu/': page('https://www.example.edu/', '<a href="/study/tuition-fees/">Tuition fees</a>'), 'https://www.example.edu/study/tuition-fees/': feesPage }), search: null, now: () => NOW })
+    expect(out.record.sources.map((x) => x.url)).toEqual(['https://www.example.edu/study/tuition-fees/'])
+    expect(out.items).toHaveLength(1)
+    expect(out.items[0].text).toContain('gave no figure or date that could be read automatically')
+    expect(out.record.official).toEqual(['https://www.example.edu/'])
+  })
+
   it('flags an outdated page and says so in the evidence', async () => {
     const old = page('https://www.example.edu/', '<p>Tuition fee for the MSc is EUR 2,000 per year.</p><p>Last updated: 1 March 2023</p>')
     const out = await researchQuestion({ topics: ['fees or costs'], course: null, universities: [site] }, { fetchPage: fetcher({ 'https://www.example.edu/': old }), search: null, now: () => NOW })

@@ -2307,6 +2307,19 @@ describe('Derek daily allowance, web research and routing', () => {
       expect(await derekBodies(q2.conversationId)).toEqual([])
     })
 
+    it('points a preliminary answer to an official page and never asks for what the student already said', async () => {
+      const research = vi.fn(async (): Promise<ResearchResult> => ({
+        items: [],
+        record: { attempted: true, query: 'q', sources: [], conflicts: [], outdated: [], official: ['https://massey.example/'], failure: 'The university pages that could be read did not state this.' },
+      }))
+      const q = await ask(await makeStudent(), feeQuestion)
+      expect(await run(q, new MockProvider(), { loadEvidence: async () => [], research })).toMatchObject({ state: 'auto_sent' })
+      const [body] = await derekBodies(q.conversationId)
+      expect(body).toContain('Official page to check: https://massey.example/')
+      const instructions = (await import('@/lib/derek/provider')).DEREK_INSTRUCTIONS
+      expect(instructions).toMatch(/ONLY when the student has not named them/)
+    })
+
     it('does not research greetings, general concepts or high-risk topics', async () => {
       const research = researchOf([web('https://thames.example/x', 'EUR 1')])
       for (const text of ['Hello', ordinary, 'My student visa for Synthetic Thames University was refused, what are the fees to appeal?'])

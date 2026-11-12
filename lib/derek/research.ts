@@ -223,7 +223,7 @@ export function isOutdated(published: string | null, today: Date): boolean {
 }
 
 const TOPIC_WORDS: Record<string, string[]> = {
-  fees: ['tuition', 'fee', 'fees', 'cost', 'costs', 'per year', 'per annum', 'scholarship', 'funding'],
+  fees: ['tuition', 'fee', 'fees', 'cost', 'costs', 'per year', 'per annum', 'per point'],
   deadlines: ['deadline', 'deadlines', 'apply by', 'closing date', 'closes', 'intakes', 'application period', 'applications open', 'application window'],
   requirements: ['requirement', 'requirements', 'eligib', 'admission', 'entry', 'ielts', 'toefl', 'pte', 'duolingo', 'gpa', 'degree', 'prerequisite', 'language'],
   scholarships: ['scholarship', 'scholarships', 'bursary', 'funding', 'financial aid', 'grant'],
@@ -417,6 +417,7 @@ export async function researchQuestion(input: ResearchInput, deps: ResearchDeps 
   const sources: ResearchSource[] = []
   const outdated: string[] = []
   let failure: string | null = null
+  const topical = new Map<string, boolean>()
   const name = input.universities[0]?.name ?? input.universityName ?? null
   const query = name ? buildQuery(name, input.course, input.topics) : null
   try {
@@ -439,6 +440,7 @@ export async function researchQuestion(input: ResearchInput, deps: ResearchDeps 
     }
     if (!queue.length && !failure) failure = 'LockIn holds no official page for this university, so there was nothing to read.'
     const seen = new Set<string>()
+    const topicWords = wordsFor(input.topics)
     for (let n = 0; n < queue.length && sources.length < RESEARCH.maxPages && !controller.signal.aborted; n++) {
       const next = queue[n]
       if (seen.has(next.url)) continue
@@ -453,6 +455,7 @@ export async function researchQuestion(input: ResearchInput, deps: ResearchDeps 
       if (next.depth < 2) for (const link of relevantLinks(page.html, page.url, input.topics, input.course)) queue.push({ url: link, via: 'linked_page', publisher: next.publisher, depth: next.depth + 1 })
       if (!passages.length) continue
       const title = pageTitle(page.html) || new URL(page.url).hostname
+      topical.set(page.url, topicWords.some((w) => `${new URL(page.url).pathname} ${title}`.toLowerCase().includes(w)))
       sources.push({ url: page.url, publisher: next.publisher, title, retrievedAt: today, published, outdated: stale, via: next.via })
       if (stale) outdated.push(`${new URL(page.url).hostname} (page last updated ${published})`)
       passages.forEach((p, i) =>
@@ -469,6 +472,14 @@ export async function researchQuestion(input: ResearchInput, deps: ResearchDeps 
   } finally {
     clearTimeout(budget)
   }
+  // A page whose address or title is about the topic outranks a home page that merely mentions it: when such pages exist,
+  // passages from the others are dropped (news items on a home page are not an answer about fees).
+  if ([...topical.values()].some(Boolean)) {
+    for (let i = items.length - 1; i >= 0; i--) if (!topical.get(items[i].sourceUrl)) items.splice(i, 1)
+    for (let i = sources.length - 1; i >= 0; i--) if (!topical.get(sources[i].url)) sources.splice(i, 1)
+    outdated.splice(0, outdated.length, ...sources.filter((x) => x.outdated).map((x) => `${new URL(x.url).hostname} (page last updated ${x.published})`))
+  }
+  items.sort((a, b) => Number(/\d/.test(b.text)) - Number(/\d/.test(a.text)))
   if (!items.length && !failure) failure = 'The university pages that could be read did not state this.'
   return { items, record: { attempted: true, query, sources, conflicts: findConflicts(items, input.topics), outdated, failure } }
 }

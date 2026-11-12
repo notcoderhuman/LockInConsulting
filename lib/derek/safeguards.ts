@@ -45,6 +45,8 @@ const FACT_TOPICS: [RegExp, string, RegExp][] = [
   [/\b(acceptance rates?|admit rates?|selectiv\w*)\b/i, 'acceptance rates', /acceptance/i],
   [/\b(requirements?|ielts|toefl|pte|duolingo|gpa|cgpa|grades?|percentage needed|minimum marks|eligib\w*|cut-?offs?)\b/i, 'entry or language requirements', /requirement/i],
   [/\b(scholarships?|bursar\w*|funding|financial aid)\b/i, 'scholarships', /scholarship/i],
+  // How to apply, the next steps, the documents to submit.
+  [/\b(how (?:do|can|should|to) (?:i )?apply|next steps?|apply(?:ing)? (?:for|to)|application (?:process|steps?|procedure|checklist)|documents? (?:needed|required|to submit)|required documents)\b/i, 'application steps', /how to apply|appl(?:y|ication)|documents?|checklist/i],
 ]
 
 /** The factual topics (fees, rankings, deadlines…) a question asks about. */
@@ -139,21 +141,26 @@ export function unsupportedFigures(draft: string, evidence: EvidenceItem[]): str
 }
 
 /**
- * A fact from a draft record (EvidenceItem.unverified) may appear only under UNVERIFIED_LABEL or on a
- * line that itself says it is unverified. Anywhere else (including under the directory label) a
- * figure or source link that only a draft record supports reads as verified.
+ * Facts that only an unreviewed source supports (the university's own website, or LockIn's draft notes) must be attributed:
+ * the answer must link at least one of those sources (or, in the older format, put them under the unverified label). A figure
+ * that only such a source supports, stated with no link to it and no sign of its origin, reads as a verified LockIn fact.
  */
 export function draftPresentedAsVerified(draft: string, evidence: EvidenceItem[]): boolean {
   if (!evidence.some((e) => e.unverified)) return false
   const verified = evidence.filter((e) => !e.unverified)
   const verifiedUrls = evidenceUrls(verified)
   const draftUrls = new Set([...evidenceUrls(evidence)].filter((u) => !verifiedUrls.has(u)))
+  // Attributed: the answer links one of those sources.
+  if (urlsIn(draft).some((u) => draftUrls.has(u))) {
+    // (Lines under the old unverified label need nothing more; lines elsewhere are covered by the link above.)
+    return false
+  }
   let section: 'other' | 'unverified' = 'other'
   for (const line of draft.split('\n')) {
     if (line.includes(UNVERIFIED_LABEL)) section = 'unverified'
     else if (line.includes(DIRECTORY_LABEL)) section = 'other'
-    else if (section !== 'unverified' && !/\bunverified\b|not yet checked/i.test(line))
-      if (urlsIn(line).some((u) => draftUrls.has(u)) || unsupportedFigures(line, verified).length) return true
+    else if (section !== 'unverified' && !/\bunverified\b|not yet checked|official (?:website|page)|according to|says/i.test(line))
+      if (unsupportedFigures(line, verified).length) return true
   }
   return false
 }
@@ -188,7 +195,7 @@ export function assessDraft(
   if (!verified.length && (draft.includes(DIRECTORY_LABEL) || /\b(lockin|our directory) (has )?(verified|confirms?)\b|\bverified by lockin\b/i.test(draft)))
     (level = worst(level, 'high')), reasons.push('Draft claims LockIn-verified information, but no verified evidence was provided')
   if (draftPresentedAsVerified(draft, evidence))
-    (level = worst(level, 'high')), reasons.push('An unverified draft record is presented without its "not yet checked by LockIn" label')
+    (level = worst(level, 'high')), reasons.push('Facts from an unreviewed source are given without a link to that source')
   const invented = unsupportedFigures(draft, evidence)
   if (invented.length) {
     level = worst(level, 'high')

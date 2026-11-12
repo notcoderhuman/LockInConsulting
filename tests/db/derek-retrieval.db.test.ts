@@ -141,12 +141,13 @@ describe('Derek retrieval from published data only', () => {
     }
   })
 
-  it('end to end: a sourced answer from the mock is low risk and cites URL, publisher and date', async () => {
+  it('end to end: a sourced answer from the mock is low risk and links the source in plain words', async () => {
     const question = 'What is the tuition fee at Alpha Synthetic University?'
     const evidence = await loadEvidence(db, question, TODAY)
     const guidance = analyseQuestion(question, evidence)
     const r = await new MockProvider().generate({ question, history: [], evidence, instructions: DEREK_INSTRUCTIONS, guidance }, { signal: new AbortController().signal })
-    expect(r.text).toContain('(official source: https://alpha.example/msc-data/fees, Alpha University (synthetic), checked')
+    expect(r.text).toContain('([Alpha University (synthetic)](https://alpha.example/msc-data/fees))')
+    expect(r.text).not.toMatch(/Not yet checked by LockIn|UNVERIFIED|\(source:|\(official source:|accessed 20|checked 20|From the LockIn directory|evidence:/)
     expect(assessDraft(r.text, assessQuestion(question, evidence), evidence)).toEqual({ level: 'low', reasons: [] })
   })
 })
@@ -180,13 +181,14 @@ describe('Derek retrieval from draft records (unverified, labelled)', () => {
     expect(evidence).toEqual([expect.objectContaining({ ref: `draft_university:${ids.delta}`, unverified: true, text: expect.stringContaining("is in LockIn's draft records") })])
   })
 
-  it('end to end: the mock answers under the unverified label, and that answer is low risk', async () => {
+  it('end to end: the mock answers from a draft record with its source linked, and that answer is low risk', async () => {
     const question = 'What is the tuition fee at Delta Draft University?'
     const evidence = await loadEvidence(db, question, TODAY)
     const guidance = analyseQuestion(question, evidence)
     const r = await new MockProvider().generate({ question, history: [], evidence, instructions: DEREK_INSTRUCTIONS, guidance }, { signal: new AbortController().signal })
-    expect(r.text).toContain('Not yet checked by LockIn (unverified):')
-    expect(r.text).not.toContain('From the LockIn directory:')
+    // The draft record's fact is attributed to its source by a link, and no internal wording reaches the student.
+    expect(r.text).toMatch(/\]\(https:\/\//)
+    expect(r.text).not.toMatch(/Not yet checked by LockIn|UNVERIFIED|\(source:|\(official source:|accessed 20|checked 20|From the LockIn directory|evidence:/)
     expect(assessDraft(r.text, assessQuestion(question, evidence), evidence)).toEqual({ level: 'low', reasons: [] })
   })
 })

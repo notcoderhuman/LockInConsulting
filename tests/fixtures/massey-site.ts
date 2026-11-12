@@ -11,6 +11,10 @@ export const MASSEY = {
   mscRegulations: `${BASE}/about/university-calendar-and-regulations/qualification-regulations/master-of-science/`,
   analytics: `${BASE}/study/all-qualifications-and-degrees/master-of-analytics-PMANL/`,
   entry: `${BASE}/study/entry-requirements-to-study-at-massey/`,
+  apply: `${BASE}/study/admission-and-enrolment/steps-to-apply/`,
+  feesHub: `${BASE}/study/fees-and-funding/`,
+  fees: `${BASE}/study/fees-and-funding/tuition-fees-for-international-students/`,
+  scholarships: `${BASE}/study/fees-and-funding/scholarships/`,
 } as const
 
 export const PATHWAYS = [
@@ -18,13 +22,21 @@ export const PATHWAYS = [
   'A bachelor’s degree or equivalent, with a B- average or higher over 300-level majoring courses, plus at least two years of relevant professional experience demonstrated through a portfolio and an interview if required.',
   'A Bachelor of Information Sciences with Honours or Postgraduate Diploma in Information Sciences, or equivalent, with a B- average or higher over qualifying 700-level courses.',
 ]
+export const MINFSC_FEE = 'The tuition fee for the Master of Information Sciences is NZD 38,400 per year for international students.'
+export const ANALYTICS_FEE = 'The tuition fee for the Master of Analytics is NZD 41,000 per year for international students.'
+export const APPLY_STEPS = [
+  'Check that you meet the entry requirements for your qualification before you apply.',
+  'Gather your supporting documents: certified academic transcripts, proof of identity and English language evidence.',
+  'Apply online through the Massey application portal and upload your documents.',
+]
+export const SCHOLARSHIP_LINE = 'Massey offers scholarships for international postgraduate students, and eligibility and closing dates differ for each scholarship.'
 export const ANALYTICS_RULE = 'Admission to the Master of Analytics requires a bachelor’s degree with a C+ average in statistics or mathematics courses.'
 
 const page = (url: string, title: string, body: string): Page => ({ url, html: `<html><head><title>${title}</title></head><body>${body}</body></html>`, lastModified: null })
 const link = (href: string, text: string) => `<a href="${href}">${text}</a>`
 
 export const masseyPages: Record<string, Page> = {
-  [MASSEY.home]: page(MASSEY.home, 'Massey University', `${link('/study/all-qualifications-and-degrees/', 'All qualifications and degrees')} ${link('/study/entry-requirements-to-study-at-massey/', 'Entry requirements')} ${link('/news/', 'News')}`),
+  [MASSEY.home]: page(MASSEY.home, 'Massey University', `${link('/study/all-qualifications-and-degrees/', 'All qualifications and degrees')} ${link('/study/entry-requirements-to-study-at-massey/', 'Entry requirements')} ${link('/study/admission-and-enrolment/steps-to-apply/', 'How to apply: steps to apply')} ${link('/study/fees-and-funding/', 'Fees and scholarships')} ${link('/news/', 'News')}`),
   [MASSEY.allQualifications]: page(
     MASSEY.allQualifications,
     'All qualifications and degrees - Massey University',
@@ -51,5 +63,9 @@ export const masseyPages: Record<string, Page> = {
     '<p>The Master of Science with a major in Computer Science is not accepting new enrolments.</p>',
   ),
   [MASSEY.analytics]: page(MASSEY.analytics, 'Master of Analytics - Massey University', `<p>${ANALYTICS_RULE}</p><p>Applicants must also meet English language requirements.</p>`),
+  [MASSEY.apply]: page(MASSEY.apply, 'Steps to apply - Massey University', `<ol>${APPLY_STEPS.map((x) => `<li>${x}</li>`).join('')}</ol>`),
+  [MASSEY.feesHub]: page(MASSEY.feesHub, 'Fees and funding - Massey University', `${link('/study/fees-and-funding/tuition-fees-for-international-students/', 'Tuition fees for international students')} ${link('/study/fees-and-funding/scholarships/', 'Scholarships')}`),
+  [MASSEY.fees]: page(MASSEY.fees, 'Tuition fees for international students - Massey University', `<p>${MINFSC_FEE}</p><p>${ANALYTICS_FEE}</p>`),
+  [MASSEY.scholarships]: page(MASSEY.scholarships, 'Scholarships - Massey University', `<p>${SCHOLARSHIP_LINE}</p>`),
   [MASSEY.entry]: page(MASSEY.entry, 'Entry requirements to study at Massey University', '<p>Applicants must meet the University’s admission requirements and English language requirements for the qualification they apply for.</p>'),
 }

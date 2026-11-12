@@ -8,7 +8,7 @@ import type { Connection, RowDataPacket } from 'mysql2/promise'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { connect, startTestDatabase, type TestDatabase } from './harness'
 import { chatLastSeen, handleChat } from './handling'
-import { ANALYTICS_RULE, MASSEY, masseyPages, PATHWAYS } from '../fixtures/massey-site'
+import { ANALYTICS_RULE, APPLY_STEPS, MASSEY, masseyPages, PATHWAYS } from '../fixtures/massey-site'
 import { loadMigrations, migrate } from '../../scripts/migrate.mjs'
 import { runAdminCli } from '../../scripts/admin-user.mjs'
 import { todayIso } from '@/lib/data/publication'
@@ -927,9 +927,8 @@ describe('Derek Auto Mode (offline, mock providers only)', () => {
     const out = await run(q, new MockProvider())
     expect(out.state).toBe('auto_sent')
     const [reply] = await rows<{ body: string }>("SELECT body FROM messages WHERE conversation_id = ? AND author_kind = 'derek'", [q.conversationId])
-    expect(reply.body).toContain('Not yet checked by LockIn (unverified):')
-    expect(reply.body).toMatch(/UNVERIFIED, not yet checked by LockIn: .*AUD 45670\.00 per year .*\(source: https:\/\/uni\.example\/support\/\d+, Example University \(synthetic\), accessed /)
-    expect(reply.body).not.toContain(DIRECTORY_LABEL)
+    expect(reply.body).toMatch(/AUD 45670\.00 per year[\s\S]*\]\(https:\/\/uni\.example\/support\/\d+\)/) // the figure, with its source as a link
+    expect(reply.body).not.toMatch(/Not yet checked by LockIn|UNVERIFIED|\(source:|\(official source:|accessed 20|checked 20|From the LockIn directory|evidence:/)
     // Still a draft: the public directory does not show it.
     expect(await rows("SELECT id FROM public_universities WHERE slug = 'synthetic-draftonly-university'")).toHaveLength(0)
 
@@ -1708,7 +1707,8 @@ describe('Derek answer quality with real directory data (mock provider)', () => 
     expect(provider.requests[0].guidance).toMatchObject({ kind: 'broad_destination', destinations: ['UK'], askFollowUp: true })
     const [draft] = await D.listDrafts(pool(), reviewer, q.conversationId)
     expect(draft.body).toMatch(/course content and structure/)
-    expect(draft.body).toContain(`${DIRECTORY_LABEL}\n- Synthetic Thames University`)
+    expect(draft.body).toContain('- Synthetic Thames University')
+    expect(draft.body).not.toMatch(/Not yet checked by LockIn|UNVERIFIED|\(source:|\(official source:|accessed 20|checked 20|From the LockIn directory|evidence:/)
     expect(draft.body).not.toContain('Severn')
     expect(draft.body!.trim().endsWith('?')).toBe(true)
     expect(draft.body!.match(/\?/g)).toHaveLength(1)
@@ -1727,8 +1727,8 @@ describe('Derek answer quality with real directory data (mock provider)', () => 
       expect(provider.requests[0].evidence).toEqual([])
       expect(provider.requests[0].guidance).toMatchObject({ kind: 'specific_fact', askFollowUp: true })
       const [draft] = await D.listDrafts(pool(), reviewer, q.conversationId)
-      expect(draft.body).toMatch(/LockIn has not verified/)
-      expect(draft.body).toMatch(/Which university and course are you interested in\?$/)
+      expect(draft.body).toMatch(/I could not confirm/)
+      expect(draft.body).toMatch(/Which course are you interested in\?$/) // the university is named: only the course is missing
       expect(draft.body).not.toContain(DIRECTORY_LABEL)
       expect(unsupportedFigures(draft.body!, [])).toEqual([])
     }
@@ -2252,9 +2252,9 @@ describe('Derek daily allowance, web research and routing', () => {
       expect(input.course).toBe('MSc Computer Science')
       expect(Object.keys(input).sort()).toEqual(['course', 'topics', 'universities'])
       expect(JSON.stringify(input)).not.toMatch(/Asha|Rao|student\d+@test|@/)
-      // The answer is labelled as not yet checked by LockIn and links the page; the review record keeps the source.
+      // The answer says what the page says and links it, with no internal wording; the review record keeps the source.
       const [body] = await derekBodies(q.conversationId)
-      expect(body).toContain('Not yet checked by LockIn (unverified):')
+      expect(body).not.toMatch(/Not yet checked by LockIn|UNVERIFIED|\(source:|\(official source:|accessed 20|checked 20|From the LockIn directory|evidence:/)
       expect(body).toContain('EUR 3,200')
       expect(body).toContain('https://thames.example/admissions/fees')
       const [draft] = await D.listDrafts(pool(), owner, q.conversationId)
@@ -2292,7 +2292,7 @@ describe('Derek daily allowance, web research and routing', () => {
       expect(await run(q, new MockProvider(), { loadEvidence: async () => [], research: empty })).toMatchObject({ state: 'auto_sent' })
       const [body] = await derekBodies(q.conversationId)
       expect(body).toContain(D.PRELIMINARY_NOTE)
-      expect(body).toMatch(/has not verified/)
+      expect(body).toMatch(/could not confirm/)
       expect(body.split(D.PRELIMINARY_NOTE)[1]).not.toMatch(/\d/) // no figure or date was made up
       expect(body).not.toMatch(/https?:/)
       const [draft] = await D.listDrafts(pool(), owner, q.conversationId)
@@ -2316,9 +2316,9 @@ describe('Derek daily allowance, web research and routing', () => {
       const q = await ask(await makeStudent(), feeQuestion)
       expect(await run(q, new MockProvider(), { loadEvidence: async () => [], research })).toMatchObject({ state: 'auto_sent' })
       const [body] = await derekBodies(q.conversationId)
-      expect(body).toContain('Official page to check: https://massey.example/')
+      expect(body).toContain('You can start from the official page: [massey.example official page](https://massey.example/)')
       const instructions = (await import('@/lib/derek/provider')).DEREK_INSTRUCTIONS
-      expect(instructions).toMatch(/ONLY when the student has not named them/)
+      expect(instructions).toMatch(/Do not ask which university or course the student means when they already said it/)
     })
 
     it('does not research greetings, general concepts or high-risk topics', async () => {
@@ -2648,8 +2648,7 @@ describe('Massey entry requirements through the whole Derek pipeline (regression
       { ref: 'draft_course:59:requirements', text: `${UNVERIFIED_TAG}: Master of Analytics entry requirements: ${ANALYTICS_RULE}`, sourceUrl: MASSEY.analytics, publisher: 'Massey University', checkedAt: TODAY, unverified: true },
     ]
     const research = (input: Parameters<typeof R.researchQuestion>[0]) => R.researchQuestion({ ...input, universities: [site] }, { fetchPage: async (u) => masseyPages[u] ?? null, search: null })
-    // A stand-in for the model: it writes a short answer using ONLY what is in the evidence it receives (like Gemini under the rules).
-    const { citation, UNVERIFIED_LABEL } = await import('@/lib/derek/provider')
+    // A stand-in for the model: it writes a conversational answer using ONLY what is in the evidence it receives (like Gemini under the rules).
     const seen: { evidence: EvidenceItem[]; note: string }[] = []
     const model: AiProvider = {
       id: 'mock',
@@ -2657,20 +2656,21 @@ describe('Massey entry requirements through the whole Derek pipeline (regression
       autoReply: { permitted: true },
       async generate(req) {
         seen.push({ evidence: req.evidence, note: req.guidance?.note ?? '' })
-        const fromPage = (url: string, re: RegExp) => req.evidence.find((e) => e.sourceUrl === url && re.test(e.text))
-        const detail = (e: EvidenceItem | undefined) => (e ? `${e.text.replace(/^.*?: (?=[A-Z])/, '').replace(/^from the web page "[^"]*": /, '')} ${citation(e)}` : '')
-        const lines = [
-          'The closest programme that is currently open is the Master of Information Sciences (MInfSc). Its published entry routes are below.',
+        const fact = (url: string, re: RegExp) => req.evidence.find((e) => e.sourceUrl === url && re.test(e.text))?.text.replace(/^UNVERIFIED[^:]*: from the web page "[^"]*": /, '') ?? ''
+        const text = [
+          'The closest programme that is currently open is the Master of Information Sciences (MInfSc), which is a 180-credit qualification. There are three published ways in:',
           '',
-          UNVERIFIED_LABEL,
-          ...[/Bachelor of Information Sciences or equivalent, with a B- average/, /two years of relevant professional experience/, /Honours or Postgraduate Diploma/].map((re) => `- ${detail(fromPage(MASSEY.minfsc, re))}`),
-          `- ${detail(fromPage(MASSEY.minfsc, /English language requirements/))}`,
-          `- ${detail(fromPage(MASSEY.minfscRegulations, /transitional provisions/))}`,
-          `- ${detail(fromPage(MASSEY.mscRegulations, /not accepting new enrolments/))}`,
+          `- ${fact(MASSEY.minfsc, /Bachelor of Information Sciences or equivalent, with a B- average/)}`,
+          `- ${fact(MASSEY.minfsc, /two years of relevant professional experience/)}`,
+          `- ${fact(MASSEY.minfsc, /Honours or Postgraduate Diploma/)}`,
           '',
-          'Meeting the minimum requirements does not guarantee admission. Please confirm on the official pages before you apply.',
-        ]
-        return { text: lines.join('\n'), model: 'mock-derek-1' }
+          `You will also need to meet Massey’s university-wide admission and English language requirements. ${fact(MASSEY.minfsc, /English language requirements/)}`,
+          '',
+          `One thing to know about the name: ${fact(MASSEY.minfscRegulations, /transitional provisions/)} And the older Master of Science pathway is closed: ${fact(MASSEY.mscRegulations, /not accepting new enrolments/)}`,
+          '',
+          `Meeting the minimum does not guarantee admission. The details are on Massey’s [Master of Information Sciences page](${MASSEY.minfsc}), its [qualification regulations](${MASSEY.minfscRegulations}) and the [Master of Science regulations](${MASSEY.mscRegulations}).`,
+        ].join('\n')
+        return { text, model: 'mock-derek-1' }
       },
     }
     const outcome = await D.prepareDerekDraft(pool(), q.conversationId, q.triggerMessageId!, { provider: model, loadEvidence, research })
@@ -2712,5 +2712,162 @@ describe('Massey entry requirements through the whole Derek pipeline (regression
     expect(DEREK_INSTRUCTIONS).toMatch(/never use another qualification's requirements or fees/)
     expect(DEREK_INSTRUCTIONS).toMatch(/does not guarantee admission/)
     expect(DEREK_INSTRUCTIONS).toMatch(/never as an opening habit/)
+  })
+})
+
+describe('Conversational answers: next steps, scholarships and fees (examples A, B, C; fixtures)', () => {
+  const env = { DEREK_AI_ENABLED: 'true', DEREK_PROVIDER: 'mock', DEREK_AUTO_REPLY_CLEARED: 'mock' }
+  const subject = 'New Zealand · Master’s in Computer Science'
+  const site = { name: 'Massey University', officialWebsite: MASSEY.home, courseUrls: [] as string[] }
+  const FREE: DerekStatus = { state: 'ready', providerId: 'mock', notes: [], autoReply: { permitted: true }, freeTier: true }
+  const INTERNAL = /Not yet checked by LockIn|UNVERIFIED|\(source:|\(official source:|accessed 20|checked 20|From the LockIn directory|evidence:|\[(?:web|university|draft_course|course):/
+  const bare = /(?<!\]\()https?:\/\//
+  const left = async (s: StudentActor) => (await AL.getAllowance(pool(), s.profileId)).remaining
+  const bodies = async (id: number) => (await rows<{ body: string }>("SELECT body FROM messages WHERE conversation_id = ? AND author_kind = 'derek' ORDER BY id", [id])).map((r) => r.body)
+
+  beforeEach(async () => {
+    Object.assign(process.env, env)
+    AUTO_REPLY_LIMITS.globalPerHour = 100_000
+    AUTO_REPLY_LIMITS.globalPerDay = 100_000
+    await S.updateSupportSettings(pool(), owner, { autoReplyEnabled: true })
+  })
+  afterEach(async () => {
+    for (const k of Object.keys(env)) delete process.env[k]
+    await db.query("UPDATE support_settings SET support_mode = 'online', auto_reply_enabled = FALSE WHERE id = 1")
+  })
+
+  /** A model stand-in that answers in the way the instructions ask, using only the evidence it is handed. */
+  function counsellor(write: (facts: (url: string, re: RegExp) => string, req: Parameters<AiProvider['generate']>[0]) => string) {
+    const requests: Parameters<AiProvider['generate']>[0][] = []
+    const provider: AiProvider = {
+      id: 'mock',
+      model: 'mock-derek-1',
+      autoReply: { permitted: true },
+      async generate(req) {
+        requests.push(req)
+        const facts = (url: string, re: RegExp) => req.evidence.find((e) => e.sourceUrl === url && re.test(e.text))?.text.replace(/^UNVERIFIED[^:]*: from the web page "[^"]*": /, '') ?? ''
+        return { text: write(facts, req), model: 'mock-derek-1' }
+      },
+    }
+    return { provider, requests }
+  }
+  const researchOver = async () => {
+    const R = await import('@/lib/derek/research')
+    const calls: Parameters<typeof R.researchQuestion>[0][] = []
+    const research = (input: Parameters<typeof R.researchQuestion>[0]) => (calls.push(input), R.researchQuestion({ ...input, universities: [site] }, { fetchPage: async (u) => masseyPages[u] ?? null, search: null }))
+    return { research, calls }
+  }
+  const accept = (s: StudentActor) => db.query('UPDATE student_profiles SET privacy_notice_version = ? WHERE id = ?', [O.PRIVACY_NOTICE_VERSION, s.profileId])
+  const why = async (id: number) => JSON.stringify((await D.listDrafts(pool(), owner, id)).map((d) => [d.risk, d.riskReasons, d.holdReason]))
+
+  it('A: explains the current qualification and the practical steps, with clean links and no internal wording', async () => {
+    const s = await makeStudent()
+    const q = await C.createConversation(pool(), s, { body: 'What are my next steps to apply for Master’s in Computer Science at Massey University?', clientRequestId: rid(), subject })
+    const { research, calls } = await researchOver()
+    const { provider, requests } = counsellor((f) =>
+      [
+        'The qualification to look at is the **Master of Information Sciences (MInfSc)**: Massey’s older Master of Science in Computer Science is closed to new students, and Computer Science is now taught within the MInfSc.',
+        '',
+        'Here is a sensible order for applying:',
+        '',
+        `1. ${f(MASSEY.apply, /entry requirements for your qualification/)}`,
+        `2. ${f(MASSEY.apply, /supporting documents/)}`,
+        `3. ${f(MASSEY.apply, /online through/)}`,
+        '',
+        `Your academic route depends on your background: ${f(MASSEY.minfsc, /Bachelor of Information Sciences or equivalent, with a B- average/)}`,
+        '',
+        `Start with Massey’s [Master of Information Sciences page](${MASSEY.minfsc}), then follow the [steps to apply](${MASSEY.apply}). Meeting the minimum does not guarantee admission.`,
+      ].join('\n'),
+    )
+    const out = await D.prepareDerekDraft(pool(), q.conversationId, q.triggerMessageId!, { provider, research, loadEvidence: async () => [] })
+    expect(out, await why(q.conversationId)).toMatchObject({ state: 'auto_sent' })
+    expect(calls[0].topics).toEqual(['application steps'])
+    // The evidence handed to the model: the steps, the programme and its regulations; never the other course.
+    const seen = requests[0].evidence.map((e) => e.text).join('\n')
+    for (const step of APPLY_STEPS) expect(seen).toContain(step)
+    expect(seen).toContain('180-credit')
+    expect(seen).not.toMatch(/Analytics|C\+ average/)
+    // What the student reads.
+    const [body] = await bodies(q.conversationId)
+    for (const step of APPLY_STEPS) expect(body).toContain(step)
+    expect(body).toMatch(/\[Master of Information Sciences page\]\(https:\/\/www\.massey\.ac\.nz\/study\/all-qualifications-and-degrees\/master-of-information-sciences-PMINS\/\)/)
+    expect(body).toMatch(/\[steps to apply\]\(https:\/\/www\.massey\.ac\.nz\/study\/admission-and-enrolment\/steps-to-apply\/\)/)
+    expect(body).not.toMatch(INTERNAL)
+    expect(body).not.toMatch(bare) // no raw address anywhere outside a link
+    expect(body).not.toContain(D.PRELIMINARY_NOTE)
+    expect(body).toContain('does not guarantee admission')
+    expect(await left(s)).toBe(9)
+  })
+
+  it('C: a short follow-up gets the right course’s figure and sends nothing about the earlier conversation to the free tier', async () => {
+    const s = await makeStudent('Asha Rao')
+    await accept(s)
+    const first = 'What are my next steps to apply for Master’s in Computer Science at Massey University?'
+    const q = await C.createConversation(pool(), s, { body: first, clientRequestId: rid(), subject })
+    const { research, calls } = await researchOver()
+    const { provider, requests } = counsellor((f) =>
+      [
+        `For the Master of Information Sciences, Massey lists the international tuition fee at **NZD 38,400 per year**. ${f(MASSEY.fees, /Master of Information Sciences is NZD 38,400/) ? '' : ''}`,
+        '',
+        `That comes from Massey’s [tuition fees for international students](${MASSEY.fees}) page. Fees are set each year, so confirm the figure there before you pay.`,
+      ].join('\n'),
+    )
+    // The first question is answered (any answer), then the short follow-up arrives.
+    await C.staffReply(pool(), reviewer, q.conversationId, { body: 'Thanks, the team will look at your first question.', clientRequestId: rid() })
+    const follow = await C.sendStudentMessage(pool(), s, q.conversationId, { body: 'What are the tuition fees?', clientRequestId: rid() })
+    const out = await D.prepareDerekDraft(pool(), q.conversationId, follow.triggerMessageId!, { provider, research, status: FREE, loadEvidence: async () => [] })
+    expect(out, await why(q.conversationId)).toMatchObject({ state: 'auto_sent' })
+    // Resolved on LockIn's side: the right university, qualification and topic.
+    expect(calls.at(-1)).toMatchObject({ topics: ['fees or costs'], course: 'Master’s in Computer Science' })
+    const seen = requests[0].evidence.map((e) => e.text).join('\n')
+    expect(seen).toContain('NZD 38,400')
+    expect(seen).not.toMatch(/41,000|Analytics/)
+    // What Google would receive: the short question and public evidence only.
+    const wire = JSON.stringify({ q: requests[0].question, h: requests[0].history, n: requests[0].guidance?.note })
+    expect(requests[0].question).toBe('What are the tuition fees?')
+    expect(requests[0].history).toEqual([])
+    expect(wire, wire).not.toMatch(/Asha|Rao|next steps to apply|Master’s in Computer Science|plan to study|Follow-up to the student/)
+    // What the student reads.
+    const bodies2 = await bodies(q.conversationId)
+    const body = bodies2.at(-1)!
+    expect(body).toContain('NZD 38,400')
+    expect(body).not.toContain('41,000')
+    expect(body).not.toMatch(INTERNAL)
+    expect(body).not.toMatch(bare)
+    expect(body).toContain(`](${MASSEY.fees})`)
+    expect(await left(s)).toBe(9) // one Derek answer delivered (the first reply was a person's), counted once
+  })
+
+  it('B: asks once what the student has in mind when nothing is known, and uses the earlier university when it is', async () => {
+    const s = await makeStudent()
+    const cold = await ask(s, 'Can I get a scholarship?')
+    const { research, calls } = await researchOver()
+    expect(await D.prepareDerekDraft(pool(), cold.conversationId, cold.triggerMessageId!, { provider: new MockProvider(), research })).toMatchObject({ state: 'auto_sent' })
+    expect(calls).toHaveLength(0) // no university: nothing to look up
+    const [coldBody] = await bodies(cold.conversationId)
+    expect(coldBody).toContain('Which university or country, and which study level, do you have in mind?')
+    expect(coldBody).not.toMatch(/\d/) // no invented amount, date or eligibility
+    expect(coldBody).not.toMatch(INTERNAL)
+
+    // With the Massey conversation behind it, the same question is about Massey.
+    const t = await makeStudent()
+    const q = await C.createConversation(pool(), t, { body: 'What are the entry requirements for Master’s in Computer Science at Massey University?', clientRequestId: rid(), subject })
+    await C.staffReply(pool(), reviewer, q.conversationId, { body: 'The details are on the official programme page.', clientRequestId: rid() })
+    const ask2 = await C.sendStudentMessage(pool(), t, q.conversationId, { body: 'Can I get a scholarship?', clientRequestId: rid() })
+    const { provider, requests } = counsellor((f) =>
+      [
+        `Massey does offer scholarships to international postgraduate students, though ${f(MASSEY.scholarships, /eligibility and closing dates differ/).toLowerCase().replace('massey offers scholarships for international postgraduate students, and ', '')}`,
+        '',
+        `Check the [Massey scholarships page](${MASSEY.scholarships}) for the ones that match a Master of Information Sciences applicant, and note each closing date, since they differ. I can’t say whether you qualify for any of them.`,
+      ].join('\n'),
+    )
+    expect(await D.prepareDerekDraft(pool(), q.conversationId, ask2.triggerMessageId!, { provider, research, loadEvidence: async () => [] }), await why(q.conversationId)).toMatchObject({ state: 'auto_sent' })
+    expect(calls.at(-1)).toMatchObject({ topics: ['scholarships'] })
+    expect(requests[0].evidence.map((e) => e.text).join('\n')).toContain('eligibility and closing dates differ')
+    const body = (await bodies(q.conversationId)).at(-1)!
+    expect(body).not.toMatch(INTERNAL)
+    expect(body).not.toMatch(bare)
+    expect(body).not.toMatch(/Which university/) // it is not asked again
+    expect(body).not.toMatch(/\bNZD|\d{3,}/) // no invented amounts
   })
 })

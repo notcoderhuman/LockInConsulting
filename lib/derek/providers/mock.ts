@@ -1,4 +1,4 @@
-import { citation, DIRECTORY_LABEL, ProviderError, UNVERIFIED_LABEL, type EvidenceItem, type AiProvider, type AutoReplyCapability, type DraftRequest, type DraftResult } from '../provider'
+import { ProviderError, type EvidenceItem, type AiProvider, type AutoReplyCapability, type DraftRequest, type DraftResult } from '../provider'
 
 // Deterministic, offline provider for development and automated tests. It never makes a network
 // call, costs nothing and sees only synthetic data. It is refused in production (lib/derek/config.ts).
@@ -39,42 +39,51 @@ export class MockProvider implements AiProvider {
   }
 }
 
+const host = (url: string) => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return 'official page'
+  }
+}
+/** An evidence line as a plain sentence for the student: no tags, no "from the web page" wrapper. */
+const plain = (e: EvidenceItem) => e.text.replace(/^UNVERIFIED[^:]*:\s*/i, '').replace(/^from the web page "[^"]*":\s*/i, '')
+const line = (e: EvidenceItem) => `- ${plain(e)} ([${e.publisher || host(e.sourceUrl)}](${e.sourceUrl}))`
+
 function contractAnswer(request: DraftRequest): { text: string; uncertain: boolean } {
   const g = request.guidance
   // As many evidence lines as fit in a message (4000 characters), best first.
   const top: EvidenceItem[] = []
   let size = 0
   for (const e of request.evidence) {
-    size += e.text.length + citation(e).length + 8
+    size += plain(e).length + e.sourceUrl.length + (e.publisher || '').length + 12
     if (size > 3300) break
     top.push(e)
   }
-  const facts = top.map((e) => `- ${e.text} ${citation(e)}`)
-  // Verified facts under the directory label; draft records only under the unverified one.
-  const block = (label: string, list: EvidenceItem[]) => (list.length ? [label, ...list.map((e) => `- ${e.text} ${citation(e)}`)] : [])
-  const sourcedBlock = [...block(DIRECTORY_LABEL, top.filter((e) => !e.unverified)), ...block(UNVERIFIED_LABEL, top.filter((e) => e.unverified))].join('\n')
-  const followUp = g?.followUp ? `\n${g.followUp}` : ''
+  const facts = top.map(line)
+  const sourced = facts.join('\n')
+  const followUp = g?.followUp ? `\n\n${g.followUp}` : ''
 
-  // A specific fact with matching verified evidence: quote it, nothing else.
+  // A specific fact with matching evidence: say what the sources say, nothing else.
   if (g?.kind === 'specific_fact' && !g.askFollowUp && facts.length)
-    return { text: `${sourcedBlock}\nDetails can change, so confirm on the official page before you apply.`, uncertain: false }
+    return { text: `Here is what the sources say:\n\n${sourced}\n\nDetails can change, so it is worth confirming on the official page before you apply.`, uncertain: false }
 
-  // A specific fact LockIn has not verified (or no guidance and no evidence at all).
+  // A specific fact nothing in the evidence answers (or no guidance and no evidence at all).
   if (g?.kind === 'specific_fact' || (!g && !facts.length))
     return {
-      text: `LockIn has not verified ${g?.topics.join(' or ') || 'this information'} yet, so I won’t guess. The official course page of the university is the best place to check, and a LockIn team member will follow up.${followUp || '\nWhich university and course are you interested in?'}`,
+      text: `I could not confirm ${g?.topics.join(' or ') || 'this information'} yet, so I won’t guess. The official course page of the university is the best place to check, and a LockIn team member will follow up.${followUp || '\n\nWhich university and course are you interested in?'}`,
       uncertain: true,
     }
 
   const where = g?.destinations.length ? ` in ${g.destinations.join(' and ')}` : ''
   const general =
     g?.kind === 'broad_destination'
-      ? `When you compare universities${where}, look at:\n- course content and structure\n- entry requirements for your level\n- total cost, including tuition and living costs\n- location and city life\n- application timelines and intakes\nThese differ between universities, so check each official course page.`
+      ? `When you compare universities${where}, look at:\n- course content and structure\n- entry requirements for your level\n- total cost, including tuition and living costs\n- location and city life\n- application timelines and intakes\n\nThese differ between universities, so check each official course page.`
       : 'In general, this depends on the university and the course, so treat this as general guidance and check the official course page for the details.'
-  const sourced = facts.length
-    ? `\n${sourcedBlock}`
+  const extra = facts.length
+    ? `\n\nA few universities to look at:\n${sourced}`
     : g && g.destinations.length > 1
-      ? `\nLockIn has not verified university data for ${g.destinations.join(' or ')} yet, so no figures are given here.`
+      ? `\n\nI have no confirmed university data for ${g.destinations.join(' or ')} yet, so no figures are given here.`
       : ''
-  return { text: `${general}${sourced}${followUp}`, uncertain: false }
+  return { text: `${general}${extra}${followUp}`, uncertain: false }
 }

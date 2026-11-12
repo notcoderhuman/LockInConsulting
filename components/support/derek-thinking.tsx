@@ -56,9 +56,9 @@ export function DerekThinking({ pending, phase }: { pending: boolean; phase: Der
   return (
     <div role="status" aria-live="polite" className="self-start">
       {shown ? (
-        <div className="derek-thinking flex items-center gap-3 rounded-xl border border-border bg-background px-4 py-3" data-leaving={leaving ? 'true' : undefined}>
-          <ThinkingOrb state={ORB_STATE[label]} size={64} theme="dark" color={GOLD} aria-hidden="true" />
-          <span className="text-sm text-muted-foreground">{THINKING_TEXT[label]}</span>
+        <div className="derek-thinking inline-flex items-center gap-2 py-1 text-sm text-muted-foreground" data-leaving={leaving ? 'true' : undefined}>
+          <ThinkingOrb state={ORB_STATE[label]} size={20} theme="dark" color={GOLD} aria-hidden="true" />
+          <span>{THINKING_TEXT[label]}</span>
         </div>
       ) : null}
     </div>

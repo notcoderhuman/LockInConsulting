@@ -86,7 +86,9 @@ describe('Massey entry requirements (regression fixture)', () => {
   it('stops at the generic admissions page only when nothing programme-specific is published', async () => {
     const generic = Object.fromEntries(Object.entries(masseyPages).filter(([u]) => ![MASSEY.minfsc, MASSEY.minfscRegulations, MASSEY.mscRegulations].includes(u as never)))
     const out = await researchQuestion({ topics: ['entry or language requirements'], course: 'Master’s in Computer Science', universities: [site] }, { fetchPage: async (u) => generic[u] ?? null, search: null, now: () => NOW })
-    expect(out.record.sources.map((s) => s.url)).toEqual([MASSEY.entry])
+    const urls = out.record.sources.map((s) => s.url)
+    expect(urls).toContain(MASSEY.entry)
+    for (const specific of [MASSEY.minfsc, MASSEY.minfscRegulations, MASSEY.mscRegulations, MASSEY.analytics]) expect(urls).not.toContain(specific)
     expect(out.items.map((i) => i.text).join('\n')).not.toContain(ANALYTICS_RULE)
   })
 })

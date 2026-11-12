@@ -48,10 +48,10 @@ describe('suggested questions', () => {
 })
 
 describe('Derek answers', () => {
-  it('are asked to be short and to say plainly when unsure', () => {
-    expect(DEREK_INSTRUCTIONS).toMatch(/usually 2 to 4 sentences/)
+  it('are asked to answer like a counsellor and to say plainly when unsure', () => {
+    expect(DEREK_INSTRUCTIONS).toMatch(/Simple questions get short answers of a few sentences/)
     expect(DEREK_INSTRUCTIONS).toMatch(/Never present a guess as a confirmed fact/)
-    expect(DEREK_INSTRUCTIONS).toMatch(/never your internal reasoning/)
+    expect(DEREK_INSTRUCTIONS).toMatch(/never show your reasoning/)
   })
 
   it('mark a truncated answer as incomplete, so it is never sent as a preliminary answer', () => {

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { DerekThinking, type DerekPhase } from '@/components/support/derek-thinking'
+import { MessageBody } from '@/components/support/message-body'
 import { Button } from '@/components/ui/button'
 import { controlClass } from '@/components/admin/form-controls'
 import { DESTINATIONS } from '@/lib/destinations'
@@ -357,7 +358,7 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
                 )}
               >
                 <span className={cn('text-xs font-medium', m.authorKind === 'student' ? 'text-muted-foreground' : m.authorKind === 'derek' ? 'text-primary' : 'text-foreground')}>{m.label}</span>
-                <p className="text-sm leading-relaxed break-words whitespace-pre-wrap text-foreground">{m.body}</p>
+                {m.authorKind === 'derek' ? <MessageBody text={m.body} /> : <p className="text-sm leading-relaxed break-words whitespace-pre-wrap text-foreground">{m.body}</p>}
                 <time className="text-[0.7rem] text-muted-foreground">{formatTime(m.createdAt)}</time>
               </li>
             ))}

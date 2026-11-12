@@ -232,6 +232,7 @@ const TOPIC_WORDS: Record<string, string[]> = {
   deadlines: ['deadline', 'deadlines', 'apply by', 'closing date', 'closes', 'intakes', 'application period', 'applications open', 'application window'],
   requirements: ['requirement', 'requirements', 'eligib', 'admission', 'entry', 'ielts', 'toefl', 'pte', 'duolingo', 'gpa', 'prerequisite', 'language', 'pathway', 'average', 'professional experience', 'portfolio', 'credits', 'new enrolments', 'new enrollments', 'transitional'],
   scholarships: ['scholarship', 'scholarships', 'bursary', 'funding', 'financial aid', 'grant'],
+  application: ['how to apply', 'apply', 'application', 'steps', 'documents', 'checklist', 'supporting documents', 'submit', 'enrol', 'requirement', 'requirements', 'eligib', 'admission', 'average', 'pathway'],
   visa: ['visa', 'immigration', 'residence permit', 'study permit'],
   other: ['admission', 'apply', 'application'],
 }
@@ -239,7 +240,7 @@ const TOPIC_WORDS: Record<string, string[]> = {
 function wordsFor(topics: string[]): string[] {
   const out = new Set<string>()
   for (const t of topics.length ? topics : ['other']) {
-    const key = /fee|tuition|cost/.test(t) ? 'fees' : /deadline|intake|date/.test(t) ? 'deadlines' : /requirement|eligib|entry|language|score/.test(t) ? 'requirements' : /scholar|fund|bursar/.test(t) ? 'scholarships' : /visa|immigr|permit/.test(t) ? 'visa' : 'other'
+    const key = /fee|tuition|cost/.test(t) ? 'fees' : /deadline|intake|date/.test(t) ? 'deadlines' : /requirement|eligib|entry|language|score/.test(t) ? 'requirements' : /scholar|fund|bursar/.test(t) ? 'scholarships' : /appl|document|step/.test(t) ? 'application' : /visa|immigr|permit/.test(t) ? 'visa' : 'other'
     for (const w of TOPIC_WORDS[key]) out.add(w)
   }
   return [...out]
@@ -249,8 +250,18 @@ function wordsFor(topics: string[]): string[] {
 function substantive(line: string, topics: string[]): boolean {
   const key = topics.join(' ')
   if (/fee|tuition|cost|deadline|intake|date/.test(key)) return /\d/.test(line)
+  if (/appl|document|step/.test(key)) return CLOSED_RE.test(line) || /\b(?:apply|application|submit|documents?|checklist|portal|online|step|deadline|degree|bachelor|master|average|experience|portfolio|english)\b/i.test(line)
   if (/requirement|eligib|entry|language|score/.test(key)) return CLOSED_RE.test(line) || /\d|\b(?:degree|bachelor|master|ielts|toefl|pte|duolingo|gpa|grade|diploma|certificate|english|average|experience|portfolio|interview)\b/i.test(line)
   return true
+}
+
+const QUALIFICATION_NAME = /\b(?:Master|Bachelor|Doctor|Postgraduate Diploma|Graduate Diploma|Diploma|Certificate)\s+(?:of|in)\s+[A-Z][A-Za-z&-]*(?:\s+(?:and|of|in|&)?\s*[A-Z][A-Za-z&-]*){0,4}/g
+
+/** A line about "the Master of Analytics" says nothing about a Computer Science question: lines naming only other qualifications are dropped. */
+function namesOnlyOtherQualifications(line: string, q: Qualification): boolean {
+  const names = line.match(QUALIFICATION_NAME) ?? []
+  // Only the subject counts here: a Bachelor of the same subject is a prerequisite named in a Master's admission rule, not a competing programme.
+  return names.length > 0 && names.every((n) => isOtherQualification(n, q, { ignoreLevel: true }))
 }
 
 /** The lines of a page that speak about the topic, best first. */
@@ -265,7 +276,7 @@ export function relevantPassages(text: string, topics: string[], course: string 
       // A line that says the programme is closed to new students, or under transitional rules, is always worth keeping.
       return { line, i, score: hits * 2 + courseWords.filter((w) => lower.includes(w)).length + (/\d/.test(line) ? 1 : 0) + (CLOSED_RE.test(line) ? 4 : 0) }
     })
-    .filter((x) => x.score >= 2 && substantive(x.line, topics))
+    .filter((x) => x.score >= 2 && substantive(x.line, topics) && !(q && namesOnlyOtherQualifications(x.line, q)))
     .sort((a, b) => b.score - a.score || a.i - b.i)
     .slice(0, max)
     .sort((a, b) => a.i - b.i)
@@ -369,6 +380,7 @@ const TOPIC_EVIDENCE: [RegExp, RegExp][] = [
   [/acceptance/i, /acceptance/i],
   [/requirement/i, /requirement/i],
   [/scholarship/i, /scholarship/i],
+  [/application/i, /appl(?:y|ication)|documents?|checklist/i],
 ]
 const GENERIC_COURSE_WORDS = new Set(['master', 'masters', 'bachelor', 'bachelors', 'degree', 'programme', 'program', 'course', 'postgraduate', 'undergraduate', 'diploma', 'honours', 'with', 'from'])
 

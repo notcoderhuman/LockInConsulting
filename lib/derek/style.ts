@@ -23,8 +23,7 @@ const TRAILING_FILLER: RegExp[] = [
 export function tidyDraft(raw: string): string {
   let text = raw
     .replace(/\r\n?/g, '\n')
-    .replace(/\*\*([^*\n]+)\*\*/g, '$1')
-    .replace(/__([^_\n]+)__/g, '$1')
+    .replace(/__([^_\n]+)__/g, '**$1**')
     .replace(/^#{1,6}\s+/gm, '')
     .replace(/^\s*[*•]\s+/gm, '- ')
     .trim()
@@ -67,7 +66,7 @@ export function styleIssues(text: string, { maxWords = 220 }: { maxWords?: numbe
   if (SIGNIFICANCE.test(text)) issues.push('Vague claim about significance or opportunities')
   if (NEGATIVE_PARALLEL.test(text)) issues.push('"Not just X, but Y" construction')
   if (HEDGE.test(text)) issues.push('Generic hedge or disclaimer')
-  if (/\*\*|__|^#{1,6}\s/m.test(text) || EMOJI.test(text)) issues.push('Decorative formatting (bold, headings or emoji)')
+  if (/^#{1,6}\s/m.test(text) || EMOJI.test(text)) issues.push('Decorative formatting (headings or emoji)')
   if ((text.match(/^\s*(?:-|\*|•|\d+[.)])\s/gm) ?? []).length > 8) issues.push('Long list')
   if (wordCount(text) > maxWords) issues.push(`Long reply (${wordCount(text)} words)`)
   // Three or more sentences opening with the same two words read as a template.
@@ -82,4 +81,32 @@ export function styleIssues(text: string, { maxWords = 220 }: { maxWords?: numbe
   if (Object.values(openings.reduce<Record<string, number>>((n, o) => ({ ...n, [o]: (n[o] ?? 0) + 1 }), {})).some((n) => n >= 3))
     issues.push('Repetitive sentence openings')
   return issues
+}
+
+// ---------------------------------------------------------------------------------------------
+// What the student reads. The safeguards judge the model's text; this turns whatever internal wording slipped through
+// (label lines, "(source: …, accessed …)" citations, evidence tags) into plain student-facing Markdown, so a student never
+// sees engineering metadata. It only removes or rewrites; it never adds a fact.
+// ---------------------------------------------------------------------------------------------
+
+const hostLabel = (url: string) => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return 'official page'
+  }
+}
+
+export function studentFacingText(text: string): string {
+  let t = text
+    // A label line that introduces facts: gone.
+    .replace(/^[ \t]*(?:From the LockIn directory|Not yet checked by LockIn \(unverified\)|From the LockIn team):[ \t]*$/gim, '')
+    .replace(/(?:UNVERIFIED,? not yet checked by LockIn|Not yet checked by LockIn \(unverified\))[:\s]*/gi, '')
+    // Evidence references and "from the web page" wrappers the model might echo.
+    .replace(/\[(?:web|official|tuition_fee|draft_tuition_fee|course|draft_course|course_intake|draft_course_intake|university|draft_university|university_ranking|acceptance_rate)[^\]\n]*\]/g, '')
+    .replace(/from the web page "[^"\n]*":\s*/gi, '')
+    // "(source: URL, Publisher, accessed 2026-11-12)" becomes a clean link named after the publisher.
+    .replace(/\((?:official )?source:\s*(https?:\/\/[^\s,)]+)(?:,\s*([^,)]+?))?(?:,\s*(?:accessed|checked)[^)]*)?\)/gi, (_m, url: string, who?: string) => `([${(who ?? hostLabel(url)).trim()}](${url}))`)
+  t = t.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim()
+  return t || text.trim()
 }

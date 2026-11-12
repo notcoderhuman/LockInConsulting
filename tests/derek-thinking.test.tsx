@@ -15,7 +15,10 @@ describe('Derek thinking indicator', () => {
     expect(thinking).toContain('role="status"')
     expect(thinking).toContain('aria-live="polite"')
     expect(thinking).toMatch(/<canvas[^>]*aria-hidden="true"/) // the orb is a canvas from thinking-orbs; the words are the announcement
-    expect(thinking).toMatch(/width:\s*64px/i) // the 64 px chat size
+    expect(thinking).toMatch(/width:\s*20px/i) // the 20 px inline size
+    expect(thinking).toMatch(/height:\s*20px/i)
+    expect(thinking).not.toMatch(/rounded-xl|border-border|bg-background|px-4 py-3/) // no separate card around it
+    expect(thinking).toMatch(/inline-flex items-center/)
     expect(renderToStaticMarkup(<DerekThinking pending phase="researching" />)).toContain('Derek is checking university sources…')
     expect(renderToStaticMarkup(<DerekThinking pending phase="solving" />)).toContain('Derek is thinking…')
     expect(THINKING_TEXT).toEqual({ thinking: 'Derek is thinking…', researching: 'Derek is checking university sources…', solving: 'Derek is thinking…' })

@@ -25,11 +25,12 @@ describe('every sourced fact carries its source', () => {
     expect(q(`${DIRECTORY_LABEL}\n- ${fee.text} (https://elsewhere.example/)`, [fee]).level).not.toBe('low')
   })
 
-  it('the mock (and so the contract) cites URL, publisher and checked date', async () => {
+  it('the mock (and so the contract) links the source with the publisher as the link text', async () => {
     const evidence = [fee]
     const guidance = analyseQuestion('What is the tuition fee at Example U?', evidence)
     const r = await new MockProvider().generate({ question: 'What is the tuition fee at Example U?', history: [], evidence, instructions: DEREK_INSTRUCTIONS, guidance }, { signal: new AbortController().signal })
-    expect(r.text).toContain(`(official source: ${fee.sourceUrl}, ${pub}, checked 2026-10-01)`)
+    expect(r.text).toContain(`([${pub}](${fee.sourceUrl}))`)
+    expect(r.text).not.toMatch(/official source:|checked 2026/)
     expect(q(r.text, evidence).level).toBe('low')
   })
 })
@@ -81,24 +82,27 @@ describe('draft (unverified) records are always labelled', () => {
   it('accepts a draft fact under the unverified label, with its source', () => {
     expect(risk(`${UNVERIFIED_LABEL}\n- MSc Draft tuition fee: GBP 27500.00 per year ${cite}\nConfirm it on the official page.`, [draftFee])).toEqual({ level: 'low', reasons: [] })
   })
-  it('rejects the same fact under the directory label, in plain text, or called verified', () => {
-    expect(risk(`${DIRECTORY_LABEL}\n- MSc Draft tuition fee: GBP 27500.00 per year ${cite}`, [draftFee]).level).toBe('high')
-    expect(risk(`Tuition is GBP 27500.00 per year ${cite}.`, [draftFee]).reasons).toContain('An unverified draft record is presented without its "not yet checked by LockIn" label')
+  it('accepts the same fact in natural words when the answer links the source', () => {
+    expect(risk('The university’s fees page lists GBP 27500.00 per year for the MSc ([Draft University](https://draft.example/fees)).', [draftFee])).toEqual({ level: 'low', reasons: [] })
+    expect(risk(`Tuition is GBP 27500.00 per year ${cite}.`, [draftFee]).level).toBe('low') // the old citation form still counts as a link
+  })
+  it('rejects a figure only a draft record supports when nothing says where it comes from, and any claim of LockIn verification', () => {
+    expect(risk('Tuition is GBP 27500.00 per year.', [draftFee]).reasons).toContain('Facts from an unreviewed source are given without a link to that source')
     expect(risk(`LockIn has verified this. ${UNVERIFIED_LABEL}\n- GBP 27500.00 per year ${cite}`, [draftFee]).level).toBe('high')
+    expect(risk(`${DIRECTORY_LABEL}\n- MSc Draft tuition fee: GBP 27500.00 per year`, [draftFee]).level).toBe('high')
   })
   it('allows a draft figure on a line that says it is unverified', () => {
     expect(risk(`The unverified figure is GBP 27500.00 per year ${cite}.`, [draftFee]).level).toBe('low')
   })
-  it('the mock keeps verified and unverified facts in separate, labelled sections', async () => {
+  it('the mock states verified and unreviewed facts in plain words with links, never with internal labels', async () => {
     const evidence = [fee, draftFee]
     const question = 'What is the tuition fee at Example U?'
     const guidance = analyseQuestion(question, evidence)
     const r = await new MockProvider().generate({ question, history: [], evidence, instructions: DEREK_INSTRUCTIONS, guidance }, { signal: new AbortController().signal })
-    const [verifiedPart, draftPart] = r.text.split(UNVERIFIED_LABEL)
-    expect(verifiedPart).toContain(`${DIRECTORY_LABEL}\n- MSc Data`)
-    expect(verifiedPart).not.toContain('27500')
-    expect(draftPart).toContain('- UNVERIFIED, not yet checked by LockIn: MSc Draft tuition fee')
-    expect(draftPart).toContain('accessed 2026-11-01)')
+    expect(r.text).toContain('- MSc Data')
+    expect(r.text).toContain('- MSc Draft tuition fee (international): GBP 27500.00 per year')
+    expect(r.text).toContain('(https://draft.example/fees)')
+    expect(r.text).not.toMatch(/UNVERIFIED|Not yet checked by LockIn|accessed 2026|From the LockIn directory/)
     expect(assessDraft(r.text, assessQuestion(question, evidence), evidence)).toEqual({ level: 'low', reasons: [] })
   })
 })

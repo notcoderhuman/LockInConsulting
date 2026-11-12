@@ -75,7 +75,7 @@ describe('Gemini request', () => {
   it('sends rules and verified evidence as the system instruction, history as turns, and bounds output', () => {
     const body = buildGeminiRequest(request)
     const system = body.systemInstruction.parts[0].text
-    expect(system).toContain('Facts about a specific university come ONLY from the EVIDENCE')
+    expect(system).toContain('When you use EVIDENCE, say where it comes from in natural words')
     expect(system).toContain('[tuition_fee:7] MSc Data Science tuition fee (international): EUR 15000.00')
     expect(system).toContain('official source: https://uni.example/fees')
     expect(body.contents.map((c) => c.role)).toEqual(['user', 'model', 'user'])

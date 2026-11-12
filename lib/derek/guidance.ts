@@ -1,5 +1,5 @@
 import { DESTINATIONS, type Destination } from '@/lib/destinations'
-import { DIRECTORY_LABEL, UNVERIFIED_LABEL, type EvidenceItem, type QuestionGuidance } from './provider'
+import { type EvidenceItem, type QuestionGuidance } from './provider'
 import { factTopicsIn } from './safeguards'
 
 // Per-question guidance for Derek. Pure and deterministic: it decides what kind of answer the
@@ -68,7 +68,9 @@ const OPEN_ENDED = /\b(study abroad|help me|guide me|advice|suggest|recommend|co
 export function analyseQuestion(question: string, evidence: EvidenceItem[], earlierStudentText = '', lastReply = ''): QuestionGuidance {
   const all = `${earlierStudentText}\n${question}`
   // A short or explicitly connected question continues the earlier one: keep its context.
-  const isFollowUp = Boolean(earlierStudentText.trim()) && (FOLLOW_UP.test(question) || question.trim().split(/\s+/).length <= 4)
+  // A question that names no university or country but asks for a fact ("What are the tuition fees?") depends on the earlier ones.
+  const ownlyNamed = detectDestinations(question).length > 0 || UNIVERSITY_WORD.test(question) || NAMED_TARGET.test(question)
+  const isFollowUp = Boolean(earlierStudentText.trim()) && (FOLLOW_UP.test(question) || question.trim().split(/\s+/).length <= 4 || (!ownlyNamed && factTopicsIn(question).length > 0))
   const ownDestinations = detectDestinations(question).map((d) => d.shortName)
   const destinations = ownDestinations.length || !isFollowUp ? ownDestinations : detectDestinations(earlierStudentText).map((d) => d.shortName)
   const ownTopics = factTopicsIn(question)
@@ -93,13 +95,19 @@ export function analyseQuestion(question: string, evidence: EvidenceItem[], earl
   const askFollowUp =
     (kind === 'specific_fact' && !hasFactEvidenceNow) ||
     (kind === 'broad_destination' && !(knowsLevel && knowsSubject)) ||
-    (kind === 'general' && openEnded && !(knowsLevel && knowsSubject))
+    (kind === 'general' && openEnded && !(knowsLevel && knowsSubject)) ||
+    // "Can I get a scholarship?" with no university, country or earlier context: ask once what they have in mind.
+    (kind === 'general' && topics.length > 0 && !destinations.length && !UNIVERSITY_WORD.test(question) && !(isFollowUp && UNIVERSITY_WORD.test(earlierStudentText)) && !CONCEPT.test(question))
 
+  // A university the student already named (or an earlier message named) is never asked for again.
+  const universityNamed = UNIVERSITY_WORD.test(question) || (NAMED_TARGET.test(question) && !destinations.length) || (isFollowUp && UNIVERSITY_WORD.test(earlierStudentText))
   const candidate = !askFollowUp
     ? null
     : kind === 'specific_fact'
-      ? 'Which university and course are you interested in?'
-      : !knowsLevel && !knowsSubject
+      ? universityNamed ? (knowsSubject ? null : 'Which course are you interested in?') : 'Which university and course are you interested in?'
+      : kind === 'general' && topics.length > 0 && !openEnded
+        ? 'Which university or country, and which study level, do you have in mind?'
+        : !knowsLevel && !knowsSubject
         ? 'Are you planning undergraduate or postgraduate study, and in which subject?'
         : !knowsLevel
           ? 'Are you planning undergraduate or postgraduate study?'
@@ -125,18 +133,18 @@ export function analyseQuestion(question: string, evidence: EvidenceItem[], earl
   if (kind === 'broad_destination')
     notes.push(
       hasUniversityEvidence
-        ? `Some LockIn directory listings are in EVIDENCE: you may name verified ones on the "${DIRECTORY_LABEL}" line and UNVERIFIED ones only on the "${UNVERIFIED_LABEL}" line, without adding facts that are not in EVIDENCE.`
+        ? 'Some university listings are in EVIDENCE: you may name them, saying where each comes from, without adding facts that are not in EVIDENCE.'
         : 'There are no LockIn directory listings for this, so do not name or recommend specific universities.',
     )
   if (kind === 'specific_fact')
     notes.push(
       hasFactEvidenceNow
-        ? `The student asks about ${topics.join(', ')}. Use ONLY the matching EVIDENCE lines for these facts, with their sources: verified ones on the "${DIRECTORY_LABEL}" line, UNVERIFIED ones only on the "${UNVERIFIED_LABEL}" line. Anything not in EVIDENCE is unknown.`
-        : `The student asks about ${topics.join(', ')}${where}, but LockIn has no verified record for it. Start with [UNCERTAIN]. Say in one sentence that LockIn has not verified this yet, give brief general guidance on where to check (the official university course page), and do not give any figure, date or range.`,
+        ? `The student asks about ${topics.join(', ')}. Use ONLY the matching EVIDENCE for these facts, say naturally where each comes from, and link the official page. Anything not in EVIDENCE is unknown.`
+        : `The student asks about ${topics.join(', ')}${where}, but nothing in EVIDENCE answers it. Start with [UNCERTAIN]. Say plainly that this could not be confirmed, name the kind of official page that will confirm it and what to look for there, and give no figure, date or range.`,
     )
   const universities = new Set(evidence.filter(isListing).map((e) => e.ref.replace(/^draft_/, ''))).size
   if (kind === 'specific_fact' && universities > 1)
-    notes.push(`This compares ${universities} universities. Keep each fact with its own university and source; where one has a fact the other lacks, say LockIn has not verified it for that university. Never fill a gap with another university's figure.`)
+    notes.push(`This compares ${universities} universities. Keep each fact with its own university and source; where one has a fact the other lacks, say it could not be confirmed for that university. Never fill a gap with another university's figure.`)
   if (followUp) notes.push(`The student's goals are not clear yet. End with exactly this one follow-up question, or a close equivalent: "${followUp}"`)
   else notes.push('Do not ask a follow-up question unless you truly need one.')
 

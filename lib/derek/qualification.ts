@@ -73,11 +73,11 @@ const levelsIn = (title: string): Level[] => (Object.keys(LEVEL_WORDS) as Level[
  * A qualification of another name: the title names a degree level but nothing of the asked subject, or names the asked subject
  * at a different level (a Bachelor's page is not evidence for a Master's).
  */
-export function isOtherQualification(title: string, q: Qualification): boolean {
+export function isOtherQualification(title: string, q: Qualification, { ignoreLevel = false }: { ignoreLevel?: boolean } = {}): boolean {
   if (!ANY_LEVEL.test(normalise(title))) return false
   if (!matchesQualification(title, q)) return true
   const levels = levelsIn(title)
-  if (q.level != null && levels.length > 0 && !levels.includes(q.level)) return true
+  if (!ignoreLevel && q.level != null && levels.length > 0 && !levels.includes(q.level)) return true
   // "Master of Dairy Science and Technology" shares the common word "science" with a Computer Science question but names another subject.
   const head = normalise(title).split(/\s[-–—|:]\s/)[0]
   const subject = head.split(/[^a-z0-9]+/).filter((t) => t.length >= 4 && !GENERIC.has(t) && !PAGE_WORDS.has(t))

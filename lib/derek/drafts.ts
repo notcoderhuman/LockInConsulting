@@ -29,7 +29,7 @@ import { PRIVACY_NOTICE_VERSION } from '@/lib/student/onboarding'
 import { classifyMessage, GREETING_REPLY, isSmallTalk, OFF_TOPIC_REPLY, RULES_PROVIDER_ID, scopeRisk, THANKS_REPLY } from './scope'
 
 const RULES_MODEL = 'derek-rules-1'
-import { styleIssues, tidyDraft } from './style'
+import { studentFacingText, styleIssues, tidyDraft } from './style'
 
 // Derek's draft lifecycle.
 //
@@ -127,10 +127,19 @@ export async function failAbandonedDrafts(pool: Pool, conversationId: number): P
 }
 
 /** What the model is told about the research (it never sees the student; only what the pages said). */
+function officialLabel(url: string): string {
+  try {
+    return `${new URL(url).hostname.replace(/^www\./, '')} official page`
+  } catch {
+    return 'official page'
+  }
+}
+
 function researchNote(r: ResearchResult): string {
-  if (!r.items.length) return `Web research: the university's own pages were checked and gave nothing usable (${r.record.failure ?? 'no relevant text'}). Start with [UNCERTAIN], say you could not verify this online, and that the LockIn team will confirm. Give no figure or date.`
-  const parts = ['Web research: the EVIDENCE lines marked UNVERIFIED from web pages are the university\'s own pages, read just now. Use them only on the UNVERIFIED line, name the page, give its link, and tell the student to confirm on the official page. When these lines state the answer, give it directly and completely, without [UNCERTAIN] and without saying LockIn has not verified it: the source is the university itself.']
-  if (r.record.outdated.length) parts.push(`Some pages are old (${r.record.outdated.join('; ')}): say that the information may be out of date and start with [UNCERTAIN].`)
+  if (!r.items.length)
+    return `The university's own pages were checked just now and gave nothing usable for this (${r.record.failure ?? 'no relevant text'}). Start with [UNCERTAIN], say plainly that you could not confirm it, tell the student which official page will confirm it and what to look for there, and give no figure or date.`
+  const parts = ["The EVIDENCE lines marked UNVERIFIED that come from web pages are the university's own pages, read just now. Tell the student what those pages say in natural words, name the page, and link it with descriptive text. When they state the answer, give it directly and completely, without [UNCERTAIN] and without saying anything is unverified: the source is the university itself."]
+  if (r.record.outdated.length) parts.push(`Some pages are old (${r.record.outdated.join('; ')}): say the information may be out of date and start with [UNCERTAIN].`)
   if (r.record.conflicts.length) parts.push(`The sources disagree (${r.record.conflicts.join('; ')}): say so plainly, do not pick one as correct, and start with [UNCERTAIN].`)
   return parts.join(' ')
 }
@@ -299,14 +308,23 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     const history = historyRows.reverse().map((r) => ({ role: r.author_kind === 'student' ? ('student' as const) : ('team' as const), text: redactPersonalData(String(r.body)) }))
     // The plan from the first-question form (destination and course only, never the Instagram
     // handle) counts as something the student already told Derek.
-    const earlier = [freeTier ? '' : (claim.plan ?? ''), ...history.filter((h) => h.role === 'student').map((h) => h.text)].join('\n')
+    // The student's earlier questions and chosen course are used on LockIn's side to understand a short or follow-up question
+    // ("What are the tuition fees?") and to find the right university's evidence. On the free tier none of it is sent to Google.
+    const localEarlier = (await selectRows(pool, "SELECT body FROM messages WHERE conversation_id = ? AND author_kind = 'student' AND id < ? ORDER BY id DESC LIMIT 6", [conversationId, claim.firstPendingId])).reverse().map((m) => redactPersonalData(String(m.body))).join('\n')
+    const earlier = [claim.plan ?? '', localEarlier].filter(Boolean).join('\n')
     // "What about Italy?" looks up evidence with the earlier question's context too.
     const lookup = analyseQuestion(question, [], earlier).isFollowUp ? `${earlier}\n${claim.question}` : claim.question
     evidence = await (deps.loadEvidence ?? loadEvidence)(pool, lookup)
     // Records about another course of the university are not evidence for the asked qualification (lib/derek/qualification.ts).
     const askedText = planFromSubject(claim.subject).course ?? askedQualification(claim.question)
     evidence = dropOtherCourseEvidence(evidence, parseQualification(askedText))
-    const analysed = analyseQuestion(question, evidence, earlier, history.filter((h) => h.role === 'team').at(-1)?.text)
+    const analysedFull = analyseQuestion(question, evidence, earlier, history.filter((h) => h.role === 'team').at(-1)?.text)
+    // On the free tier the note must not repeat what the earlier messages said; the evidence itself carries the university.
+    const scrub = (note: string, followUp: boolean) =>
+      freeTier
+        ? note.replace(/Follow-up to the student's earlier message:[^.]*\. Answer in that context; do not ask again for what they already told you\./, '') + (followUp ? ' If the question does not name a university or course, answer about the one the EVIDENCE is about and name it, so the student can correct you.' : '')
+        : note
+    const analysed = { ...analysedFull, note: scrub(analysedFull.note, analysedFull.isFollowUp === true && evidence.length > 0) }
     // On the free tier nothing about the student is sent beyond the question (the privacy notice says so): the chosen course and
     // destination are used on LockIn's side only (evidence lookup, research), never put in the text sent to Google.
     const planOk = Boolean(claim.plan) && !freeTier
@@ -324,7 +342,6 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     // "Do not answer" is decided by what LockIn holds for THIS course: a fee for another course of the same university does not count.
     const asked = askedText
     if (guidance.kind === 'specific_fact' && !evidenceCovers(evidence, guidance.topics, asked) && assessQuestion(claim.question, evidence, { general: false }).level !== 'high') {
-      const localEarlier = (await selectRows(pool, "SELECT body FROM messages WHERE conversation_id = ? AND author_kind = 'student' AND id < ? ORDER BY id DESC LIMIT 6", [conversationId, claim.firstPendingId])).map((m) => String(m.body)).join('\n')
       const universities = await findUniversitySites(pool, `${localEarlier}\n${claim.question}`).catch(() => [])
       // Tests never reach the network unless they inject a research function; DEREK_WEB_RESEARCH=off switches it off in production.
       const doResearch = deps.research ?? (process.env.NODE_ENV === 'test' || process.env.DEREK_WEB_RESEARCH === 'off' ? null : researchQuestion)
@@ -339,7 +356,7 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
         const again = analyseQuestion(question, evidence, earlier, history.filter((h) => h.role === 'team').at(-1)?.text)
         guidance = {
           ...again,
-          note: `${again.note}${planOk ? ` The student told LockIn before asking: "${redactPersonalData(claim.plan ?? '')}" Use this and do not ask for it again.` : ''} ${researchNote(research)}`,
+          note: `${scrub(again.note, again.isFollowUp === true)}${planOk ? ` The student told LockIn before asking: "${redactPersonalData(claim.plan ?? '')}" Use this and do not ask for it again.` : ''} ${researchNote(research)}`,
         }
       }
     }
@@ -433,8 +450,10 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     // The general page about the topic beats a side page ("non-tuition fees"): prefer a source that is not a "non-" page, then the shortest address.
     const bestSource = research ? [...research.record.sources].sort((x, y) => Number(/\bnon-/.test(x.url)) - Number(/\bnon-/.test(y.url)) || x.url.length - y.url.length)[0]?.url : undefined
     const officialPage = research ? (bestSource ?? research.record.official?.[0] ?? null) : null
-    const pointer = preliminary && officialPage && !text.data.includes(officialPage) ? `\n\nOfficial page to check: ${officialPage}` : ''
-    const body = preliminary ? `${PRELIMINARY_NOTE}\n\n${text.data}${pointer}` : text.data
+    // What the student reads: internal labels, citation brackets and evidence tags are turned into plain Markdown (lib/derek/style.ts).
+    const readable = claim.fixed ? text.data : studentFacingText(text.data)
+    const pointer = preliminary && officialPage && !readable.includes(officialPage) ? `\n\nYou can start from the official page: [${officialLabel(officialPage)}](${officialPage})` : ''
+    const body = preliminary ? `${PRELIMINARY_NOTE}\n\n${readable}${pointer}` : readable
     if (preliminary) risk.reasons = [PRELIMINARY_REASON, ...flags]
     // Editorial findings are for the reviewer (and stop automatic sending); they do not raise the risk level.
     if (!claim.fixed) risk.reasons.push(...styleIssues(body, { maxWords: maxCharsFor(evidence) > AUTO_REPLY_LIMITS.maxChars ? 450 : 220 }).map((s) => `Style: ${s}`))

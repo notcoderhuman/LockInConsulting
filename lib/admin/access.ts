@@ -54,7 +54,7 @@ export async function resolveAdminContext(requestHeaders: Headers): Promise<Admi
     }
     return {
       state: 'ok',
-      actor: { userId: session.user.id, name: session.user.name, email: session.user.email, role, supportEnabled: Boolean(Number(rows[0].support_enabled)) },
+      actor: { userId: session.user.id, name: session.user.name, email: session.user.email, role, supportEnabled: Boolean(Number(rows[0].support_enabled)), sessionId: session.session.id },
     }
   } catch (error) {
     console.error('[admin] could not resolve session', error)

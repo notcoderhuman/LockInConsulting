@@ -7,6 +7,7 @@ import path from 'node:path'
 import type { Connection, RowDataPacket } from 'mysql2/promise'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { connect, startTestDatabase, type TestDatabase } from './harness'
+import { chatLastSeen, handleChat } from './handling'
 import { loadMigrations, migrate } from '../../scripts/migrate.mjs'
 import { runAdminCli } from '../../scripts/admin-user.mjs'
 import { todayIso } from '@/lib/data/publication'
@@ -249,10 +250,29 @@ describe('identity separation', () => {
       expect((await beat(staffCookie, 'https://evil.example')).status).toBe(403)
       expect((await beat(staffCookie)).status).toBe(204)
       const presence = async () => (await studentPresence.GET(new Request(`${ORIGIN}/api/student/presence`, { headers: { cookie: studentCookie } }))).json()
-      expect(await presence()).toEqual({ state: 'online', name: 'Staff', derekAvailable: true })
+      const offline = { state: 'offline', name: null, conversationId: null, joinedAt: null, derekAvailable: true }
+      // A heartbeat alone (Staff merely signed in) never shows Staff to a student.
+      expect(await presence()).toEqual(offline)
       expect((await studentPresence.GET(new Request(`${ORIGIN}/api/student/presence`))).status).toBe(401)
 
-      // A question while Staff is online waits for a person…
+      const availability = await import('@/app/api/admin/availability/route')
+      const visibility = await import('@/app/api/admin/availability/students/route')
+      const chat = await import('@/app/api/admin/conversations/[id]/presence/route')
+      const post = (url: string, cookie: string, body: unknown, origin = ORIGIN) =>
+        new Request(`${ORIGIN}${url}`, { method: 'POST', headers: { cookie, origin, 'content-type': 'application/json' }, body: JSON.stringify(body) })
+      const mine = async () => (await availability.GET(new Request(`${ORIGIN}/api/admin/availability`, { headers: { cookie: staffCookie } }))).json()
+      // Only signed-in support staff change availability: never anonymous, never a student, never cross-site.
+      expect((await availability.POST(post('/api/admin/availability', '', { available: true }))).status).toBe(401)
+      expect((await availability.POST(post('/api/admin/availability', studentCookie, { available: true }))).status).toBe(403)
+      expect((await availability.POST(post('/api/admin/availability', staffCookie, { available: true }, 'https://evil.example'))).status).toBe(403)
+      expect((await availability.GET(new Request(`${ORIGIN}/api/admin/availability`, { headers: { cookie: studentCookie } }))).status).toBe(403)
+      // A login starts Offline with every student Offline.
+      expect(await mine()).toMatchObject({ available: false })
+      expect((await mine()).students.every((x: { visible: boolean }) => !x.visible)).toBe(true)
+
+      // Staff goes Online, but has not enabled this student: Derek answers the student's question.
+      expect(await (await availability.POST(post('/api/admin/availability', staffCookie, { available: true }))).json()).toMatchObject({ available: true })
+      expect(await mine()).toMatchObject({ available: true }) // a refresh keeps it within the same login
       const created = await (
         await conversationsRoute.POST(
           new Request(`${ORIGIN}/api/student/conversations`, {
@@ -263,15 +283,49 @@ describe('identity separation', () => {
         )
       ).json()
       const id = Number(created.conversationId)
-      await vi.waitFor(async () => expect((await rows<{ status: string }>('SELECT status FROM ai_drafts WHERE conversation_id = ?', [id]))[0]?.status).toBe('ready'), { timeout: 10_000 })
       const read = async () => (await messagesRoute.GET(new Request(`${ORIGIN}/api/student/conversations/${id}/messages`, { headers: { cookie: studentCookie } }), { params: Promise.resolve({ id: String(id) }) })).json()
-      expect((await read()).messages.map((m: { authorKind: string }) => m.authorKind)).toEqual(['student'])
-      // …then Staff's browser closes. The student's next check-in hands over to Derek, notice first.
-      await db.query('UPDATE staff_presence SET last_seen_at = UTC_TIMESTAMP(3) - INTERVAL 10 MINUTE')
-      expect(await presence()).toMatchObject({ state: 'offline', name: 'Staff' })
+      await vi.waitFor(async () => expect((await read()).messages.at(-1)?.authorKind).toBe('derek'), { timeout: 10_000 })
+      expect(await presence()).toEqual(offline)
+
+      // Staff enables this student: still Offline to them until Staff enters their chat.
+      const [{ student_profile_id: profileId }] = await rows<{ student_profile_id: number }>('SELECT student_profile_id FROM conversations WHERE id = ?', [id])
+      expect((await visibility.POST(post('/api/admin/availability/students', studentCookie, { studentProfileId: Number(profileId), visible: true }))).status).toBe(403)
+      expect((await visibility.POST(post('/api/admin/availability/students', staffCookie, { studentProfileId: Number(profileId), visible: true }))).status).toBe(200)
+      expect(await presence()).toEqual(offline)
+      // A student cannot claim a chat, nor anyone from another site.
+      const claim = (cookie: string, origin = ORIGIN) => chat.POST(post(`/api/admin/conversations/${id}/presence`, cookie, {}, origin), { params: Promise.resolve({ id: String(id) }) })
+      expect((await claim(studentCookie)).status).toBe(403)
+      expect((await claim(staffCookie, 'https://evil.example')).status).toBe(403)
+      // Staff opens the chat: this student, and only this student, sees Staff online.
+      expect(await (await claim(staffCookie)).json()).toEqual({ state: 'mine', handling: true, available: true, visible: true })
+      const live = await presence()
+      expect(live).toMatchObject({ state: 'online', name: 'Staff', conversationId: id, derekAvailable: true })
+      expect(String(live.joinedAt)).toMatch(/^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d{3}$/)
+      expect((await claim(staffCookie)).status).toBe(200)
+      expect((await presence()).joinedAt).toBe(live.joinedAt) // the same visit: one "has joined" event, however many heartbeats
+
+      // A question while Staff is in the chat waits for Staff…
+      const asked = await messagesRoute.POST(
+        new Request(`${ORIGIN}/api/student/conversations/${id}/messages`, {
+          method: 'POST',
+          headers: { cookie: studentCookie, origin: ORIGIN, 'content-type': 'application/json' },
+          body: JSON.stringify({ body: 'What is a letter of recommendation?', clientRequestId: rid() }),
+        }),
+        { params: Promise.resolve({ id: String(id) }) },
+      )
+      expect(asked.status).toBeLessThan(300)
+      await vi.waitFor(async () => expect((await rows<{ status: string }>("SELECT status FROM ai_drafts WHERE conversation_id = ? ORDER BY id DESC LIMIT 1", [id]))[0]?.status).toBe('ready'), { timeout: 10_000 })
+      expect((await read()).messages.at(-1).authorKind).toBe('student')
+      // …then Staff leaves the chat: Staff is offline to the student at once, and Derek answers on the next check-in.
+      expect((await chat.DELETE(new Request(`${ORIGIN}/x`, { method: 'DELETE', headers: { cookie: staffCookie, origin: ORIGIN, 'content-type': 'application/json' }, body: '{}' }), { params: Promise.resolve({ id: String(id) }) })).status).toBe(204)
+      expect(await presence()).toEqual(offline)
       const after = await read()
       expect(after.messages.at(-1)).toMatchObject({ authorKind: 'derek', label: expect.stringMatching(/^Replied by Derek · AI assistant/) })
-      expect(after.messages.at(-1).body.startsWith(D.handoffNoticeText(null))).toBe(true) // no person had replied in this conversation
+      // Back in the chat, then Offline: offline to the student immediately.
+      await claim(staffCookie)
+      expect((await presence()).state).toBe('online')
+      await availability.POST(post('/api/admin/availability', staffCookie, { available: false }))
+      expect(await presence()).toEqual(offline)
       // Another student's conversation is never touched or shown.
       const other = await ask(await makeStudent(), 'What is a statement of purpose?')
       expect((await messagesRoute.GET(new Request(`${ORIGIN}/x`, { headers: { cookie: studentCookie } }), { params: Promise.resolve({ id: String(other.conversationId) }) })).status).toBe(404)
@@ -279,6 +333,7 @@ describe('identity separation', () => {
       for (const k of Object.keys(env)) delete process.env[k]
       as('')
       await db.query('DELETE FROM staff_presence')
+      await db.query('DELETE FROM conversation_presence')
       await db.query("UPDATE support_settings SET support_mode = 'online', auto_reply_enabled = FALSE WHERE id = 1")
     }
   })
@@ -880,13 +935,13 @@ describe('Derek Auto Mode (offline, mock providers only)', () => {
     expect(await run({ conversationId: q.conversationId, triggerMessageId: next.messageId }, new MockProvider())).toMatchObject({ state: 'taken_over' })
   })
 
-  it('escalates visa, legal and distress questions, uncertain answers, refusals, unverified links and long replies', async () => {
+  // An answer Derek is unsure of is sent as preliminary information instead (Owner rule, 12 Nov 2026): see the handoff tests.
+  it('escalates visa, legal and distress questions, refusals, unverified links and long replies', async () => {
     const s = await makeStudent()
     const cases: [string, AiProvider, RegExp | null][] = [
       ['Can my student visa be refused?', fixed('Please check the official government page.'), null],
       ['I want to sue my education agent.', fixed('A LockIn team member will follow up.'), null],
       ['I feel hopeless about my applications.', fixed('A LockIn team member will follow up.'), null],
-      [general, fixed('LockIn has not verified that yet.', true), null],
       [general, fixed('I’m sorry, but I can’t help with that.'), /held: reads like a refusal/],
       [general, fixed('Read the guide at https://made-up.example/sop before you start.'), /held: contains a link that is not from verified evidence/],
       [general, fixed('A statement of purpose explains your goals. '.repeat(25)), /held: longer than 900 characters/],
@@ -1174,9 +1229,9 @@ describe('Derek Auto Mode (offline, mock providers only)', () => {
     it('spends no rewrite request while the team is online (the answer waits for a person anyway)', async () => {
       await db.query("INSERT IGNORE INTO auth_user (id, name, email, emailVerified, updatedAt) VALUES ('u-short-dev', 'Dev Short', 'short-dev@test.example', 1, UTC_TIMESTAMP(3))")
       await db.query("INSERT IGNORE INTO admin_members (user_id, role, status, granted_by) VALUES ('u-short-dev', 'reviewer', 'active', 'cli:test')")
-      await db.query("INSERT INTO staff_presence (user_id, last_seen_at) VALUES ('u-short-dev', UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE last_seen_at = UTC_TIMESTAMP(3)")
       try {
         const q = await ask(await makeStudent(), compare)
+        await handleChat(db, 'u-short-dev', q.conversationId)
         const { provider, requests } = sequence(long, concise)
         expect(await run(q, provider, { loadEvidence: async () => [] })).toMatchObject({ state: 'review' })
         expect(requests).toHaveLength(1)
@@ -1768,6 +1823,7 @@ describe('team presence and the human-to-Derek handoff', () => {
   afterEach(async () => {
     for (const k of Object.keys(env)) delete process.env[k]
     await db.query('DELETE FROM staff_presence')
+    await db.query('DELETE FROM conversation_presence')
     await db.query("UPDATE support_settings SET support_mode = 'online', auto_reply_enabled = FALSE WHERE id = 1")
   })
   afterAll(async () => {
@@ -1798,10 +1854,10 @@ describe('team presence and the human-to-Derek handoff', () => {
     expect(String(after.last_seen_at)).toBe(String(before.last_seen_at))
   })
 
-  it('while the team is online a person answers: Derek drafts but never sends, and promises nothing', async () => {
-    await seen(dev, 0)
+  it('while Dev is handling the chat a person answers: Derek drafts but never sends, and promises nothing', async () => {
     const s = await makeStudent()
     const q = await ask(s, 'What is a statement of purpose?')
+    await handleChat(db, dev.userId, q.conversationId)
     expect((await C.getStudentMessages(pool(), s, q.conversationId)).conversation).toMatchObject({
       acknowledgement: 'Your question has been received. A member of the LockIn team will follow up.',
       replyPending: false,
@@ -1811,21 +1867,21 @@ describe('team presence and the human-to-Derek handoff', () => {
       'the LockIn team is online, so a person will answer',
     )
     expect(await derekBodies(q.conversationId)).toEqual([])
-    // Still online (or only reconnecting): no handoff.
+    // Still in the chat (a heartbeat a minute ago is within the lease): no handoff.
     expect(await D.handOffToDerek(pool(), q.conversationId)).toEqual({ state: 'none' })
-    await seen(dev, 150)
+    await chatLastSeen(db, 60)
     expect(await D.handOffToDerek(pool(), q.conversationId)).toEqual({ state: 'none' })
   })
 
   it('hands over after Dev disconnects: one notice first, then Derek’s labelled answer, exactly once', async () => {
-    await seen(dev, 0)
     const s = await makeStudent()
     const first = await ask(s, 'Hello, is anyone there?')
+    await handleChat(db, dev.userId, first.conversationId)
     await C.staffReply(pool(), dev, first.conversationId, { body: 'Hi, Dev here. What would you like to know?', clientRequestId: rid() })
     const q = await C.sendStudentMessage(pool(), s, first.conversationId, { body: 'What is a statement of purpose?', clientRequestId: rid() })
     expect(await run({ conversationId: first.conversationId, triggerMessageId: q.triggerMessageId }, fixed())).toMatchObject({ state: 'review' })
 
-    await seen(dev, 600) // Dev's browser closed ten minutes ago
+    await chatLastSeen(db, 600) // Dev's browser closed ten minutes ago
     const results = await Promise.all([D.handOffToDerek(pool(), first.conversationId), D.handOffToDerek(pool(), first.conversationId), D.handOffToDerek(pool(), first.conversationId)])
     expect(results.filter((r) => r.state === 'sent')).toHaveLength(1)
     expect(await D.handOffToDerek(pool(), first.conversationId)).toEqual({ state: 'none' })
@@ -1851,21 +1907,35 @@ describe('team presence and the human-to-Derek handoff', () => {
     expect((await derekBodies(q.conversationId))[0]).toBe(`${D.handoffNoticeText(null)}\n\n${answer}`)
   })
 
+  it('when Derek is unsure of an ordinary question he answers as preliminary and asks the team to confirm', async () => {
+    const s = await makeStudent()
+    const q = await ask(s, 'What is a conditional offer?')
+    expect(await run(q, fixed('A conditional offer usually depends on your final results.', true))).toMatchObject({ state: 'auto_sent' })
+    const [body] = await derekBodies(q.conversationId)
+    expect(body).toContain(`${D.PRELIMINARY_NOTE}\n\nA conditional offer usually depends on your final results.`)
+    const flagged = await rows<{ title: string }>("SELECT title FROM notifications WHERE conversation_id = ? AND kind = 'high_risk'", [q.conversationId])
+    expect(flagged.map((n) => n.title)).toEqual([expect.stringMatching(/preliminary answer he was not sure about/)])
+    // The question and the whole exchange stay in the conversation for the team.
+    expect((await C.getStudentMessages(pool(), s, q.conversationId)).messages.map((m) => m.authorKind)).toEqual(['student', 'derek'])
+    // Suggestions follow Derek's answer, built from this student's question.
+    expect((await C.getStudentMessages(pool(), s, q.conversationId)).conversation.suggestions.length).toBeGreaterThanOrEqual(2)
+  })
+
   it('a human taking over, or replying first, always wins over the handoff', async () => {
-    await seen(dev, 0)
     const s = await makeStudent()
     const taken = await ask(s, 'What is a statement of purpose?')
+    await handleChat(db, dev.userId, taken.conversationId)
     await run(taken, fixed())
     await C.takeOverConversation(pool(), dev, taken.conversationId)
-    await seen(dev, 600)
+    await chatLastSeen(db, 600)
     expect(await D.handOffToDerek(pool(), taken.conversationId)).toEqual({ state: 'none' })
     await C.sendStudentMessage(pool(), s, taken.conversationId, { body: 'hello?', clientRequestId: rid() })
     expect(await derekBodies(taken.conversationId)).toEqual([])
 
-    await seen(dev, 0)
     const raced = await ask(s, 'What is a statement of purpose?')
+    await handleChat(db, dev.userId, raced.conversationId)
     await run(raced, fixed())
-    await seen(dev, 600)
+    await chatLastSeen(db, 600)
     // Dev answers at the same moment the student's chat triggers the handoff. Dev's reply carries the
     // last message Dev saw, so whichever lands second is refused: one answer only, in either order.
     const seenUpToId = raced.messageId
@@ -1910,11 +1980,11 @@ describe('team presence and the human-to-Derek handoff', () => {
   })
 
   it('never pretends to hand over when Derek is not cleared, and hands over once he is', async () => {
-    await seen(dev, 0)
     const s = await makeStudent()
     const q = await ask(s, 'What is a statement of purpose?')
+    await handleChat(db, dev.userId, q.conversationId)
     await run(q, fixed())
-    await seen(dev, 600)
+    await chatLastSeen(db, 600)
     expect(await D.handOffToDerek(pool(), q.conversationId, { status: { ...READY, autoReply: { permitted: false, blockers: ['x'] } } })).toEqual({ state: 'none' })
     expect(await derekBodies(q.conversationId)).toEqual([]) // not cleared → nothing pretends to hand over
     expect(await D.handOffToDerek(pool(), q.conversationId)).toMatchObject({ state: 'sent' })

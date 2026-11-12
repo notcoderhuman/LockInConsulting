@@ -68,4 +68,6 @@ export interface AdminActor {
   role: AdminRole
   /** Owner-granted support access for an editor. Ignored for reviewers and owners. */
   supportEnabled?: boolean
+  /** The admin login session (auth_session.id) this request belongs to; availability is scoped to it. */
+  sessionId?: string
 }

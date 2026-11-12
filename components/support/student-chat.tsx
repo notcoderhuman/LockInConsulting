@@ -90,6 +90,7 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
   const [statusLabel, setStatusLabel] = useState('')
   const [acknowledgement, setAcknowledgement] = useState<string | null>(null)
   const [replyPending, setReplyPending] = useState(false)
+  const [suggestions, setSuggestions] = useState<string[]>([])
   const [pending, setPending] = useState<Pending[]>([])
   const [draft, setDraft] = useState('')
   const [loadingOlder, setLoadingOlder] = useState(false)
@@ -125,11 +126,12 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
       if (r.status === 401) setListState('signed_out')
       return false
     }
-    const conv = r.data.conversation as { subject: string; statusLabel: string; acknowledgement?: string | null; replyPending?: boolean }
+    const conv = r.data.conversation as { subject: string; statusLabel: string; acknowledgement?: string | null; replyPending?: boolean; suggestions?: string[] }
     setSubject(conv.subject)
     setStatusLabel(conv.statusLabel)
     setAcknowledgement(conv.acknowledgement ?? null)
     setReplyPending(conv.replyPending === true)
+    setSuggestions(Array.isArray(conv.suggestions) ? conv.suggestions.slice(0, 3) : [])
     const incoming = r.data.messages as Message[]
     // Never shows a message twice (a send's own reload and a poll can both return it) and keeps id order.
     const fresh = incoming.filter((m) => !messagesRef.current.some((s) => s.id === m.id))
@@ -156,6 +158,7 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
     setPending([])
     setAcknowledgement(null)
     setReplyPending(false)
+    setSuggestions([])
     if (selected == null) return
     // Live updates: every few seconds while the tab is visible, asking only for newer messages. Pauses while the
     // tab is hidden and checks at once when it returns; doubles the wait after each failure (up to 30 s) and
@@ -239,9 +242,15 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
       subject = contextSubject(destination, course, instagram)
     }
     setContextError(null)
-    const item: Pending = { key: newKey(), body, subject, state: 'sending' }
-    setPending((p) => [...p, item])
     setDraft('')
+    send(body, subject)
+  }
+
+  // A typed question and a clicked suggestion go through exactly the same send (idempotency key, Retry, polling).
+  function send(body: string, subject?: string) {
+    const item: Pending = { key: newKey(), body, subject, state: 'sending' }
+    setSuggestions([])
+    setPending((p) => [...p, item])
     void deliver(item)
   }
 
@@ -359,6 +368,24 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
               </li>
             ))}
           </ol>
+          {suggestions.length && !pending.length && threadState === 'ready' && messages.at(-1)?.authorKind === 'derek' ? (
+            <div className="flex flex-col gap-2 self-start">
+              <span className="text-xs text-muted-foreground">You could also ask:</span>
+              <ul className="flex flex-wrap gap-2">
+                {suggestions.map((q) => (
+                  <li key={q}>
+                    <button
+                      type="button"
+                      onClick={() => send(q)}
+                      className="rounded-full border border-primary/40 px-3 py-1.5 text-left text-xs text-foreground hover:border-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                    >
+                      {q}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           {acknowledgement && !pending.length && threadState === 'ready' ? (
             <p role="status" className="self-end text-xs text-muted-foreground">
               {acknowledgement}

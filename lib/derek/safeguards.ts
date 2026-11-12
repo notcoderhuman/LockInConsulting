@@ -155,6 +155,9 @@ export function draftPresentedAsVerified(draft: string, evidence: EvidenceItem[]
   return false
 }
 
+/** The reason assessDraft records when the model itself said it was not sure (the [UNCERTAIN] marker). */
+export const MODEL_UNCERTAIN_REASON = 'Derek reported it could not answer from the evidence'
+
 export function assessDraft(
   draft: string,
   question: RiskAssessment,
@@ -163,7 +166,7 @@ export function assessDraft(
 ): RiskAssessment {
   let level = question.level
   const reasons = [...question.reasons]
-  if (modelUncertain) (level = worst(level, 'uncertain')), reasons.push('Derek reported it could not answer from the evidence')
+  if (modelUncertain) (level = worst(level, 'uncertain')), reasons.push(MODEL_UNCERTAIN_REASON)
   const quotesInr = evidence.some((e) => e.ref.endsWith(':inr'))
   for (const [re, label] of FORBIDDEN_CLAIMS)
     if (re.test(draft) && !(label === INR_CONVERSION && quotesInr)) (level = worst(level, 'high')), reasons.push(label)

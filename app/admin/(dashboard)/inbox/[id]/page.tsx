@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { ConversationBadge, RiskBadge } from '@/components/admin/conversation-badge'
 import { EmptyState, PageHeader, Panel } from '@/components/admin/page-header'
 import { LiveRefresh } from '@/components/admin/live-refresh'
+import { ChatPresence } from '@/components/admin/chat-presence'
 import { DraftReviewForms, HandoverForm, MarkConversationRead, ReplyForm, RequestDraftForm, StatusForm } from '@/components/admin/support-forms'
 import { requireAdminPage } from '@/lib/admin/access'
 import { actorCan } from '@/lib/admin/roles'
@@ -59,6 +60,7 @@ export default async function ConversationPage({ params, searchParams }: { param
   return (
     <>
       <LiveRefresh conversationId={id} scrollToLatest />
+      {before ? null : <ChatPresence conversationId={id} />}
       {before ? null : <MarkConversationRead conversationId={id} upTo={last?.id} />}
       <PageHeader
         title={`#${c.id} · ${c.subject}`}

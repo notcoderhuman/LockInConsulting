@@ -12,6 +12,7 @@ import { getDerekStatus } from '@/lib/derek/config'
 import { getInboxCounts } from '@/lib/support/conversations'
 import { countUnreadNotifications, staffViewer } from '@/lib/support/notifications'
 import { SyncReviewNotices } from '@/components/admin/support-forms'
+import { AvailabilityPanel } from '@/components/admin/availability-panel'
 import { getSupportSettings } from '@/lib/support/settings'
 import { STATUS_LABEL } from '@/lib/support/state'
 
@@ -74,6 +75,8 @@ export default async function OverviewPage() {
         ) : null}
         <StatCard href="/admin/notifications" label="Unread notifications" value={unreadNotifications} />
       </section>
+
+      {actorCan(actor, 'support.reply') ? <AvailabilityPanel /> : null}
 
       <p className="text-sm leading-relaxed text-muted-foreground">
         {`Automatic replies: ${support.autoReplyEnabled ? (derek.autoReply.permitted ? 'on' : 'on for fixed replies only (provider not cleared)') : 'paused'}. Derek: ${

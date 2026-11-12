@@ -7,7 +7,8 @@ import type { StudentActor } from '@/lib/student/access'
 import { attributionLabel, type AuthorKind } from './attribution'
 import { assertActor, inTransaction, isDuplicate, selectRows, sha256, SupportError, type Row } from './db'
 import { createNotification, markConversationNotificationsRead, staffViewer } from './notifications'
-import { getTeamPresence } from './presence'
+import { suggestQuestions } from '@/lib/derek/suggestions'
+import { conversationHandler } from './availability'
 import { autoReplyActive, getSupportSettings } from './settings'
 import { DEREK_FAILED, DEREK_PENDING_SECONDS, DEREK_WRITING, isConversationStatus, nextStatus, STUDENT_ACKNOWLEDGEMENT, STUDENT_STATUS_LABEL, TransitionError, type ConversationEvent, type ConversationStatus } from './state'
 import { deriveSubject, newConversationInput, newMessageInput, reasonText } from './validation'
@@ -346,12 +347,23 @@ export async function getStudentMessages(db: Db, student: StudentActor, conversa
     const settings = await getSupportSettings(db)
     const fixed = ['greeting', 'thanks', 'off_topic'].includes(classifyMessage(String(target.body)).scope)
     derekWriting =
-      derek.state === 'ready' && settings.autoReplyEnabled && (fixed || autoReplyActive(settings, derek)) && (await getTeamPresence(db)).state === 'offline' // else a person answers
+      derek.state === 'ready' && settings.autoReplyEnabled && (fixed || autoReplyActive(settings, derek)) && !(await conversationHandler(db, conversationId)) // else the team member in this chat answers
+  }
+  // After Derek's latest answer, two or three follow-up questions built from this student's own course, university
+  // and question (lib/derek/suggestions.ts). Nothing while a reply is pending or after a person answered.
+  let suggestions: string[] = []
+  if (!waiting && before == null) {
+    const [latest] = await selectRows(db, 'SELECT author_kind FROM messages WHERE conversation_id = ? ORDER BY id DESC LIMIT 1', [conversationId])
+    if (latest?.author_kind === 'derek') {
+      const asked = await selectRows(db, "SELECT body FROM messages WHERE conversation_id = ? AND author_kind = 'student' ORDER BY id DESC LIMIT 10", [conversationId])
+      suggestions = suggestQuestions({ subject: String(conv[0].subject), studentMessages: asked.reverse().map((m) => String(m.body)) })
+    }
   }
   return {
     conversation: {
       id: conversationId,
       subject: String(conv[0].subject),
+      suggestions,
       statusLabel: isConversationStatus(status) ? STUDENT_STATUS_LABEL[status] : 'Waiting for the LockIn team',
       acknowledgement: !waiting ? null : derekWriting ? DEREK_WRITING : draft === 'failed' ? DEREK_FAILED : STUDENT_ACKNOWLEDGEMENT,
       /** The client checks back quickly while true. */

@@ -111,7 +111,8 @@ export function parseGeminiResponse(body: unknown, fallbackModel: string): Draft
   }
   // Anything but a clean STOP (e.g. MAX_TOKENS: a truncated answer may be missing its caveat)
   // is never treated as low risk.
-  if (finish !== 'STOP') uncertain = true
+  const incomplete = finish !== 'STOP'
+  if (incomplete) uncertain = true
 
   const usage = isObj(body.usageMetadata) ? body.usageMetadata : {}
   const candidates = count(usage.candidatesTokenCount)
@@ -120,6 +121,7 @@ export function parseGeminiResponse(body: unknown, fallbackModel: string): Draft
     text,
     model: typeof body.modelVersion === 'string' && body.modelVersion ? body.modelVersion.slice(0, 120) : fallbackModel,
     uncertain,
+    ...(incomplete ? { incomplete: true } : {}),
     usage: {
       inputTokens: count(usage.promptTokenCount),
       // Billed output = visible answer + thinking tokens.

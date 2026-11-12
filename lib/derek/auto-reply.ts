@@ -1,6 +1,6 @@
 import type { PoolConnection } from 'mysql2/promise'
 import { selectRows, type Row } from '@/lib/support/db'
-import { getTeamPresence } from '@/lib/support/presence'
+import { conversationHandler } from '@/lib/support/availability'
 import { autoReplyActive, type SupportSettings } from '@/lib/support/settings'
 import type { DerekStatus } from './config'
 import type { AiProvider, EvidenceItem } from './provider'
@@ -44,7 +44,7 @@ export function keepsQualifiers(original: string, shortened: string): boolean {
   return QUALIFIERS.every((re) => !re.test(original) || re.test(shortened))
 }
 
-/** Hold reason for a draft that waits only because a team member is online. handOffToDerek may send it later. */
+/** Hold reason for a draft that waits only because a team member is handling the conversation. handOffToDerek may send it later. (Stored text: kept as written so older held drafts still hand off.) */
 export const TEAM_ONLINE_HOLD = 'the LockIn team is online, so a person will answer'
 
 export type AutoReplyDecision = { send: true } | { send: false; heldReason: string | null }
@@ -104,8 +104,9 @@ export async function decideAutoReply(
   if (Number(usage.student) >= AUTO_REPLY_LIMITS.perStudentPerDay) return hold('daily automatic-reply limit for this student reached')
   if (Number(usage.hour) >= AUTO_REPLY_LIMITS.globalPerHour) return hold('hourly automatic-reply limit reached')
   if (Number(usage.day) >= AUTO_REPLY_LIMITS.globalPerDay) return hold('daily automatic-reply limit reached')
-  // Last, so a draft held for this reason passed every other check: while the team is online (or
-  // only briefly gone) a person answers, and Derek takes over only after the grace period.
-  if ((await getTeamPresence(conn)).state !== 'offline') return hold(TEAM_ONLINE_HOLD)
+  // Last, so a draft held for this reason passed every other check: while a team member is actively handling
+  // THIS conversation (Online, this student enabled, chat open: lib/support/availability.ts) a person answers;
+  // as soon as they leave or go Offline, handOffToDerek may send it.
+  if (await conversationHandler(conn, Number(conv.id))) return hold(TEAM_ONLINE_HOLD)
   return { send: true }
 }

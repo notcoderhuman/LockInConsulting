@@ -4,7 +4,7 @@ import type { AdminActor } from '@/lib/admin/roles'
 import { applyEvent, lockConversation } from '@/lib/support/conversations'
 import { assertActor, inTransaction, isDuplicate, selectRows, sha256, SupportError, type Row } from '@/lib/support/db'
 import { createNotification } from '@/lib/support/notifications'
-import { getTeamPresence } from '@/lib/support/presence'
+import { conversationHandler } from '@/lib/support/availability'
 import { autoReplyActive, getSupportSettings } from '@/lib/support/settings'
 import { TransitionError } from '@/lib/support/state'
 import { messageBody, reasonText } from '@/lib/support/validation'
@@ -14,7 +14,11 @@ import { loadEvidence } from './evidence'
 import { analyseQuestion, COMPARISON_TARGET_CHARS, studentPlanFromSubject } from './guidance'
 import { DEREK_INSTRUCTIONS, type AiProvider, type DraftRequest, type EvidenceItem } from './provider'
 import { callProvider, MAX_ATTEMPTS, type CallOutcome } from './runtime'
-import { assessDraft, assessQuestion, combineRisk, redactPersonalData } from './safeguards'
+import { assessDraft, assessQuestion, combineRisk, MODEL_UNCERTAIN_REASON, redactPersonalData } from './safeguards'
+
+/** How a preliminary answer opens (Owner's wording, 12 Nov 2026). */
+export const PRELIMINARY_NOTE = 'I’m not fully certain about this, so please treat this as preliminary information. This needs confirmation from the LockIn team.'
+const PRELIMINARY_REASON = 'Derek was not certain: sent as preliminary information, and the team is asked to confirm it'
 import { FREE_TIER_HOLD_CODE, screenForFreeTier } from './free-tier'
 import { PRIVACY_NOTICE_VERSION } from '@/lib/student/onboarding'
 import { classifyMessage, GREETING_REPLY, isSmallTalk, OFF_TOPIC_REPLY, RULES_PROVIDER_ID, scopeRisk, THANKS_REPLY } from './scope'
@@ -184,7 +188,7 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     const options = deps.callOptions ?? { maxAttempts: derekMaxAttempts() }
     outcome = await callProvider(provider, request, options)
     // Only spend the rewrite request when an automatic reply could really be sent (switch, clearance, team offline).
-    const autoReplyPossible = async () => autoReplyActive(await getSupportSettings(pool), status) && (await getTeamPresence(pool)).state === 'offline'
+    const autoReplyPossible = async () => autoReplyActive(await getSupportSettings(pool), status) && !(await conversationHandler(pool, conversationId))
     outcome = await shortenIfTooLong(provider, request, options, outcome, autoReplyPossible)
   }
 
@@ -236,11 +240,21 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     const asked = assessQuestion(claim.question, evidence, { general })
     const questionRisk = claim.fixed && asked.level !== 'high' ? { level: 'low' as const, reasons: [] } : asked
     const risk = combineRisk(assessDraft(text.data, questionRisk, evidence, { modelUncertain: outcome.result.uncertain }), scopeRisk(claim.classification))
+    // Owner rule (12 Nov 2026): when Derek himself is not sure, and nothing else about the question or the draft is
+    // risky, he still answers, opening with a plain statement that it is preliminary, and the team is asked to
+    // follow up. A truncated answer, a risky topic or any failed check still waits for a person.
+    const preliminary =
+      !claim.fixed && outcome.result.uncertain === true && !outcome.result.incomplete && risk.level === 'uncertain' && risk.reasons.every((r) => r === MODEL_UNCERTAIN_REASON)
+    const body = preliminary ? `${PRELIMINARY_NOTE}\n\n${text.data}` : text.data
+    if (preliminary) {
+      risk.level = 'low'
+      risk.reasons = [PRELIMINARY_REASON]
+    }
     // Editorial findings are for the reviewer (and stop automatic sending); they do not raise the risk level.
-    if (!claim.fixed) risk.reasons.push(...styleIssues(text.data).map((s) => `Style: ${s}`))
+    if (!claim.fixed) risk.reasons.push(...styleIssues(body).map((s) => `Style: ${s}`))
     await conn.query(
       "INSERT INTO ai_draft_revisions (draft_id, revision, body, body_sha256, created_by_kind, created_by) VALUES (?, 1, ?, ?, 'derek', NULL)",
-      [claim.draftId, text.data, sha256(text.data)],
+      [claim.draftId, body, sha256(body)],
     )
     await conn.query(
       `UPDATE ai_drafts SET status = 'ready', current_revision = 1, risk_level = ?, risk_reasons = ?, evidence_refs = ?, model = ?,
@@ -267,14 +281,22 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
       builtIn: claim.fixed != null,
       conv,
       risk: risk.level,
-      text: text.data,
+      text: body,
       evidence,
     })
     if (decision.send) {
-      const messageId = await deliverDraft(conn, conv, claim.draftId, text.data, null, {
+      const messageId = await deliverDraft(conn, conv, claim.draftId, body, null, {
         provider: claim.fixed ? RULES_PROVIDER_ID : provider.id,
         model: outcome.result.model.slice(0, 120),
       })
+      if (preliminary)
+        await createNotification(conn, {
+          audience: 'staff_support',
+          kind: 'high_risk',
+          conversationId,
+          title: `Derek sent a preliminary answer he was not sure about in conversation #${conversationId} — please confirm or correct it`,
+          targetPath: `/admin/inbox/${conversationId}`,
+        })
       return { state: 'auto_sent', draftId: claim.draftId, messageId }
     }
     const held = decision.heldReason
@@ -417,6 +439,14 @@ export async function handOffToDerek(pool: Pool, conversationId: number, deps: {
     })
     if (!decision.send) return none
     const messageId = await deliverDraft(conn, conv, Number(draft.id), String(revision.body), null, { provider: String(draft.provider), model: String(draft.model) })
+    if (String(draft.risk_reasons ?? '').includes(PRELIMINARY_REASON))
+      await createNotification(conn, {
+        audience: 'staff_support',
+        kind: 'high_risk',
+        conversationId,
+        title: `Derek sent a preliminary answer he was not sure about in conversation #${conversationId} — please confirm or correct it`,
+        targetPath: `/admin/inbox/${conversationId}`,
+      })
     return { state: 'sent', draftId: Number(draft.id), messageId }
   })
 }

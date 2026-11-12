@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto'
 import type { Connection, RowDataPacket } from 'mysql2/promise'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { connect, startTestDatabase, type TestDatabase } from './harness'
+import { handleChat } from './handling'
 import { loadMigrations, migrate } from '../../scripts/migrate.mjs'
 
 vi.mock('next/headers', () => ({ headers: async () => new Headers() }))
@@ -143,8 +144,8 @@ describe('Gemini drafts through the worker (fake fetch)', () => {
       // A team member online: the same kind of question waits for a person.
       await db.query("INSERT INTO auth_user (id, name, email, emailVerified, updatedAt) VALUES ('u-gem-dev', 'Dev Gem', 'gem-dev@test.example', 1, UTC_TIMESTAMP(3))")
       await db.query("INSERT INTO admin_members (user_id, role, status, granted_by) VALUES ('u-gem-dev', 'reviewer', 'active', 'cli:test')")
-      await db.query("INSERT INTO staff_presence (user_id, last_seen_at) VALUES ('u-gem-dev', UTC_TIMESTAMP(3))")
       const q2 = await C.createConversation(pool(), s, { body: 'What is an unconditional offer?', clientRequestId: rid() })
+      await handleChat(db, 'u-gem-dev', q2.conversationId)
       const held = await D.prepareDerekDraft(pool(), q2.conversationId, q2.triggerMessageId!, { status: getDerekStatus(cleared), provider: gemini(() => geminiReply(answer)).provider })
       expect(held).toMatchObject({ state: 'review' })
     } finally {

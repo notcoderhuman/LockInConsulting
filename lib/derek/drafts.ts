@@ -245,6 +245,11 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
       ? { ...analysed, note: `${analysed.note} The student told LockIn before asking: "${redactPersonalData(claim.plan ?? '')}" Use this and do not ask for it again.` }
       : analysed
     general = guidance.kind !== 'specific_fact'
+    // The stage marker the student's chat reads (replyPhase): written by this worker only while it really is in that stage.
+    const setPhase = (phase: 'researching' | 'solving' | 'thinking') =>
+      pool.query('UPDATE ai_drafts SET research = ? WHERE id = ? AND status = ?', [JSON.stringify({ phase }), claim.draftId, 'generating']).catch(() => {})
+    // A comparison of countries or a long, multi-part question is the orb's "solving" stage.
+    const complex = guidance.destinations.length > 1 || question.length > 280 || claim.question.includes('\n\n')
     // Research: only for a factual question about a named university that LockIn's records do not answer, and never
     // for a high-risk topic (visa, legal, distress), which goes to a person. Nothing about the student leaves the server.
     // "Do not answer" is decided by what LockIn holds for THIS course: a fee for another course of the same university does not count.
@@ -255,7 +260,7 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
       // Tests never reach the network unless they inject a research function; DEREK_WEB_RESEARCH=off switches it off in production.
       const doResearch = deps.research ?? (process.env.NODE_ENV === 'test' || process.env.DEREK_WEB_RESEARCH === 'off' ? null : researchQuestion)
       // The student's chat shows "checking university sources" while this marker is set; the final update below replaces it.
-      if (doResearch) await pool.query('UPDATE ai_drafts SET research = ? WHERE id = ? AND status = ?', [JSON.stringify({ phase: 'researching' }), claim.draftId, 'generating']).catch(() => {})
+      if (doResearch) await setPhase('researching')
       research = await doResearch?.({ topics: guidance.topics, course: asked, universities })?.catch(() => null) ?? null
       if (research) {
         evidence = [...evidence, ...research.items].slice(0, 30)
@@ -267,6 +272,8 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
         }
       }
     }
+    // Back from research (or none): the stage the student's chat shows while the answer is written.
+    await setPhase(complex ? 'solving' : 'thinking')
     const request = { question, history, evidence, instructions: DEREK_INSTRUCTIONS, guidance }
     const options = deps.callOptions ?? { maxAttempts: derekMaxAttempts() }
     outcome = await callProvider(provider, request, options)

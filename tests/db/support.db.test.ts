@@ -2420,20 +2420,32 @@ describe('Derek in production: held answers, research coverage and the thinking 
       expect(await view(s, q.conversationId)).toMatchObject({ replyPending: false, replyPhase: null })
     })
 
-    it('says it is checking university sources only while research is really running', async () => {
+    it('moves through the stages as the server really does: checking sources while research runs, then thinking, solving for a long question', async () => {
       const s = await makeStudent()
       const q = await C.createConversation(pool(), s, { body: massey, clientRequestId: rid(), subject: 'New Zealand · Master’s in Computer Science' })
-      let release!: () => void
-      const gate = new Promise<void>((resolve) => (release = resolve))
+      let releaseResearch!: () => void
+      const researchGate = new Promise<void>((resolve) => (releaseResearch = resolve))
       const research = vi.fn(async (): Promise<ResearchResult> => {
-        await gate
+        await researchGate
         return { items: [], record: { attempted: true, query: null, sources: [], conflicts: [], outdated: [], failure: 'The university pages that could be read did not state this.' } }
       })
-      const working = run(q, new MockProvider(), { loadEvidence: async () => [], research })
+      const { provider, open } = slow('LockIn has not verified the tuition fees yet, so I won’t guess.')
+      const working = run(q, provider, { loadEvidence: async () => [], research })
       await vi.waitFor(async () => expect(await view(s, q.conversationId)).toMatchObject({ replyPending: true, replyPhase: 'researching' }))
-      release()
-      expect(await working).toMatchObject({ state: 'auto_sent' })
+      releaseResearch() // research is over, the answer is being written: back to thinking
+      await vi.waitFor(async () => expect(await view(s, q.conversationId)).toMatchObject({ replyPending: true, replyPhase: 'thinking' }))
+      open()
+      await working
       expect(await view(s, q.conversationId)).toMatchObject({ replyPending: false, replyPhase: null })
+
+      // A comparison of two countries is the orb's "solving" stage.
+      const t = await makeStudent()
+      const long = await ask(t, 'Compare studying computer science in Germany and Poland for an Indian student.')
+      const second = slow()
+      const solving = run(long, second.provider)
+      await vi.waitFor(async () => expect(await view(t, long.conversationId)).toMatchObject({ replyPending: true, replyPhase: 'solving' }))
+      second.open()
+      await solving
     })
 
     it('ends when the AI request fails, when Dev joins during processing, when the allowance is used up, and for an abandoned worker', async () => {

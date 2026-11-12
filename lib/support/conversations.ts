@@ -311,6 +311,12 @@ export async function exportStudentConversations(db: Db, student: StudentActor) 
   return out
 }
 
+/** The stage Derek is in, from the marker the worker writes on the draft: reading university pages, a long or multi-part question, or writing. */
+function replyPhaseOf(marker: unknown): 'thinking' | 'researching' | 'solving' {
+  const text = typeof marker === 'string' ? marker : JSON.stringify(marker ?? '')
+  return text.includes('"researching"') ? 'researching' : text.includes('"solving"') ? 'solving' : 'thinking'
+}
+
 export async function getStudentMessages(db: Db, student: StudentActor, conversationId: number, { before = null, after = null, limit = 30 }: { before?: number | null; after?: number | null; limit?: number } = {}) {
   const conv = await selectRows(
     db,
@@ -377,7 +383,7 @@ export async function getStudentMessages(db: Db, student: StudentActor, conversa
       /** The client checks back quickly while true, and shows Derek's thinking indicator: only while he is really working. */
       replyPending: derekWriting,
       /** What Derek is doing, for the indicator's wording: reading university pages, or thinking. Never his reasoning. */
-      replyPhase: !derekWriting ? null : draft === 'generating' && (typeof target.draft_research === 'string' ? target.draft_research : JSON.stringify(target.draft_research ?? '')).includes('"researching"') ? ('researching' as const) : ('thinking' as const),
+      replyPhase: !derekWriting ? null : draft === 'generating' ? replyPhaseOf(target.draft_research) : ('thinking' as const),
     },
     messages: rows.map((r) => toView(r, 'student', student.userId)),
     hasMore,

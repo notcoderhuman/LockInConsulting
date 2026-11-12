@@ -11,7 +11,7 @@ import { ALLOWANCE_NOTICE, getAllowance } from '@/lib/derek/allowance'
 import { suggestQuestions } from '@/lib/derek/suggestions'
 import { conversationHandler } from './availability'
 import { autoReplyActive, getSupportSettings } from './settings'
-import { DEREK_FAILED, DEREK_PENDING_SECONDS, DEREK_WRITING, isConversationStatus, nextStatus, STUDENT_ACKNOWLEDGEMENT, STUDENT_STATUS_LABEL, TransitionError, type ConversationEvent, type ConversationStatus } from './state'
+import { DEREK_FAILED, DEREK_GENERATION_SECONDS, DEREK_PENDING_SECONDS, DEREK_WRITING, isConversationStatus, nextStatus, STUDENT_ACKNOWLEDGEMENT, STUDENT_STATUS_LABEL, TransitionError, type ConversationEvent, type ConversationStatus } from './state'
 import { deriveSubject, newConversationInput, newMessageInput, reasonText } from './validation'
 
 // Conversations and messages. Ownership and permissions are checked here, on the server, for
@@ -332,7 +332,9 @@ export async function getStudentMessages(db: Db, student: StudentActor, conversa
     ? await selectRows(
         db,
         `SELECT m.id, m.body, m.created_at > UTC_TIMESTAMP(3) - INTERVAL ${DEREK_PENDING_SECONDS} SECOND AS recent,
-                (SELECT d.status FROM ai_drafts d WHERE d.trigger_message_id = m.id) AS draft_status
+                (SELECT d.status FROM ai_drafts d WHERE d.trigger_message_id = m.id) AS draft_status,
+                (SELECT d.created_at > UTC_TIMESTAMP(3) - INTERVAL ${DEREK_GENERATION_SECONDS} SECOND FROM ai_drafts d WHERE d.trigger_message_id = m.id) AS draft_fresh,
+                (SELECT d.research FROM ai_drafts d WHERE d.trigger_message_id = m.id) AS draft_research
            FROM messages m WHERE m.conversation_id = ? AND m.author_kind = 'student' AND m.id > ? ORDER BY m.id DESC LIMIT 20`,
         [conversationId, Number(conv[0].last_reply_id ?? 0)],
       )
@@ -340,7 +342,8 @@ export async function getStudentMessages(db: Db, student: StudentActor, conversa
   const target = unanswered.find((m) => !isSmallTalk(classifyMessage(String(m.body)))) ?? unanswered[0]
   const draft = target?.draft_status == null ? null : String(target.draft_status)
   let derekWriting =
-    Boolean(target) && conv[0].ai_paused_by == null && status !== 'awaiting_human_review' && status !== 'failed' && (draft === 'generating' || (draft == null && Number(target.recent) === 1))
+    // A draft still "generating" after DEREK_GENERATION_SECONDS belongs to a worker that died: it no longer counts as Derek working.
+    Boolean(target) && conv[0].ai_paused_by == null && status !== 'awaiting_human_review' && status !== 'failed' && ((draft === 'generating' && Number(target.draft_fresh) === 1) || (draft == null && Number(target.recent) === 1))
   if (derekWriting) {
     // Only promise a reply Derek may actually send now: LockIn's fixed replies, or any low-risk
     // answer when the provider is cleared. Otherwise the usual "a person will follow up".
@@ -371,8 +374,10 @@ export async function getStudentMessages(db: Db, student: StudentActor, conversa
       statusLabel: isConversationStatus(status) ? STUDENT_STATUS_LABEL[status] : 'Waiting for the LockIn team',
       acknowledgement: !waiting ? null : derekWriting ? DEREK_WRITING : exhausted ? ALLOWANCE_NOTICE : draft === 'failed' ? DEREK_FAILED : STUDENT_ACKNOWLEDGEMENT,
       allowance,
-      /** The client checks back quickly while true. */
+      /** The client checks back quickly while true, and shows Derek's thinking indicator: only while he is really working. */
       replyPending: derekWriting,
+      /** What Derek is doing, for the indicator's wording: reading university pages, or thinking. Never his reasoning. */
+      replyPhase: !derekWriting ? null : draft === 'generating' && (typeof target.draft_research === 'string' ? target.draft_research : JSON.stringify(target.draft_research ?? '')).includes('"researching"') ? ('researching' as const) : ('thinking' as const),
     },
     messages: rows.map((r) => toView(r, 'student', student.userId)),
     hasMore,

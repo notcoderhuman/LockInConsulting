@@ -341,6 +341,30 @@ export async function findUniversitySites(db: Queryable, text: string): Promise<
   return out
 }
 
+const TOPIC_EVIDENCE: [RegExp, RegExp][] = [
+  [/fee|cost/i, /tuition|fee/i],
+  [/rank/i, /rank/i],
+  [/intake|deadline/i, /intake|deadline/i],
+  [/acceptance/i, /acceptance/i],
+  [/requirement/i, /requirement/i],
+  [/scholarship/i, /scholarship/i],
+]
+const GENERIC_COURSE_WORDS = new Set(['master', 'masters', 'bachelor', 'bachelors', 'degree', 'programme', 'program', 'course', 'postgraduate', 'undergraduate', 'diploma', 'honours', 'with', 'from'])
+
+/**
+ * Whether LockIn already holds what the student asked: for every topic, a record about it, and, when the student chose a course,
+ * a record that mentions that course. Another course's fee at the same university does not answer the question.
+ */
+export function evidenceCovers(evidence: EvidenceItem[], topics: string[], course: string | null): boolean {
+  const words = (course ?? '').toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length >= 4 && !GENERIC_COURSE_WORDS.has(w))
+  const facts = evidence.filter((e) => !/^(draft_)?university:/.test(e.ref))
+  if (!topics.length) return facts.length > 0
+  return topics.every((topic) => {
+    const wanted = TOPIC_EVIDENCE.find(([t]) => t.test(topic))?.[1]
+    return facts.some((e) => (wanted ? wanted.test(e.text) || wanted.test(e.ref) : true) && (!words.length || words.some((w) => e.text.toLowerCase().includes(w))))
+  })
+}
+
 /** The general search query: university, course and what is being asked. Nothing else, and never anything personal. */
 export function buildQuery(universityName: string, course: string | null, topics: string[]): string {
   const safeCourse = course && course.length <= 80 && screenForFreeTier(course) === null ? course : null

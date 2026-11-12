@@ -74,6 +74,8 @@ export const DEREK_FAILED = 'Derek couldn’t generate an answer this time, so a
 
 /** How long after a student's message Derek counts as "about to start" before his draft row exists. */
 export const DEREK_PENDING_SECONDS = 20
+/** The longest a draft may stay 'generating' (research plus two provider attempts) before it counts as abandoned. */
+export const DEREK_GENERATION_SECONDS = 120
 
 /** What the student sees. Internal review and failure states are never exposed as such. */
 export const STUDENT_STATUS_LABEL: Record<ConversationStatus, string> = {

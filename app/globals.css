@@ -173,3 +173,101 @@ h1:lang(hi),
 h2:lang(hi) {
   line-height: 1.35;
 }
+
+/* Derek's thinking indicator (components/support/derek-thinking.tsx): a restrained gold orb, CSS/SVG only. */
+.derek-orb {
+  position: relative;
+  display: inline-block;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: none;
+  filter: drop-shadow(0 0 10px color-mix(in oklab, var(--primary) 35%, transparent));
+}
+.derek-orb-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.derek-orb-halo {
+  opacity: 0.16;
+  transform-origin: 32px 32px;
+  animation: derek-orb-glow 2.8s ease-in-out infinite;
+}
+.derek-orb-core {
+  transform-origin: 32px 32px;
+  animation: derek-orb-breathe 2.8s ease-in-out infinite;
+}
+.derek-orb-ring-a,
+.derek-orb-ring-b {
+  transform-origin: 32px 32px;
+}
+.derek-orb-ring-a {
+  animation: derek-orb-spin 7s linear infinite;
+}
+.derek-orb-ring-b {
+  animation: derek-orb-spin 11s linear infinite reverse;
+}
+.derek-thinking {
+  animation: derek-thinking-in 260ms var(--ease-out-soft, ease-out) both;
+}
+.derek-thinking[data-leaving='true'] {
+  animation: derek-thinking-out 320ms ease-in both;
+}
+@keyframes derek-orb-glow {
+  0%,
+  100% {
+    opacity: 0.1;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 0.26;
+    transform: scale(1.08);
+  }
+}
+@keyframes derek-orb-breathe {
+  0%,
+  100% {
+    transform: scale(0.96);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+@keyframes derek-orb-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes derek-thinking-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes derek-thinking-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+/* Reduced motion: the orb is a still, softly lit disc with the same wording; nothing moves or pulses. */
+@media (prefers-reduced-motion: reduce) {
+  .derek-orb-halo,
+  .derek-orb-core,
+  .derek-orb-ring-a,
+  .derek-orb-ring-b,
+  .derek-thinking,
+  .derek-thinking[data-leaving='true'] {
+    animation: none !important;
+  }
+  .derek-thinking[data-leaving='true'] {
+    opacity: 0;
+  }
+}

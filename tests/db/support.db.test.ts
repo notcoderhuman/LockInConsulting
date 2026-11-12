@@ -790,7 +790,8 @@ describe('automatic replies', () => {
       // The owner's switch is on, but this provider is not cleared: model-written text waits for a person.
       const q = await ask(s)
       expect(await D.prepareDerekDraft(pool(), q.conversationId, q.triggerMessageId!, { provider: new MockProvider() })).toMatchObject({ state: 'review' })
-      expect((await rows<{ hold_reason: string | null }>('SELECT hold_reason FROM ai_drafts WHERE trigger_message_id = ?', [q.triggerMessageId]))[0].hold_reason).toBeNull()
+      // The team is told why it waits (never a silent hold), and it is sent once the provider is cleared.
+      expect((await rows<{ hold_reason: string | null }>('SELECT hold_reason FROM ai_drafts WHERE trigger_message_id = ?', [q.triggerMessageId]))[0].hold_reason).toBe(AR.NOT_CLEARED_HOLD)
       // LockIn's own greeting involves no provider, so it is answered straight away.
       const hi = await ask(s, 'hello')
       expect(await D.prepareDerekDraft(pool(), hi.conversationId, hi.triggerMessageId!, { provider: new MockProvider() })).toMatchObject({ state: 'auto_sent' })
@@ -2311,6 +2312,162 @@ describe('Derek daily allowance, web research and routing', () => {
       for (const text of ['Hello', ordinary, 'My student visa for Synthetic Thames University was refused, what are the fees to appeal?'])
         await run(await ask(await makeStudent(), text), new MockProvider(), { loadEvidence: async () => [], research })
       expect(research).not.toHaveBeenCalled()
+    })
+  })
+})
+
+describe('Derek in production: held answers, research coverage and the thinking indicator', () => {
+  const env = { DEREK_AI_ENABLED: 'true', DEREK_PROVIDER: 'mock' }
+  const answer = 'A statement of purpose explains your goals and why you chose the course.'
+  const ordinary = 'What is a statement of purpose?'
+  const massey = 'What are the tuition fees for the Master’s in Computer Science at Massey University?'
+  const fixed = (text = answer, uncertain?: boolean) => new MockProvider({ kind: 'fixed', text, uncertain })
+  const run = (q: { conversationId: number; triggerMessageId: number | null }, provider: AiProvider, deps: Parameters<typeof D.prepareDerekDraft>[3] = {}) =>
+    D.prepareDerekDraft(pool(), q.conversationId, q.triggerMessageId!, { provider, ...deps })
+  const left = async (s: StudentActor) => (await AL.getAllowance(pool(), s.profileId)).remaining
+  const dev: AdminActor = { userId: 'u-prod-dev', name: 'Dev Prod', email: 'prod-dev@test.example', role: 'reviewer' }
+  const view = async (s: StudentActor, id: number) => (await C.getStudentMessages(pool(), s, id)).conversation
+  const feeOther: EvidenceItem = { ref: 'tuition_fee:7001', text: 'Master of Analytics tuition fee (international): NZD 9000 per year', sourceUrl: 'https://massey.example/fees', publisher: 'Massey University', checkedAt: TODAY }
+  const feeMatch: EvidenceItem = { ...feeOther, ref: 'tuition_fee:7002', text: 'Master of Computer Science tuition fee (international): NZD 9500 per year' }
+  const noResearch = () => vi.fn(async (): Promise<ResearchResult> => ({ items: [], record: { attempted: true, query: null, sources: [], conflicts: [], outdated: [], failure: 'The university pages that could be read did not state this.' } }))
+
+  beforeAll(async () => {
+    await db.query('INSERT INTO auth_user (id, name, email, emailVerified, updatedAt) VALUES (?, ?, ?, 0, UTC_TIMESTAMP(3))', [dev.userId, dev.name, dev.email])
+    await db.query("INSERT INTO admin_members (user_id, role, status, granted_by) VALUES (?, 'reviewer', 'active', 'cli:test')", [dev.userId])
+  })
+  beforeEach(async () => {
+    Object.assign(process.env, env)
+    AUTO_REPLY_LIMITS.globalPerHour = 100_000
+    AUTO_REPLY_LIMITS.globalPerDay = 100_000
+    await S.updateSupportSettings(pool(), owner, { autoReplyEnabled: true })
+  })
+  afterEach(async () => {
+    for (const k of [...Object.keys(env), 'DEREK_AUTO_REPLY_CLEARED']) delete process.env[k]
+    await db.query('DELETE FROM staff_presence')
+    await db.query('DELETE FROM conversation_presence')
+    await db.query("UPDATE support_settings SET support_mode = 'online', auto_reply_enabled = FALSE WHERE id = 1")
+  })
+  afterAll(async () => {
+    await db.query('DELETE FROM admin_members WHERE user_id = ?', [dev.userId])
+  })
+
+  it('shows the team why a drafted answer waits when the provider is not cleared, and sends it, preliminary or not, once it is', async () => {
+    const s = await makeStudent()
+    const q = await ask(s, ordinary)
+    expect(await run(q, fixed('A statement of purpose usually covers your goals.', true))).toMatchObject({ state: 'review' })
+    const [draft] = await D.listDrafts(pool(), owner, q.conversationId)
+    expect(draft).toMatchObject({ status: 'ready', risk: 'uncertain', holdReason: AR.NOT_CLEARED_HOLD })
+    expect(draft.riskReasons[0]).toMatch(/preliminary/)
+    expect(await left(s)).toBe(10) // nothing delivered, nothing used
+    expect((await view(s, q.conversationId)).replyPending).toBe(false) // no thinking indicator: no answer is coming from Derek
+    expect((await rows<{ title: string }>('SELECT title FROM notifications WHERE conversation_id = ?', [q.conversationId])).map((n) => n.title)).toContainEqual(expect.stringContaining('DEREK_AUTO_REPLY_CLEARED'))
+    // Nothing happens while it is still not cleared.
+    expect(await D.handOffToDerek(pool(), q.conversationId)).toEqual({ state: 'none' })
+    // The Owner records the review: the held question is answered at the student's next check-in, with the preliminary notice, once.
+    process.env.DEREK_AUTO_REPLY_CLEARED = 'mock'
+    expect(await D.handOffToDerek(pool(), q.conversationId)).toMatchObject({ state: 'sent' })
+    expect(await D.handOffToDerek(pool(), q.conversationId)).toEqual({ state: 'none' })
+    const [body] = (await rows<{ body: string }>("SELECT body FROM messages WHERE conversation_id = ? AND author_kind = 'derek'", [q.conversationId])).map((r) => r.body)
+    expect(body).toContain(D.PRELIMINARY_NOTE)
+    expect(await left(s)).toBe(9)
+    expect(await rows("SELECT id FROM notifications WHERE conversation_id = ? AND title LIKE '%sent a preliminary answer%'", [q.conversationId])).toHaveLength(1)
+  })
+
+  it('researches when LockIn only has another course of the university, and not when it has the asked course', async () => {
+    process.env.DEREK_AUTO_REPLY_CLEARED = 'mock'
+    const s = await makeStudent()
+    const subject = 'New Zealand · Master’s in Computer Science'
+    const partial = await C.createConversation(pool(), s, { body: massey, clientRequestId: rid(), subject })
+    const research = noResearch()
+    // Only the Master of Analytics is on record: that does not answer a Computer Science fee.
+    expect(await run(partial, new MockProvider(), { loadEvidence: async () => [feeOther], research })).toMatchObject({ state: 'auto_sent' })
+    expect(research).toHaveBeenCalledTimes(1)
+    expect((research.mock.calls[0] as unknown[])[0]).toMatchObject({ topics: ['fees or costs'], course: 'Master’s in Computer Science' })
+    const [body] = (await rows<{ body: string }>("SELECT body FROM messages WHERE conversation_id = ? AND author_kind = 'derek'", [partial.conversationId])).map((r) => r.body)
+    expect(body).toContain(D.PRELIMINARY_NOTE) // could not be verified: said so, not guessed
+    // The asked course is on record: no research.
+    const covered = await C.createConversation(pool(), await makeStudent(), { body: massey, clientRequestId: rid(), subject })
+    const other = noResearch()
+    await run(covered, new MockProvider(), { loadEvidence: async () => [feeMatch], research: other })
+    expect(other).not.toHaveBeenCalled()
+  })
+
+  describe('the thinking indicator follows the server', () => {
+    const slow = (answerText = answer) => {
+      let open!: () => void
+      const gate = new Promise<void>((resolve) => (open = resolve))
+      const provider: AiProvider = { id: 'mock', model: 'mock-derek-1', autoReply: { permitted: true }, async generate() { await gate; return { text: answerText, model: 'mock-derek-1' } } }
+      return { provider, open }
+    }
+
+    beforeEach(() => {
+      process.env.DEREK_AUTO_REPLY_CLEARED = 'mock'
+    })
+
+    it('shows from the moment the question is saved until Derek’s answer arrives, and is the same for a refreshed page or a second tab', async () => {
+      const s = await makeStudent()
+      const q = await ask(s, ordinary)
+      // Saved, the worker has not started yet: already pending.
+      expect(await view(s, q.conversationId)).toMatchObject({ replyPending: true, replyPhase: 'thinking' })
+      const { provider, open } = slow()
+      const working = run(q, provider)
+      await vi.waitFor(async () => expect(await rows("SELECT id FROM ai_drafts WHERE conversation_id = ? AND status = 'generating'", [q.conversationId])).toHaveLength(1))
+      const [tabA, tabB] = await Promise.all([view(s, q.conversationId), view(s, q.conversationId)])
+      expect(tabA).toMatchObject({ replyPending: true, replyPhase: 'thinking' })
+      expect(tabB).toEqual(tabA)
+      open()
+      expect(await working).toMatchObject({ state: 'auto_sent' })
+      expect(await view(s, q.conversationId)).toMatchObject({ replyPending: false, replyPhase: null })
+    })
+
+    it('says it is checking university sources only while research is really running', async () => {
+      const s = await makeStudent()
+      const q = await C.createConversation(pool(), s, { body: massey, clientRequestId: rid(), subject: 'New Zealand · Master’s in Computer Science' })
+      let release!: () => void
+      const gate = new Promise<void>((resolve) => (release = resolve))
+      const research = vi.fn(async (): Promise<ResearchResult> => {
+        await gate
+        return { items: [], record: { attempted: true, query: null, sources: [], conflicts: [], outdated: [], failure: 'The university pages that could be read did not state this.' } }
+      })
+      const working = run(q, new MockProvider(), { loadEvidence: async () => [], research })
+      await vi.waitFor(async () => expect(await view(s, q.conversationId)).toMatchObject({ replyPending: true, replyPhase: 'researching' }))
+      release()
+      expect(await working).toMatchObject({ state: 'auto_sent' })
+      expect(await view(s, q.conversationId)).toMatchObject({ replyPending: false, replyPhase: null })
+    })
+
+    it('ends when the AI request fails, when Dev joins during processing, when the allowance is used up, and for an abandoned worker', async () => {
+      // Failure: honest fallback, no indicator, the question stays for a person.
+      const s = await makeStudent()
+      const failed = await ask(s, ordinary)
+      expect(await run(failed, new MockProvider({ kind: 'fail', code: 'unavailable', retryable: false }))).toMatchObject({ state: 'failed' })
+      expect(await view(s, failed.conversationId)).toMatchObject({ replyPending: false, replyPhase: null, acknowledgement: expect.stringContaining('couldn’t generate an answer') })
+      expect(await left(s)).toBe(10)
+
+      // Dev joins while Derek is still working: the indicator goes, and Derek's answer waits for Dev.
+      const t = await makeStudent()
+      const joined = await ask(t, ordinary)
+      const { provider, open } = slow()
+      const working = run(joined, provider)
+      await vi.waitFor(async () => expect(await view(t, joined.conversationId)).toMatchObject({ replyPending: true }))
+      await handleChat(db, dev.userId, joined.conversationId)
+      expect(await view(t, joined.conversationId)).toMatchObject({ replyPending: false, replyPhase: null })
+      open()
+      expect(await working).toMatchObject({ state: 'review' })
+      expect(await left(t)).toBe(10)
+
+      // Allowance used up: no indicator, the static notice instead.
+      const u = await makeStudent()
+      await db.query('INSERT INTO derek_allowance_days (student_profile_id, quota_date, delivered) VALUES (?, ?, 10)', [u.profileId, AL.istDay()])
+      const full = await ask(u, ordinary)
+      expect(await run(full, fixed())).toEqual({ state: 'allowance' })
+      expect(await view(u, full.conversationId)).toMatchObject({ replyPending: false, replyPhase: null, acknowledgement: AL.ALLOWANCE_NOTICE })
+
+      // A worker that died: its draft stops counting as "Derek is working" after the generation window.
+      const v = await makeStudent()
+      const stuck = await ask(v, ordinary)
+      await db.query("INSERT INTO ai_drafts (conversation_id, trigger_message_id, status, provider, model, created_at) VALUES (?, ?, 'generating', 'mock', 'mock-derek-1', UTC_TIMESTAMP(3) - INTERVAL 300 SECOND)", [stuck.conversationId, stuck.triggerMessageId])
+      expect(await view(v, stuck.conversationId)).toMatchObject({ replyPending: false, replyPhase: null })
     })
   })
 })

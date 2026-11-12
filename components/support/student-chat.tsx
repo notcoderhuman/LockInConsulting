@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
+import { DerekThinking, type DerekPhase } from '@/components/support/derek-thinking'
 import { Button } from '@/components/ui/button'
 import { controlClass } from '@/components/admin/form-controls'
 import { DESTINATIONS } from '@/lib/destinations'
@@ -95,6 +96,7 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
   const [statusLabel, setStatusLabel] = useState('')
   const [acknowledgement, setAcknowledgement] = useState<string | null>(null)
   const [replyPending, setReplyPending] = useState(false)
+  const [replyPhase, setReplyPhase] = useState<DerekPhase | null>(null)
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [allowance, setAllowance] = useState<Allowance | null>(null)
   const [pending, setPending] = useState<Pending[]>([])
@@ -133,11 +135,12 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
       if (r.status === 401) setListState('signed_out')
       return false
     }
-    const conv = r.data.conversation as { subject: string; statusLabel: string; acknowledgement?: string | null; replyPending?: boolean; suggestions?: string[]; allowance?: Allowance }
+    const conv = r.data.conversation as { subject: string; statusLabel: string; acknowledgement?: string | null; replyPending?: boolean; replyPhase?: DerekPhase | null; suggestions?: string[]; allowance?: Allowance }
     setSubject(conv.subject)
     setStatusLabel(conv.statusLabel)
     setAcknowledgement(conv.acknowledgement ?? null)
     setReplyPending(conv.replyPending === true)
+    setReplyPhase(conv.replyPending === true ? (conv.replyPhase ?? 'thinking') : null)
     setSuggestions(Array.isArray(conv.suggestions) ? conv.suggestions.slice(0, 3) : [])
     if (conv.allowance) setAllowance(conv.allowance)
     const incoming = r.data.messages as Message[]
@@ -166,6 +169,7 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
     setPending([])
     setAcknowledgement(null)
     setReplyPending(false)
+    setReplyPhase(null)
     setSuggestions([])
     if (selected == null) return
     // Live updates: every few seconds while the tab is visible, asking only for newer messages. Pauses while the
@@ -394,7 +398,8 @@ export function StudentChat({ initialConversationId }: { initialConversationId: 
               </ul>
             </div>
           ) : null}
-          {acknowledgement && !pending.length && threadState === 'ready' ? (
+          <DerekThinking pending={replyPending && selected != null && !pending.some((p) => p.state === 'failed')} phase={replyPhase} />
+          {acknowledgement && !replyPending && !pending.length && threadState === 'ready' ? (
             <p role="status" className="self-end text-xs text-muted-foreground">
               {acknowledgement}
             </p>

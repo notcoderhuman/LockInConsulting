@@ -8,12 +8,12 @@ import { conversationHandler } from '@/lib/support/availability'
 import { autoReplyActive, getSupportSettings } from '@/lib/support/settings'
 import { TransitionError } from '@/lib/support/state'
 import { messageBody, reasonText } from '@/lib/support/validation'
-import { AUTO_REPLY_LIMITS, decideAutoReply, keepsQualifiers, TEAM_ONLINE_HOLD } from './auto-reply'
+import { AUTO_REPLY_LIMITS, decideAutoReply, keepsQualifiers, NOT_CLEARED_HOLD, TEAM_ONLINE_HOLD } from './auto-reply'
 import { createProvider, derekDailyTokenLimit, derekMaxAttempts, getDerekStatus, type DerekStatus } from './config'
 import { loadEvidence } from './evidence'
-import { analyseQuestion, COMPARISON_TARGET_CHARS, hasFactEvidence, studentPlanFromSubject } from './guidance'
+import { analyseQuestion, COMPARISON_TARGET_CHARS, studentPlanFromSubject } from './guidance'
 import { commitAllowance, releaseAllowance, reserveAllowance } from './allowance'
-import { findUniversitySites, researchQuestion, type ResearchResult } from './research'
+import { evidenceCovers, findUniversitySites, researchQuestion, type ResearchResult } from './research'
 import { planFromSubject } from './suggestions'
 import { DEREK_INSTRUCTIONS, type AiProvider, type DraftRequest, type EvidenceItem } from './provider'
 import { callProvider, MAX_ATTEMPTS, type CallOutcome } from './runtime'
@@ -247,12 +247,16 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     general = guidance.kind !== 'specific_fact'
     // Research: only for a factual question about a named university that LockIn's records do not answer, and never
     // for a high-risk topic (visa, legal, distress), which goes to a person. Nothing about the student leaves the server.
-    if (guidance.kind === 'specific_fact' && !hasFactEvidence(evidence) && assessQuestion(claim.question, evidence, { general: false }).level !== 'high') {
+    // "Do not answer" is decided by what LockIn holds for THIS course: a fee for another course of the same university does not count.
+    const asked = planFromSubject(claim.subject).course
+    if (guidance.kind === 'specific_fact' && !evidenceCovers(evidence, guidance.topics, asked) && assessQuestion(claim.question, evidence, { general: false }).level !== 'high') {
       const localEarlier = (await selectRows(pool, "SELECT body FROM messages WHERE conversation_id = ? AND author_kind = 'student' AND id < ? ORDER BY id DESC LIMIT 6", [conversationId, claim.firstPendingId])).map((m) => String(m.body)).join('\n')
       const universities = await findUniversitySites(pool, `${localEarlier}\n${claim.question}`).catch(() => [])
       // Tests never reach the network unless they inject a research function; DEREK_WEB_RESEARCH=off switches it off in production.
       const doResearch = deps.research ?? (process.env.NODE_ENV === 'test' || process.env.DEREK_WEB_RESEARCH === 'off' ? null : researchQuestion)
-      research = await doResearch?.({ topics: guidance.topics, course: planFromSubject(claim.subject).course, universities })?.catch(() => null) ?? null
+      // The student's chat shows "checking university sources" while this marker is set; the final update below replaces it.
+      if (doResearch) await pool.query('UPDATE ai_drafts SET research = ? WHERE id = ? AND status = ?', [JSON.stringify({ phase: 'researching' }), claim.draftId, 'generating']).catch(() => {})
+      research = await doResearch?.({ topics: guidance.topics, course: asked, universities })?.catch(() => null) ?? null
       if (research) {
         evidence = [...evidence, ...research.items].slice(0, 30)
         // What was read now counts as evidence, so the guidance is built again: it must not still say LockIn has nothing.
@@ -290,6 +294,8 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     }
 
     if (!outcome.ok) {
+      // The real reason is logged (a short code, never the question or the answer) and shown to the team in the notification below.
+      console.error(`[derek] draft ${claim.draftId} for conversation ${conversationId} failed: ${outcome.code} after ${outcome.attempts} attempt(s)`)
       await releaseAllowance(conn, claim.draftId) // a failed generation never costs the student a slot
       await conn.query("UPDATE ai_drafts SET status = 'failed', error_code = ?, attempts = ?, latency_ms = ? WHERE id = ?", [
         outcome.code,
@@ -328,6 +334,7 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     const risk = combineRisk(assessDraft(text.data, questionRisk, evidence, { modelUncertain: outcome.result.uncertain }), scopeRisk(claim.classification))
     // Web research that found a conflict, an outdated page or nothing at all is flagged for a person (Owner request, 12 Nov 2026).
     const flags = research ? researchFlags(research) : []
+    if (research && flags.length) console.warn(`[derek] research for conversation ${conversationId}: ${flags.join('; ').slice(0, 300)}`)
     for (const f of flags) risk.reasons.push(f)
     if (flags.length && risk.level === 'low') risk.level = 'uncertain'
     // Owner rule (12 Nov 2026): when Derek himself is not sure, or research could not settle it, and nothing else about the
@@ -493,8 +500,11 @@ export async function handOffToDerek(pool: Pool, conversationId: number, deps: {
     // Only a conversation waiting for the team, that no person has taken over.
     if (conv.status !== 'awaiting_human_review' || conv.ai_paused_by != null) return none
     const [draft] = await selectRows(conn, "SELECT * FROM ai_drafts WHERE conversation_id = ? AND status = 'ready' ORDER BY id DESC LIMIT 1 FOR UPDATE", [conversationId])
-    // Held only because the team was online, low risk, and not edited by a person.
-    if (!draft || draft.hold_reason !== TEAM_ONLINE_HOLD || draft.risk_level !== 'low' || Number(draft.current_revision) !== 1) return none
+    // A draft held only because a person was handling the chat, or only because automatic replies are not cleared yet. A
+    // preliminary answer (Derek was unsure) is stored as 'uncertain' for the team, and is eligible all the same.
+    const preliminaryDraft = String(draft?.risk_reasons ?? '').includes(PRELIMINARY_REASON)
+    const eligibleRisk = draft?.risk_level === 'low' || (draft?.risk_level === 'uncertain' && preliminaryDraft)
+    if (!draft || (draft.hold_reason !== TEAM_ONLINE_HOLD && draft.hold_reason !== NOT_CLEARED_HOLD) || !eligibleRisk || Number(draft.current_revision) !== 1) return none
     const trigger = Number(draft.trigger_message_id)
     const later = await selectRows(conn, 'SELECT author_kind, body FROM messages WHERE conversation_id = ? AND id > ?', [conversationId, trigger])
     if (later.some((m) => m.author_kind !== 'student' || !isSmallTalk(classifyMessage(String(m.body))))) return none

@@ -46,6 +46,13 @@ export function keepsQualifiers(original: string, shortened: string): boolean {
 /** Hold reason for a draft that waits only because a team member is handling the conversation. handOffToDerek may send it later. (Stored text: kept as written so older held drafts still hand off.) */
 export const TEAM_ONLINE_HOLD = 'the LockIn team is online, so a person will answer'
 
+/**
+ * Hold reason while the Owner's review for unreviewed replies by this provider is not recorded (DEREK_AUTO_REPLY_CLEARED).
+ * Stored on the draft so the team sees why Derek's answer is waiting, and so it is sent as soon as the clearance is recorded
+ * (handOffToDerek re-checks every gate).
+ */
+export const NOT_CLEARED_HOLD = 'automatic replies are not cleared for this provider yet (DEREK_AUTO_REPLY_CLEARED is not set)'
+
 export type AutoReplyDecision = { send: true } | { send: false; heldReason: string | null }
 
 /**
@@ -72,7 +79,11 @@ export async function decideAutoReply(
   const { settings, status, provider, conv } = input
   // LockIn's fixed texts (greeting, thanks, scope refusal) involve no third-party model, so they
   // need only Derek on and the owner's switch; model-written drafts also need provider clearance.
-  if (!(input.builtIn ? settings.autoReplyEnabled && status.state === 'ready' : autoReplyActive(settings, status))) return { send: false, heldReason: null }
+  if (!(input.builtIn ? settings.autoReplyEnabled && status.state === 'ready' : autoReplyActive(settings, status))) {
+    // The Owner's switch is on and Derek is ready, but the provider is not cleared: say so, never a silent wait.
+    if (!input.builtIn && settings.autoReplyEnabled && status.state === 'ready' && input.risk === 'low') return { send: false, heldReason: NOT_CLEARED_HOLD }
+    return { send: false, heldReason: null }
+  }
   if (input.risk !== 'low') return { send: false, heldReason: null } // already routed by risk
   const hold = (heldReason: string): AutoReplyDecision => ({ send: false, heldReason })
   if (!input.builtIn && (status.state !== 'ready' || status.providerId !== provider.id || provider.autoReply?.permitted !== true))

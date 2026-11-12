@@ -132,8 +132,8 @@ export function parseGeminiResponse(body: unknown, fallbackModel: string): Draft
 
 export class GeminiProvider implements AiProvider {
   // Google confirmed the intended use (D-041). This declaration is necessary but never enough: the
-  // owner must also clear it (DEREK_AUTO_REPLY_CLEARED=gemini; in production DEREK_PROVIDER_APPROVED and
-  // GEMINI_PAID_TIER too), and every send-time gate still applies (risk, team offline, caps, takeover).
+  // owner must also clear it (DEREK_AUTO_REPLY_CLEARED=gemini; in production DEREK_PROVIDER_APPROVED and either
+  // GEMINI_PAID_TIER or the recorded free-tier mode, D-050), and every send-time gate still applies (risk, handler, caps).
   static readonly autoReply: AutoReplyCapability = { permitted: true }
   readonly id: 'gemini' | 'vertex'
   readonly model: string

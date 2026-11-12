@@ -13,11 +13,12 @@ import { createProvider, derekDailyTokenLimit, derekMaxAttempts, getDerekStatus,
 import { loadEvidence } from './evidence'
 import { analyseQuestion, COMPARISON_TARGET_CHARS, studentPlanFromSubject } from './guidance'
 import { commitAllowance, releaseAllowance, reserveAllowance } from './allowance'
+import { DEREK_GENERATION_SECONDS } from '@/lib/support/state'
 import { evidenceCovers, findUniversitySites, researchQuestion, type ResearchResult } from './research'
 import { planFromSubject } from './suggestions'
 import { DEREK_INSTRUCTIONS, type AiProvider, type DraftRequest, type EvidenceItem } from './provider'
 import { callProvider, MAX_ATTEMPTS, type CallOutcome } from './runtime'
-import { assessDraft, assessQuestion, combineRisk, MODEL_UNCERTAIN_REASON, redactPersonalData } from './safeguards'
+import { assessDraft, assessQuestion, combineRisk, MODEL_UNCERTAIN_REASON, redactPersonalData, trimUrl } from './safeguards'
 
 /** How a preliminary answer opens (Owner's wording, 12 Nov 2026). */
 export const PRELIMINARY_NOTE = 'I’m not fully certain about this, so please treat this as preliminary information. This needs confirmation from the LockIn team.'
@@ -69,9 +70,60 @@ export interface WorkerDeps {
   research?: (input: Parameters<typeof researchQuestion>[0]) => Promise<ResearchResult>
   /** The clock for the daily allowance (tests move it across midnight IST). */
   now?: () => Date
+  /** Draft this question again in the existing, still unsent draft (staff "redraft"): same row, new revision, nothing duplicated. */
+  redraft?: boolean
 }
 
 const HISTORY_TURNS = 6
+
+/** Question-side reasons that are ordinary uncertainty ("will I get in?"): Derek answers, without any guarantee, as preliminary. */
+const ORDINARY_UNCERTAIN_REASONS = new Set(['Admission-probability question', 'Asks for a guarantee'])
+
+/** Plain words for the failure codes the team sees next to "Derek could not draft". */
+const FAILURE_WORDS: Record<string, string> = {
+  rate_limited: 'Gemini rate limit reached',
+  quota_exhausted: 'Gemini quota used up',
+  timeout: 'Gemini timed out',
+  unavailable: 'Gemini unavailable',
+  auth_failed: 'Gemini key rejected',
+  invalid_response: 'Gemini gave an unusable reply',
+  safety_blocked: 'Gemini safety filter',
+  withheld_private: 'the question looks personal, so it was not sent to Gemini',
+}
+
+/**
+ * A draft still "generating" after DEREK_GENERATION_SECONDS belongs to a worker that died. Called when the student's chat
+ * checks in: gives its allowance slot back, marks it failed (a redraft goes back to the earlier ready draft), and tells the
+ * team once, so the question never just sits behind a generic message.
+ */
+export async function failAbandonedDrafts(pool: Pool, conversationId: number): Promise<number> {
+  const [stale] = await selectRows(pool, `SELECT id FROM ai_drafts WHERE conversation_id = ? AND status = 'generating' AND created_at < UTC_TIMESTAMP(3) - INTERVAL ${DEREK_GENERATION_SECONDS} SECOND LIMIT 1`, [conversationId])
+  if (!stale) return 0
+  return inTransaction(pool, async (conn) => {
+    const conv = await lockConversation(conn, conversationId)
+    const drafts = await selectRows(conn, `SELECT id, current_revision, risk_level FROM ai_drafts WHERE conversation_id = ? AND status = 'generating' AND created_at < UTC_TIMESTAMP(3) - INTERVAL ${DEREK_GENERATION_SECONDS} SECOND FOR UPDATE`, [conversationId])
+    for (const d of drafts) {
+      await releaseAllowance(conn, Number(d.id))
+      console.error(`[derek] draft ${Number(d.id)} for conversation ${conversationId} was abandoned (worker_lost)`)
+      if (Number(d.current_revision) > 0 && d.risk_level != null) await conn.query("UPDATE ai_drafts SET status = 'ready' WHERE id = ?", [Number(d.id)])
+      else {
+        await conn.query("UPDATE ai_drafts SET status = 'failed', error_code = 'worker_lost' WHERE id = ?", [Number(d.id)])
+        await applyEvent(conn, { id: conversationId, status: conv.status }, { type: 'ai_failed' }, { kind: 'system', id: null }, 'Derek worker_lost').catch((e) => {
+          if (!(e instanceof TransitionError)) throw e
+        })
+      }
+      await createNotification(conn, {
+        audience: 'staff_support',
+        kind: 'ai_failure',
+        conversationId,
+        title: `Derek stopped before answering conversation #${conversationId} (the draft was abandoned) — a person needs to answer`,
+        targetPath: `/admin/inbox/${conversationId}`,
+        dedupeKey: `lost:${Number(d.id)}`,
+      })
+    }
+    return drafts.length
+  })
+}
 
 /** What the model is told about the research (it never sees the student; only what the pages said). */
 function researchNote(r: ResearchResult): string {
@@ -151,7 +203,7 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
         throw e
       })
       if (res === 'duplicate') return 'duplicate' as const
-      return { draftId: Number((res as { insertId: number }).insertId), question: classification.question, classification, fixed, firstPendingId, plan: studentPlanFromSubject(String(conv.subject ?? '')), subject: String(conv.subject ?? ''), identity: undefined }
+      return { draftId: Number((res as { insertId: number }).insertId), question: classification.question, classification, fixed, firstPendingId, plan: studentPlanFromSubject(String(conv.subject ?? '')), subject: String(conv.subject ?? ''), identity: undefined, redraft: false }
     }
 
     // 18+ gate, for every provider whatever its adapter declares: no recorded 18+ confirmation, no
@@ -175,13 +227,25 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     // overshoot is bounded by the drafts in flight; fine at LockIn's volume.
     if (Number(used.tokens) >= derekDailyTokenLimit()) return 'quota' as const
     try {
-      const [res] = await conn.query("INSERT INTO ai_drafts (conversation_id, trigger_message_id, status, provider, model) VALUES (?, ?, 'generating', ?, ?)", [
-        conversationId,
-        triggerMessageId,
-        provider.id,
-        provider.model,
-      ])
-      const draftId = Number((res as { insertId: number }).insertId)
+      let draftId: number
+      let redrafting = false
+      try {
+        const [res] = await conn.query("INSERT INTO ai_drafts (conversation_id, trigger_message_id, status, provider, model) VALUES (?, ?, 'generating', ?, ?)", [
+          conversationId,
+          triggerMessageId,
+          provider.id,
+          provider.model,
+        ])
+        draftId = Number((res as { insertId: number }).insertId)
+      } catch (e) {
+        if (!isDuplicate(e) || !deps.redraft) throw e
+        // A redraft reuses the one draft this message may have, but only while it is ready and unsent.
+        const [old] = await selectRows(conn, "SELECT id, status FROM ai_drafts WHERE trigger_message_id = ? FOR UPDATE", [triggerMessageId])
+        if (!old || old.status !== 'ready') return 'duplicate' as const
+        await conn.query("UPDATE ai_drafts SET status = 'generating', provider = ?, model = ?, created_at = UTC_TIMESTAMP(3) WHERE id = ?", [provider.id, provider.model, Number(old.id)])
+        draftId = Number(old.id)
+        redrafting = true
+      }
       // The student's daily allowance (lib/derek/allowance.ts): a slot is taken before anything is generated.
       // None left: no provider call, no search; the question waits in the Live Inbox for a person.
       if (!(await reserveAllowance(conn, Number(conv.student_profile_id), draftId, deps.now?.()))) {
@@ -199,7 +263,7 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
         })
         return 'allowance' as const
       }
-      return { draftId, question: classification.question, classification, fixed: null, firstPendingId, plan: studentPlanFromSubject(String(conv.subject ?? '')), subject: String(conv.subject ?? ''), identity }
+      return { draftId, question: classification.question, classification, fixed: null, firstPendingId, plan: studentPlanFromSubject(String(conv.subject ?? '')), subject: String(conv.subject ?? ''), identity, redraft: redrafting }
     } catch (e) {
       if (isDuplicate(e)) return 'duplicate' as const
       throw e
@@ -239,8 +303,9 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     const lookup = analyseQuestion(question, [], earlier).isFollowUp ? `${earlier}\n${claim.question}` : claim.question
     evidence = await (deps.loadEvidence ?? loadEvidence)(pool, lookup)
     const analysed = analyseQuestion(question, evidence, earlier, history.filter((h) => h.role === 'team').at(-1)?.text)
-    // The student's chosen destination and course are not personal details: on the free tier they are sent too, unless the screening objects.
-    const planOk = Boolean(claim.plan) && (!freeTier || screenForFreeTier(claim.plan ?? '') === null)
+    // On the free tier nothing about the student is sent beyond the question (the privacy notice says so): the chosen course and
+    // destination are used on LockIn's side only (evidence lookup, research), never put in the text sent to Google.
+    const planOk = Boolean(claim.plan) && !freeTier
     let guidance = planOk
       ? { ...analysed, note: `${analysed.note} The student told LockIn before asking: "${redactPersonalData(claim.plan ?? '')}" Use this and do not ask for it again.` }
       : analysed
@@ -304,22 +369,27 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
       // The real reason is logged (a short code, never the question or the answer) and shown to the team in the notification below.
       console.error(`[derek] draft ${claim.draftId} for conversation ${conversationId} failed: ${outcome.code} after ${outcome.attempts} attempt(s)`)
       await releaseAllowance(conn, claim.draftId) // a failed generation never costs the student a slot
-      await conn.query("UPDATE ai_drafts SET status = 'failed', error_code = ?, attempts = ?, latency_ms = ? WHERE id = ?", [
-        outcome.code,
-        outcome.attempts,
-        outcome.latencyMs,
-        claim.draftId,
-      ])
-      try {
-        await applyEvent(conn, { id: conversationId, status: conv.status }, { type: 'ai_failed' }, { kind: 'system', id: null }, `Derek ${outcome.code}`)
-      } catch (e) {
-        if (!(e instanceof TransitionError)) throw e
+      if (claim.redraft) {
+        // A failed redraft leaves the earlier ready draft as it was.
+        await conn.query("UPDATE ai_drafts SET status = 'ready' WHERE id = ?", [claim.draftId])
+      } else {
+        await conn.query("UPDATE ai_drafts SET status = 'failed', error_code = ?, attempts = ?, latency_ms = ? WHERE id = ?", [
+          outcome.code,
+          outcome.attempts,
+          outcome.latencyMs,
+          claim.draftId,
+        ])
+        try {
+          await applyEvent(conn, { id: conversationId, status: conv.status }, { type: 'ai_failed' }, { kind: 'system', id: null }, `Derek ${outcome.code}`)
+        } catch (e) {
+          if (!(e instanceof TransitionError)) throw e
+        }
       }
       await createNotification(conn, {
         audience: 'staff_support',
         kind: 'ai_failure',
         conversationId,
-        title: `Derek could not draft a reply for conversation #${conversationId} — a person needs to answer`,
+        title: `Derek could not draft a reply for conversation #${conversationId} (${FAILURE_WORDS[outcome.code] ?? outcome.code}) — a person needs to answer`,
         targetPath: `/admin/inbox/${conversationId}`,
       })
       return { state: 'failed', draftId: claim.draftId, code: outcome.code }
@@ -329,6 +399,10 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     const text = messageBody.safeParse(claim.fixed ?? tidyDraft(outcome.result.text))
     if (!text.success) {
       await releaseAllowance(conn, claim.draftId)
+      if (claim.redraft) {
+        await conn.query("UPDATE ai_drafts SET status = 'ready' WHERE id = ?", [claim.draftId])
+        return { state: 'failed', draftId: claim.draftId, code: 'invalid_response' }
+      }
       await conn.query("UPDATE ai_drafts SET status = 'failed', error_code = 'invalid_response', attempts = ? WHERE id = ?", [outcome.attempts, claim.draftId])
       await applyEvent(conn, { id: conversationId, status: conv.status }, { type: 'ai_failed' }, { kind: 'system', id: null }, 'Derek invalid_response').catch((e) => {
         if (!(e instanceof TransitionError)) throw e
@@ -348,19 +422,20 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     // question or the draft is risky, he still answers, opening with a plain statement that it is preliminary, and the
     // team is asked to follow up. A truncated answer, a risky topic or any failed check still waits for a person.
     const preliminary =
-      !claim.fixed && !outcome.result.incomplete && risk.level === 'uncertain' && (outcome.result.uncertain === true || flags.length > 0) && risk.reasons.every((r) => r === MODEL_UNCERTAIN_REASON || flags.includes(r) || (research != null && r.startsWith('No verified evidence for')))
+      !claim.fixed && !outcome.result.incomplete && risk.level === 'uncertain' && (outcome.result.uncertain === true || flags.length > 0 || risk.reasons.some((r) => ORDINARY_UNCERTAIN_REASONS.has(r))) && risk.reasons.every((r) => r === MODEL_UNCERTAIN_REASON || flags.includes(r) || ORDINARY_UNCERTAIN_REASONS.has(r) || (research != null && r.startsWith('No verified evidence for')))
     const body = preliminary ? `${PRELIMINARY_NOTE}\n\n${text.data}` : text.data
     if (preliminary) risk.reasons = [PRELIMINARY_REASON, ...flags]
     // Editorial findings are for the reviewer (and stop automatic sending); they do not raise the risk level.
     if (!claim.fixed) risk.reasons.push(...styleIssues(body).map((s) => `Style: ${s}`))
     await conn.query(
-      "INSERT INTO ai_draft_revisions (draft_id, revision, body, body_sha256, created_by_kind, created_by) VALUES (?, 1, ?, ?, 'derek', NULL)",
-      [claim.draftId, body, sha256(body)],
+      "INSERT INTO ai_draft_revisions (draft_id, revision, body, body_sha256, created_by_kind, created_by) VALUES (?, ?, ?, ?, 'derek', NULL)",
+      [claim.draftId, Number(draft.current_revision) + 1, body, sha256(body)],
     )
     await conn.query(
-      `UPDATE ai_drafts SET status = 'ready', current_revision = 1, risk_level = ?, risk_reasons = ?, evidence_refs = ?, research = ?, model = ?,
+      `UPDATE ai_drafts SET status = 'ready', current_revision = ?, hold_reason = NULL, error_code = NULL, risk_level = ?, risk_reasons = ?, evidence_refs = ?, research = ?, model = ?,
               input_tokens = ?, output_tokens = ?, latency_ms = ?, attempts = ? WHERE id = ?`,
       [
+        Number(draft.current_revision) + 1,
         risk.level,
         JSON.stringify(risk.reasons),
         JSON.stringify(evidence.map((e) => e.ref)),
@@ -511,7 +586,10 @@ export async function handOffToDerek(pool: Pool, conversationId: number, deps: {
     // preliminary answer (Derek was unsure) is stored as 'uncertain' for the team, and is eligible all the same.
     const preliminaryDraft = String(draft?.risk_reasons ?? '').includes(PRELIMINARY_REASON)
     const eligibleRisk = draft?.risk_level === 'low' || (draft?.risk_level === 'uncertain' && preliminaryDraft)
-    if (!draft || (draft.hold_reason !== TEAM_ONLINE_HOLD && draft.hold_reason !== NOT_CLEARED_HOLD) || !eligibleRisk || Number(draft.current_revision) !== 1) return none
+    // An older preliminary draft (held before holds carried a reason) is eligible too. A draft a team member edited never is.
+    const heldForNow = draft?.hold_reason === TEAM_ONLINE_HOLD || draft?.hold_reason === NOT_CLEARED_HOLD || (draft?.hold_reason == null && preliminaryDraft)
+    const [edited] = draft ? await selectRows(conn, "SELECT id FROM ai_draft_revisions WHERE draft_id = ? AND created_by_kind = 'staff' LIMIT 1", [Number(draft.id)]) : []
+    if (!draft || !heldForNow || !eligibleRisk || edited) return none
     const trigger = Number(draft.trigger_message_id)
     const later = await selectRows(conn, 'SELECT author_kind, body FROM messages WHERE conversation_id = ? AND id > ?', [conversationId, trigger])
     if (later.some((m) => m.author_kind !== 'student' || !isSmallTalk(classifyMessage(String(m.body))))) return none
@@ -523,7 +601,7 @@ export async function handOffToDerek(pool: Pool, conversationId: number, deps: {
       [conversationId, Number(draft.id), conversationId],
     )
     if (other) return none
-    const [revision] = await selectRows(conn, 'SELECT body FROM ai_draft_revisions WHERE draft_id = ? AND revision = 1', [Number(draft.id)])
+    const [revision] = await selectRows(conn, 'SELECT body FROM ai_draft_revisions WHERE draft_id = ? AND revision = ?', [Number(draft.id), Number(draft.current_revision)])
     if (!revision) return none
     const builtIn = draft.provider === RULES_PROVIDER_ID
     const provider = builtIn ? null : createProvider(status)
@@ -536,7 +614,9 @@ export async function handOffToDerek(pool: Pool, conversationId: number, deps: {
       conv,
       risk: 'low',
       text: String(revision.body),
-      evidence: [],
+      // The text is unchanged since it passed every check against its evidence when it was drafted (a team edit makes it ineligible
+      // above), so its links are not re-judged against evidence this hand-off does not load.
+      evidence: (String(revision.body).match(/https?:\/\/\S+/gi) ?? []).map((u) => ({ ref: 'handoff', text: '', sourceUrl: trimUrl(u), publisher: '', checkedAt: '' })),
       handoff: true,
     })
     if (!decision.send) return none
@@ -854,7 +934,7 @@ export async function requestDraftForConversation(pool: Pool, actor: AdminActor,
   if (status.state !== 'ready') throw new SupportError(503, status.reasons.join(' '))
   const [conv] = await selectRows(pool, 'SELECT last_student_message_id FROM conversations WHERE id = ?', [conversationId])
   if (!conv) throw new SupportError(404, 'Conversation not found.')
-  const outcome = await prepareDerekDraft(pool, conversationId, Number(conv.last_student_message_id), { ...deps, status, manual: true })
+  const outcome = await prepareDerekDraft(pool, conversationId, Number(conv.last_student_message_id), { redraft: true, ...deps, status, manual: true })
   if (outcome.state === 'duplicate') throw new SupportError(409, 'Derek has already drafted (or is drafting) a reply to this message.')
   if (outcome.state === 'stale') throw new SupportError(409, 'The latest message has already been answered.')
   if (outcome.state === 'ineligible')

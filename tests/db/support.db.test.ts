@@ -2483,3 +2483,126 @@ describe('Derek in production: held answers, research coverage and the thinking 
     })
   })
 })
+
+describe('Derek on the free tier: privacy, redraft, ordinary uncertainty and failures', () => {
+  const env = { DEREK_AI_ENABLED: 'true', DEREK_PROVIDER: 'mock' }
+  const answer = 'A statement of purpose explains your goals and why you chose the course.'
+  const ordinary = 'What is a statement of purpose?'
+  const massey = 'What are the tuition fees for the Master’s in Computer Science at Massey University?'
+  const fixed = (text = answer, uncertain?: boolean) => new MockProvider({ kind: 'fixed', text, uncertain })
+  const run = (q: { conversationId: number; triggerMessageId: number | null }, provider: AiProvider, deps: Parameters<typeof D.prepareDerekDraft>[3] = {}) =>
+    D.prepareDerekDraft(pool(), q.conversationId, q.triggerMessageId!, { provider, ...deps })
+  const left = async (s: StudentActor) => (await AL.getAllowance(pool(), s.profileId)).remaining
+  const view = async (s: StudentActor, id: number) => (await C.getStudentMessages(pool(), s, id)).conversation
+  const bodies = async (id: number) => (await rows<{ body: string }>("SELECT body FROM messages WHERE conversation_id = ? AND author_kind = 'derek' ORDER BY id", [id])).map((r) => r.body)
+  const FREE: DerekStatus = { state: 'ready', providerId: 'mock', notes: [], autoReply: { permitted: true }, freeTier: true }
+  const accepted = (s: StudentActor) => db.query('UPDATE student_profiles SET privacy_notice_version = ? WHERE id = ?', [O.PRIVACY_NOTICE_VERSION, s.profileId])
+  const web = (url: string, text: string): EvidenceItem => ({ ref: `web:${url.length}:0`, text: `${UNVERIFIED_TAG}: from the web page "Fees": ${text}`, sourceUrl: url, publisher: 'Massey University', checkedAt: TODAY, unverified: true })
+  const researchOf = (items: EvidenceItem[]) =>
+    vi.fn(async (_input: unknown): Promise<ResearchResult> => ({
+      items,
+      record: { attempted: true, query: 'q', sources: items.map((i) => ({ url: i.sourceUrl, publisher: i.publisher, title: 'Fees', retrievedAt: TODAY, published: null, outdated: false, via: 'lockin_record' as const })), conflicts: [], outdated: [], failure: items.length ? null : 'The university pages that could be read did not state this.' },
+    }))
+
+  beforeEach(async () => {
+    Object.assign(process.env, env)
+    AUTO_REPLY_LIMITS.globalPerHour = 100_000
+    AUTO_REPLY_LIMITS.globalPerDay = 100_000
+    await S.updateSupportSettings(pool(), owner, { autoReplyEnabled: true })
+  })
+  afterEach(async () => {
+    for (const k of [...Object.keys(env), 'DEREK_AUTO_REPLY_CLEARED']) delete process.env[k]
+    await db.query("UPDATE support_settings SET support_mode = 'online', auto_reply_enabled = FALSE WHERE id = 1")
+  })
+
+  it('sends Gemini only the question on the free tier, and keeps personal questions with the team', async () => {
+    process.env.DEREK_AUTO_REPLY_CLEARED = 'mock'
+    const s = await makeStudent('Asha Rao')
+    await accepted(s)
+    const provider = new MockProvider()
+    const q = await C.createConversation(pool(), s, { body: ordinary, clientRequestId: rid(), subject: 'Poland · MSc Computer Science' })
+    expect(await run(q, provider, { status: FREE })).toMatchObject({ state: 'auto_sent' })
+    const sent = JSON.stringify(provider.requests[0])
+    expect(provider.requests[0].history).toEqual([])
+    expect(sent).not.toMatch(/Asha|Rao|@test\.example|MSc Computer Science|Poland|plan to study/)
+    expect(sent).toContain(ordinary)
+
+    // A question with personal details never reaches the provider: honest message, team told, nothing counted.
+    const calls = provider.calls
+    const personal = await C.sendStudentMessage(pool(), s, q.conversationId, { body: 'My IELTS score is 6.5 and my phone is 9876543210, which course can I join?', clientRequestId: rid() })
+    expect(await run({ conversationId: q.conversationId, triggerMessageId: personal.triggerMessageId }, provider, { status: FREE })).toMatchObject({ state: 'failed', code: 'withheld_private' })
+    expect(provider.calls).toBe(calls)
+    expect(await view(s, q.conversationId)).toMatchObject({ replyPending: false, acknowledgement: expect.stringContaining('looks like it contains personal details') })
+    expect((await rows<{ title: string }>("SELECT title FROM notifications WHERE conversation_id = ? AND kind = 'ai_failure'", [q.conversationId])).map((n) => n.title)).toEqual([expect.stringContaining('looks personal')])
+    expect(await left(s)).toBe(9) // only the delivered answer counted
+  })
+
+  it('answers ordinary uncertainty as preliminary, keeps high-risk questions with the team', async () => {
+    process.env.DEREK_AUTO_REPLY_CLEARED = 'mock'
+    const s = await makeStudent()
+    const chance = await ask(s, 'What are my chances of getting into the University of Oxford?')
+    expect(await run(chance, fixed('Admission depends on many things and nobody can promise a place.'))).toMatchObject({ state: 'auto_sent' })
+    expect((await bodies(chance.conversationId))[0]).toContain(D.PRELIMINARY_NOTE)
+    expect(await rows("SELECT id FROM notifications WHERE conversation_id = ? AND title LIKE '%sent a preliminary answer%'", [chance.conversationId])).toHaveLength(1)
+    const visa = await ask(s, 'My student visa was refused, what should I do?')
+    expect(await run(visa, fixed('A LockIn team member will follow up.'))).toMatchObject({ state: 'review', risk: 'high' })
+    expect(await bodies(visa.conversationId)).toEqual([])
+    expect(await left(s)).toBe(9)
+  })
+
+  it('redrafts a held draft in place with research, never duplicates, and delivers exactly once when cleared', async () => {
+    const s = await makeStudent()
+    const subject = 'New Zealand · Master’s in Computer Science'
+    const q = await C.createConversation(pool(), s, { body: massey, clientRequestId: rid(), subject })
+    // Held first draft, from before the course was researched (and from before holds carried a reason).
+    expect(await run(q, fixed('LockIn has not verified this yet.', true), { loadEvidence: async () => [] })).toMatchObject({ state: 'review' })
+    const [first] = await D.listDrafts(pool(), owner, q.conversationId)
+    await db.query('UPDATE ai_drafts SET hold_reason = NULL WHERE id = ?', [first.id])
+    expect(await left(s)).toBe(10)
+
+    const item = web('https://massey.example/study/fees-and-funding/tuition-fees-for-international-students/', 'International tuition fees depend on the qualification; the fee table is on the page.')
+    const research = researchOf([item])
+    // A failed redraft leaves the earlier draft exactly as it was.
+    await expect(D.requestDraftForConversation(pool(), owner, q.conversationId, { provider: new MockProvider({ kind: 'fail', code: 'rate_limited', retryable: false }), research })).resolves.toMatchObject({ state: 'failed', code: 'rate_limited' })
+    expect((await D.listDrafts(pool(), owner, q.conversationId))[0]).toMatchObject({ id: first.id, status: 'ready', revision: 1 })
+    // A redraft: same draft row, a new revision with the research and its source.
+    const again = await D.requestDraftForConversation(pool(), owner, q.conversationId, { provider: new MockProvider(), research, loadEvidence: async () => [] })
+    expect(again).toMatchObject({ state: 'review', draftId: first.id })
+    const drafts = await D.listDrafts(pool(), owner, q.conversationId)
+    expect(drafts).toHaveLength(1)
+    expect(drafts[0]).toMatchObject({ id: first.id, status: 'ready', revision: 2, holdReason: AR.NOT_CLEARED_HOLD })
+    expect(drafts[0].body).toContain('https://massey.example/study/fees-and-funding/tuition-fees-for-international-students/')
+    expect(drafts[0].research?.sources[0].url).toContain('massey.example')
+    expect(await rows('SELECT revision FROM ai_draft_revisions WHERE draft_id = ? ORDER BY revision', [first.id])).toEqual([{ revision: 1 }, { revision: 2 }])
+    expect(await left(s)).toBe(10)
+    expect(await bodies(q.conversationId)).toEqual([])
+
+    // The Owner records the clearance: the question is answered once, with the newest text, and counted once.
+    process.env.DEREK_AUTO_REPLY_CLEARED = 'mock'
+    const results = await Promise.all([D.handOffToDerek(pool(), q.conversationId), D.handOffToDerek(pool(), q.conversationId), D.handOffToDerek(pool(), q.conversationId)])
+    expect(results.filter((r) => r.state === 'sent')).toHaveLength(1)
+    expect((await bodies(q.conversationId)).length).toBe(1)
+    expect((await bodies(q.conversationId))[0]).toContain('tuition-fees-for-international-students')
+    expect(await left(s)).toBe(9)
+    expect(await D.handOffToDerek(pool(), q.conversationId)).toEqual({ state: 'none' })
+  })
+
+  it('tells the team why Gemini failed, and never leaves a dead worker behind a spinner', async () => {
+    const s = await makeStudent()
+    const q = await ask(s, ordinary)
+    expect(await run(q, new MockProvider({ kind: 'fail', code: 'rate_limited', retryable: false }))).toMatchObject({ state: 'failed', code: 'rate_limited' })
+    expect((await rows<{ title: string }>("SELECT title FROM notifications WHERE conversation_id = ? AND kind = 'ai_failure'", [q.conversationId])).map((n) => n.title)).toEqual([expect.stringContaining('Gemini rate limit reached')])
+    expect(await view(s, q.conversationId)).toMatchObject({ replyPending: false, acknowledgement: expect.stringContaining('couldn’t generate an answer') })
+    expect(await left(s)).toBe(10)
+
+    const t = await makeStudent()
+    const lost = await ask(t, ordinary)
+    await db.query("INSERT INTO ai_drafts (conversation_id, trigger_message_id, status, provider, model, created_at) VALUES (?, ?, 'generating', 'mock', 'mock-derek-1', UTC_TIMESTAMP(3) - INTERVAL 300 SECOND)", [lost.conversationId, lost.triggerMessageId])
+    expect(await D.failAbandonedDrafts(pool(), lost.conversationId)).toBe(1)
+    expect(await D.failAbandonedDrafts(pool(), lost.conversationId)).toBe(0)
+    expect((await D.listDrafts(pool(), owner, lost.conversationId))[0]).toMatchObject({ status: 'failed', errorCode: 'worker_lost' })
+    expect(await rows("SELECT id FROM notifications WHERE conversation_id = ? AND title LIKE '%abandoned%'", [lost.conversationId])).toHaveLength(1)
+    expect(await view(t, lost.conversationId)).toMatchObject({ replyPending: false, acknowledgement: expect.stringContaining('couldn’t generate an answer') })
+    expect(await left(t)).toBe(10)
+  })
+})

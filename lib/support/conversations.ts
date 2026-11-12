@@ -11,7 +11,7 @@ import { ALLOWANCE_NOTICE, getAllowance } from '@/lib/derek/allowance'
 import { suggestQuestions } from '@/lib/derek/suggestions'
 import { conversationHandler } from './availability'
 import { autoReplyActive, getSupportSettings } from './settings'
-import { DEREK_FAILED, DEREK_GENERATION_SECONDS, DEREK_PENDING_SECONDS, DEREK_WRITING, isConversationStatus, nextStatus, STUDENT_ACKNOWLEDGEMENT, STUDENT_STATUS_LABEL, TransitionError, type ConversationEvent, type ConversationStatus } from './state'
+import { DEREK_FAILED, DEREK_GENERATION_SECONDS, DEREK_PRIVACY_WITHHELD, DEREK_PENDING_SECONDS, DEREK_WRITING, isConversationStatus, nextStatus, STUDENT_ACKNOWLEDGEMENT, STUDENT_STATUS_LABEL, TransitionError, type ConversationEvent, type ConversationStatus } from './state'
 import { deriveSubject, newConversationInput, newMessageInput, reasonText } from './validation'
 
 // Conversations and messages. Ownership and permissions are checked here, on the server, for
@@ -340,7 +340,8 @@ export async function getStudentMessages(db: Db, student: StudentActor, conversa
         `SELECT m.id, m.body, m.created_at > UTC_TIMESTAMP(3) - INTERVAL ${DEREK_PENDING_SECONDS} SECOND AS recent,
                 (SELECT d.status FROM ai_drafts d WHERE d.trigger_message_id = m.id) AS draft_status,
                 (SELECT d.created_at > UTC_TIMESTAMP(3) - INTERVAL ${DEREK_GENERATION_SECONDS} SECOND FROM ai_drafts d WHERE d.trigger_message_id = m.id) AS draft_fresh,
-                (SELECT d.research FROM ai_drafts d WHERE d.trigger_message_id = m.id) AS draft_research
+                (SELECT d.research FROM ai_drafts d WHERE d.trigger_message_id = m.id) AS draft_research,
+                (SELECT d.error_code FROM ai_drafts d WHERE d.trigger_message_id = m.id) AS draft_error
            FROM messages m WHERE m.conversation_id = ? AND m.author_kind = 'student' AND m.id > ? ORDER BY m.id DESC LIMIT 20`,
         [conversationId, Number(conv[0].last_reply_id ?? 0)],
       )
@@ -378,7 +379,7 @@ export async function getStudentMessages(db: Db, student: StudentActor, conversa
       subject: String(conv[0].subject),
       suggestions,
       statusLabel: isConversationStatus(status) ? STUDENT_STATUS_LABEL[status] : 'Waiting for the LockIn team',
-      acknowledgement: !waiting ? null : derekWriting ? DEREK_WRITING : exhausted ? ALLOWANCE_NOTICE : draft === 'failed' ? DEREK_FAILED : STUDENT_ACKNOWLEDGEMENT,
+      acknowledgement: !waiting ? null : derekWriting ? DEREK_WRITING : exhausted ? ALLOWANCE_NOTICE : draft === 'failed' ? (target?.draft_error === 'withheld_private' ? DEREK_PRIVACY_WITHHELD : DEREK_FAILED) : STUDENT_ACKNOWLEDGEMENT,
       allowance,
       /** The client checks back quickly while true, and shows Derek's thinking indicator: only while he is really working. */
       replyPending: derekWriting,

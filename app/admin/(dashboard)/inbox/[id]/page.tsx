@@ -143,7 +143,7 @@ export default async function ConversationPage({ params, searchParams }: { param
               </p>
             ) : null}
             {(c.takenOver ? canReviewAi : canReply) ? <HandoverForm key={c.takenOver ? 'return' : 'take'} conversationId={id} takenOver={c.takenOver != null} /> : null}
-            {canReviewAi && derek.state === 'ready' && awaitingAnswer && !openDraft ? <RequestDraftForm conversationId={id} /> : null}
+            {canReviewAi && derek.state === 'ready' && awaitingAnswer && !drafts.some((d) => d.status === 'generating') ? <RequestDraftForm conversationId={id} redraft={openDraft} /> : null}
             {drafts.length ? (
               <ul className="flex flex-col gap-4">
                 {drafts.map((d) => (

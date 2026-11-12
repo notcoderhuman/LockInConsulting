@@ -112,14 +112,14 @@ export function HandoverForm({ conversationId, takenOver }: { conversationId: nu
   )
 }
 
-export function RequestDraftForm({ conversationId }: { conversationId: number }) {
+export function RequestDraftForm({ conversationId, redraft = false }: { conversationId: number; redraft?: boolean }) {
   const { state, pending, onSubmit } = useFormAction(requestDraftAction)
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-3">
       <input type="hidden" name="conversationId" value={conversationId} />
       <FormMessage state={state} />
       <Button type="submit" variant="outline" disabled={pending} className="self-start">
-        {pending ? 'Asking Derek…' : 'Ask Derek for a draft'}
+        {pending ? 'Asking Derek…' : redraft ? 'Ask Derek to redraft (checks university sources again)' : 'Ask Derek for a draft'}
       </Button>
     </form>
   )
@@ -204,8 +204,9 @@ export function SupportSettingsForm({ autoReplyEnabled, autoReplyPermitted }: { 
       <label className="flex items-start gap-2 text-sm text-foreground">
         <input type="checkbox" name="autoReplyEnabled" value="1" defaultChecked={autoReplyEnabled} className="mt-1" />
         <span>
-          Let Derek answer routine questions himself. Greetings, thanks and ordinary low-risk questions get a reply straight away; visa, legal, payment,
-          distress, unverified facts and anything uncertain still wait for a person. Untick to pause every automatic reply.
+          Let Derek answer student questions himself. Greetings, thanks and ordinary questions get a reply straight away; when Derek is unsure he still answers,
+          says it is preliminary, and the team is asked to confirm. Visa, legal, payment, distress, personal-detail questions and incomplete or risky answers
+          still wait for a person. Untick to pause every automatic reply.
           {autoReplyPermitted ? '' : ' Until the AI provider is cleared (see above), only LockIn’s fixed greeting, thanks and scope replies are sent automatically.'}
         </span>
       </label>

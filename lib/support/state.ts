@@ -72,6 +72,9 @@ export const DEREK_WRITING = 'Derek is writing a reply…'
 /** Shown when the AI provider failed for this question; a person takes it from here. */
 export const DEREK_FAILED = 'Derek couldn’t generate an answer this time, so a member of the LockIn team will follow up.'
 
+/** Shown when the question looks personal, so it was not sent to the AI service at all; a person answers it. */
+export const DEREK_PRIVACY_WITHHELD = 'This question looks like it contains personal details, so Derek did not process it. A member of the LockIn team will answer it. Please leave personal details out of questions to Derek.'
+
 /** How long after a student's message Derek counts as "about to start" before his draft row exists. */
 export const DEREK_PENDING_SECONDS = 20
 /** The longest a draft may stay 'generating' (research plus two provider attempts) before it counts as abandoned. */

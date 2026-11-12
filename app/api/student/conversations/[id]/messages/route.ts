@@ -1,5 +1,5 @@
 import { getAdminPool } from '@/lib/db/pool'
-import { handOffToDerek } from '@/lib/derek/drafts'
+import { failAbandonedDrafts, handOffToDerek } from '@/lib/derek/drafts'
 import { scheduleDerekDraft } from '@/lib/derek/schedule'
 import { requireStudentApi } from '@/lib/student/access'
 import { handleError, json, jsonError, readJson, routeId } from '@/lib/student/http'
@@ -17,6 +17,7 @@ export async function GET(request: Request, { params }: Ctx) {
   try {
     const pool = getAdminPool()
     const page = parsePageParams(new URL(request.url))
+    await failAbandonedDrafts(pool, id).catch(() => 0) // a dead worker must not leave the question behind a spinner
     const view = await getStudentMessages(pool, student, id, page) // also proves the conversation is this student's
     // Nobody is handling this chat (Dev left it, went Offline, or never entered): Derek may take over now (lib/derek/drafts.ts).
     if (view.conversation.acknowledgement && page.before == null && !(await conversationHandler(pool, id))) {

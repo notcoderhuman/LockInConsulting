@@ -764,6 +764,9 @@ async function eraseProfile(pool: Pool, profileId: number, actor: { userId: stri
     if (!profile) throw new SupportError(404, 'Student not found.')
     if (profile.status === 'erased') throw new SupportError(409, 'This student has already been erased.')
     const userId = profile.user_id == null ? null : String(profile.user_id)
+    // Conduct records hold message excerpts and a notice: removed with the student's other data.
+    await conn.query('DELETE FROM student_restrictions WHERE student_profile_id = ?', [profileId])
+    await conn.query('DELETE FROM student_abuse_incidents WHERE student_profile_id = ?', [profileId])
     const [del] = await conn.query('DELETE FROM conversations WHERE student_profile_id = ?', [profileId])
     const conversations = Number((del as { affectedRows: number }).affectedRows)
     if (userId) {

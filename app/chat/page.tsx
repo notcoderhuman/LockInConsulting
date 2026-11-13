@@ -85,6 +85,13 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
               <SignOutButton compact redirectTo="/auth" />
             </div>
           </Card>
+        ) : ctx.state === 'restricted' ? (
+          <Card title="Chat access on your account is restricted">
+            <p>We emailed you the reason and how to ask for a review. If you can’t find the email, check your spam folder or contact LockIn Consulting.</p>
+            <div>
+              <SignOutButton compact redirectTo="/auth" />
+            </div>
+          </Card>
         ) : ctx.state === 'needs_profile' ? (
           <Card title="Finish setting up your account">
             <StudentOnboarding name={attestation?.fullName ?? ctx.name} privacyUrl={privacyNoticeUrl()} ageAttested={attestation !== null} />

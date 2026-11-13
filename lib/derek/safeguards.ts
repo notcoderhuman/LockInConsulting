@@ -25,13 +25,18 @@ export function combineRisk(a: RiskAssessment, b: RiskAssessment): RiskAssessmen
 }
 
 const HIGH_RISK_TOPICS: [RegExp, string][] = [
-  [/\b(visa|immigration|immigrate|work permit|study permit|residence permit|permanent residen|\bpr\b|deport|asylum|overstay)/i, 'Visa or immigration question'],
+  // Adverse or legal immigration matters need a person. Ordinary visa information is answered from official government pages (VISA_INFO below).
+  [/\b(deport\w*|asylum|overstay\w*|illegal(?:ly)?|appeal\w*|citizenship|permanent residen\w*|\bpr\b|(?:visa|permit)s? (?:was |got |has been |is |been |be )?(?:reject\w*|refus\w*|den\w*|cancel\w*|revok\w*|approved|granted)|(?:reject\w*|refus\w*|den\w*|cancel\w*|revok\w*) (?:my |the |our )?(?:\w+ )?(?:visa|permit))/i, 'Visa or immigration question'],
   [/\b(suicid|kill myself|self[- ]?harm|hurt myself|end my life|hopeless|abuse[ds]?)\b/i, 'Possible distress or safeguarding concern'],
   [/\b(lawyer|legal action|sue|court|fraud|scam)\b/i, 'Legal question'],
   [/\b(refund|payment|bank|loan|pay (?:the )?fee)\b/i, 'Payment or financial question'],
 ]
 
+/** An ordinary visa question: answered cautiously from the destination's official government pages, as preliminary information. */
+export const VISA_INFO_REASON = 'Visa information question (official government sources only)'
+
 const UNCERTAIN_TOPICS: [RegExp, string][] = [
+  [/\b(visas?|immigration|work permits?|study permits?|residence permits?|post-?study work|graduate route|stay[- ]back)\b/i, VISA_INFO_REASON],
   [/\b(chance|chances|probability|likely|odds|will i get (?:in|admitted|accepted)|can i get in)\b/i, 'Admission-probability question'],
   [/\b(guarantee|guaranteed|assured)\b/i, 'Asks for a guarantee'],
 ]
@@ -45,6 +50,7 @@ const FACT_TOPICS: [RegExp, string, RegExp][] = [
   [/\b(acceptance rates?|admit rates?|selectiv\w*)\b/i, 'acceptance rates', /acceptance/i],
   [/\b(requirements?|ielts|toefl|pte|duolingo|gpa|cgpa|grades?|percentage needed|minimum marks|eligib\w*|cut-?offs?)\b/i, 'entry or language requirements', /requirement/i],
   [/\b(scholarships?|bursar\w*|funding|financial aid)\b/i, 'scholarships', /scholarship/i],
+  [/\b(visas?|immigration|work permits?|study permits?|residence permits?|post-?study work)\b/i, 'visa and immigration rules', /visa|permit|immigration|work/i],
   // How to apply, the next steps, the documents to submit.
   [/\b(how (?:do|can|should|to) (?:i )?apply|next steps?|apply(?:ing)? (?:for|to)|application (?:process|steps?|procedure|checklist)|documents? (?:needed|required|to submit)|required documents)\b/i, 'application steps', /how to apply|appl(?:y|ication)|documents?|checklist/i],
 ]
@@ -55,6 +61,7 @@ export function factTopicsIn(text: string): string[] {
 }
 
 const INR_CONVERSION = 'Draft converts to INR'
+const VISA_RULE = 'Draft states a visa or work-rights rule'
 
 /** A guarantee that is denied ("does not guarantee", "no guarantee", "is not guaranteed", "cannot guarantee"). */
 const NEGATED_GUARANTEE = /\b(?:does|do|did|will|would|can|could|should)\s*(?:not|n['’]t)\s+(?:\w+\s+)?guarantee[ds]?\b|\b(?:cannot|can['’]t|won['’]t|doesn['’]t|don['’]t|never)\s+(?:\w+\s+)?guarantee[ds]?\b|\bno\s+(?:\w+\s+)?guarantee[ds]?\b|\b(?:is|are|was|were)(?:\s+not|n['’]t)\s+(?:\w+\s+)?guaranteed\b|\bnot\s+guaranteed\b/gi
@@ -68,7 +75,7 @@ const FORBIDDEN_CLAIMS:[RegExp, string][] = [
   // Derek never converts; an INR figure may only be quoted from an evidence line that states it (assessDraft).
   [/\b(approximately|about|around|roughly)\s+(?:INR|₹|rs\.?)\s?\d/i, INR_CONVERSION],
   // Visa and work-rights rules change and are never in the directory: any number beside one is invented.
-  [/\b(visas?|work permits?|work rights?|post-?study work|psw|graduate route|stay[- ]back|part-?time work)\b[^.\n]{0,80}\d|\d+\s*(?:hours?|hrs?)\s*(?:a|per)\s*week/i, 'Draft states a visa or work-rights rule'],
+  [/\b(visas?|work permits?|work rights?|post-?study work|psw|graduate route|stay[- ]back|part-?time work)\b[^.\n]{0,80}\d+(?:\.\d+)?|\d+\s*(?:hours?|hrs?)\s*(?:a|per)\s*week/i, VISA_RULE],
 ]
 
 /** Removes contact details before text is passed to any provider. */
@@ -180,8 +187,16 @@ export function assessDraft(
   const quotesInr = evidence.some((e) => e.ref.endsWith(':inr'))
   // "Meeting the minimum does not guarantee admission" is the honest sentence, not a guarantee: negated forms are not scanned.
   const claimText = draft.replace(NEGATED_GUARANTEE, ' ')
-  for (const [re, label] of FORBIDDEN_CLAIMS)
-    if (re.test(claimText) && !(label === INR_CONVERSION && quotesInr)) (level = worst(level, 'high')), reasons.push(label)
+  const evidenceDigits = new Set(evidence.flatMap((e) => digits(e.text.replace(/,/g, ''))))
+  for (const [re, label] of FORBIDDEN_CLAIMS) {
+    if (label === INR_CONVERSION && quotesInr) continue
+    const hit = re.exec(claimText)
+    if (!hit) continue
+    // A visa or work-rights figure is fine when an official page in the evidence states it; an invented one is not.
+    if (label === VISA_RULE && digits(hit[0].replace(/,/g, '')).every((n) => evidenceDigits.has(n))) continue
+    level = worst(level, 'high')
+    reasons.push(label)
+  }
   // Every sourced fact names its source: each line under the directory label, and any figure at all.
   if (evidence.length) {
     const allowed = evidenceUrls(evidence)

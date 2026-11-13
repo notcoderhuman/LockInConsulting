@@ -15,6 +15,9 @@ import {
   revokeMemberAction,
   sendTestEmailAction,
   testGeminiAction,
+  testResearchAction,
+  reviewRestrictionAction,
+  resendRestrictionEmailAction,
   setStatusAction,
   setSupportAccessAction,
   syncReviewNoticesAction,
@@ -282,6 +285,39 @@ export function EraseStudentForm({ profileId }: { profileId: number }) {
   )
 }
 
+export function RestrictionReviewForm({ restrictionId, emailSent }: { restrictionId: number; emailSent: boolean }) {
+  const { state, pending, onSubmit } = useFormAction(reviewRestrictionAction)
+  const resend = useFormAction(resendRestrictionEmailAction)
+  return (
+    <div className="flex flex-col gap-4">
+      <form onSubmit={onSubmit} className="flex flex-col gap-3" noValidate>
+        <input type="hidden" name="restrictionId" value={restrictionId} />
+        <Field id="restriction-note" label="Review note (kept in the record)" required errors={state?.fieldErrors?.note}>
+          <input id="restriction-note" name="note" maxLength={500} className={controlClass} />
+        </Field>
+        <FormMessage state={state} />
+        <div className="flex flex-wrap gap-2">
+          <Button type="submit" name="decision" value="lift" disabled={pending}>
+            Lift restriction
+          </Button>
+          <Button type="submit" name="decision" value="uphold" variant="outline" disabled={pending}>
+            Keep restriction
+          </Button>
+        </div>
+      </form>
+      {emailSent ? null : (
+        <form onSubmit={resend.onSubmit} className="flex flex-col gap-2">
+          <input type="hidden" name="restrictionId" value={restrictionId} />
+          <FormMessage state={resend.state} />
+          <Button type="submit" variant="outline" disabled={resend.pending} className="self-start">
+            Send the notice email again
+          </Button>
+        </form>
+      )}
+    </div>
+  )
+}
+
 /** Marks a conversation read once it is really shown, not when its page is rendered or prefetched. */
 /** `upTo` is the newest message shown: a message that arrives while the conversation is open is marked read too. */
 export function MarkConversationRead({ conversationId, upTo }: { conversationId: number; upTo?: number }) {
@@ -309,6 +345,19 @@ export function TestEmailForm({ email }: { email: string }) {
       <FormMessage state={state} />
       <Button type="submit" variant="outline" disabled={pending} className="self-start">
         {pending ? 'Sending…' : 'Send test email'}
+      </Button>
+    </form>
+  )
+}
+
+export function ResearchTestForm() {
+  const { state, pending, onSubmit } = useFormAction(testResearchAction)
+  return (
+    <form onSubmit={onSubmit} className="flex flex-col gap-3">
+      <p className="text-sm leading-relaxed text-muted-foreground">Runs a live internet research test for a university that is not in the directory (no student data): finds its official site, reads its pages, and has Gemini answer from them.</p>
+      <FormMessage state={state} />
+      <Button type="submit" variant="outline" disabled={pending} className="self-start">
+        {pending ? 'Testing…' : 'Test internet research'}
       </Button>
     </form>
   )

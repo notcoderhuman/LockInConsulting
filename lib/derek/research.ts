@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import dns from 'node:dns/promises'
 import net from 'node:net'
 import type { Pool, RowDataPacket } from 'mysql2/promise'
+import { GOV_SEEDS, NOT_A_SOURCE, officialSiteFor } from './discovery'
 import { screenForFreeTier } from './free-tier'
 import { CLOSED_RE, isOtherQualification, matchesQualification, parseQualification, type Qualification } from './qualification'
 import { UNVERIFIED_TAG, type EvidenceItem } from './provider'
@@ -81,6 +82,10 @@ export interface SearchProvider {
 export interface ResearchDeps {
   fetchPage?: (url: string, signal: AbortSignal) => Promise<Page | null>
   search?: SearchProvider | null
+  /** Resolves a university name to its official website (default: Wikidata). */
+  siteFor?: (name: string, signal: AbortSignal) => Promise<string | null>
+  /** The page addresses in a site's sitemap (default: its sitemap.xml). */
+  sitemap?: (site: string, signal: AbortSignal) => Promise<string[]>
   now?: () => Date
 }
 
@@ -405,8 +410,53 @@ export function buildQuery(universityName: string, course: string | null, topics
   return [universityName, safeCourse, what, 'official'].filter(Boolean).join(' ').slice(0, 200)
 }
 
-/** Brave Search API (api.search.brave.com): only when DEREK_SEARCH_PROVIDER=brave and BRAVE_SEARCH_API_KEY are set. A paid service: not enabled by default. */
+/**
+ * The independent web search (Owner brief, 13 Nov 2026): Tavily Search, free Researcher plan (1,000 credits a month, a basic search is 1 credit,
+ * 100 requests a minute, no card), used only when TAVILY_API_KEY is set. Only result URLs are used: LockIn fetches and reads the pages itself.
+ * Never Google or any search engine's result pages. Rate-limited here as well: a minute window, a monthly budget below the free credits,
+ * and a circuit breaker when Tavily says the quota is gone, so a quota problem becomes an honest "search unavailable", never a paid charge
+ * (Tavily bills pay-as-you-go only if the Owner switched it on).
+ */
+const tavily = { minute: [] as number[], month: '', used: 0, openUntil: 0 }
+export const TAVILY = { perMinute: 30, monthlyBudget: 900 }
+export function tavilyProviderFrom(env: Record<string, string | undefined> = process.env, fetchImpl: typeof fetch = fetch): SearchProvider | null {
+  const key = (env.TAVILY_API_KEY ?? '').trim()
+  if (!key) return null
+  return {
+    async search(query, signal) {
+      const now = Date.now()
+      const month = new Date(now).toISOString().slice(0, 7)
+      if (tavily.month !== month) Object.assign(tavily, { month, used: 0 })
+      tavily.minute = tavily.minute.filter((t) => now - t < 60_000)
+      if (now < tavily.openUntil || tavily.minute.length >= TAVILY.perMinute || tavily.used >= TAVILY.monthlyBudget) throw Object.assign(new Error('search budget'), { retryable: false })
+      tavily.minute.push(now)
+      tavily.used++
+      const res = await fetchImpl('https://api.tavily.com/search', {
+        method: 'POST',
+        signal,
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` },
+        body: JSON.stringify({ query: query.slice(0, 300), search_depth: 'basic', max_results: 6, include_answer: false, include_raw_content: false, include_images: false }),
+        redirect: 'error',
+      })
+      if (!res.ok) {
+        void res.body?.cancel().catch(() => {})
+        // 429 rate limit, 432/433 plan or pay-as-you-go limit exceeded, 401 bad key: stop asking for an hour.
+        if ([401, 429, 432, 433].includes(res.status)) tavily.openUntil = now + 3_600_000
+        throw Object.assign(new Error(`search ${res.status}`), { retryable: false })
+      }
+      const body = (await res.json()) as { results?: { url?: string }[] }
+      return (body.results ?? []).map((r) => r.url).filter((u): u is string => typeof u === 'string' && u.startsWith('https://'))
+    },
+  }
+}
+
+/** Test hook. */
+export const resetTavilyLimits = () => Object.assign(tavily, { minute: [], month: '', used: 0, openUntil: 0 })
+
+/** The configured web search: Tavily when its key is set, else Brave when explicitly chosen (paid: off by default), else none. */
 export function searchProviderFrom(env: Record<string, string | undefined> = process.env): SearchProvider | null {
+  const free = tavilyProviderFrom(env)
+  if (free) return free
   if (env.DEREK_SEARCH_PROVIDER !== 'brave') return null
   const key = (env.BRAVE_SEARCH_API_KEY ?? '').trim()
   if (!key) return null
@@ -423,7 +473,54 @@ export function searchProviderFrom(env: Record<string, string | undefined> = pro
   }
 }
 
-const OFFICIAL_HOST = /(^|\.)(edu|ac|gov)(\.[a-z]{2})?$|\.edu\.[a-z]{2}$|\.ac\.[a-z]{2}$|\.gov\.[a-z]{2}$/i
+const SITEMAP_BYTES = 1_500_000
+
+/** Page addresses listed in a site's sitemap.xml (robots.txt "Sitemap:" line, else /sitemap.xml), one level of sitemap index followed. Public https only. */
+export async function fetchSitemapUrls(site: string, signal: AbortSignal): Promise<string[]> {
+  const read = async (raw: string): Promise<string> => {
+    const url = await assertPublicUrl(raw)
+    const res = await fetch(url, { signal: AbortSignal.any([signal, AbortSignal.timeout(RESEARCH.pageTimeoutMs)]), redirect: 'manual', headers: { 'user-agent': AGENT, accept: 'application/xml,text/xml,text/plain' } })
+    if (!res.ok) {
+      void res.body?.cancel().catch(() => {})
+      return ''
+    }
+    return readLimited(res, SITEMAP_BYTES)
+  }
+  const locs = (xml: string) => [...xml.matchAll(/<loc>\s*(?:<!\[CDATA\[)?\s*(https:\/\/[^<\s\]]+)/gi)].map((m) => m[1])
+  try {
+    const origin = new URL(site).origin
+    const robots = await read(`${origin}/robots.txt`).catch(() => '')
+    const declared = robots.match(/^\s*sitemap:\s*(https:\/\/\S+)/im)?.[1]
+    let urls = locs(await read(declared ?? `${origin}/sitemap.xml`))
+    // An index lists other sitemaps: read the first few that look like pages of programmes, admissions or fees.
+    const children = urls.filter((u) => /\.xml(\.gz)?$/i.test(u) || /sitemap/i.test(u)).slice(0, 4)
+    if (children.length && children.length === urls.length) urls = (await Promise.all(children.map((c) => read(c).then(locs).catch(() => [])))).flat()
+    const host = new URL(site).hostname.replace(/^www\./, '')
+    return urls.filter((u) => { try { const h = new URL(u).hostname.replace(/^www\./, ''); return (h === host || h.endsWith(`.${host}`)) && !/\.(xml|pdf|jpe?g|png|gif|zip|docx?|xlsx?)(\.gz)?$/i.test(u) } catch { return false } }).slice(0, 20_000)
+  } catch {
+    return []
+  }
+}
+
+/** The sitemap pages that look most like the asked topic and qualification (a site search that needs no search engine). */
+export function rankSitemapUrls(urls: string[], topics: string[], course: string | null, q: Qualification | null): { url: string; score: number }[] {
+  const words = wordsFor(topics)
+  const courseWords = q ? q.words : (course ?? '').toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length >= 4)
+  const scored: { url: string; score: number }[] = []
+  for (const url of urls) {
+    const path = decodeURIComponent(new URL(url).pathname).replace(/[-_/]+/g, ' ').toLowerCase()
+    if (/\b(news|events?|staff|people|alumni|blog|careers|giving|research|media|stories|story)\b/.test(path)) continue
+    const topic = words.filter((w) => path.includes(w)).length
+    const subject = courseWords.filter((w) => path.includes(w)).length
+    if (!topic && !subject) continue
+    // Both a topic and the asked subject beat either alone; shallow pages beat deep ones.
+    const score = topic * 2 + subject * 3 + (topic && subject ? 4 : 0) - Math.min(3, path.split(' ').length / 6)
+    if (score >= 2) scored.push({ url, score })
+  }
+  return scored.sort((a, b) => b.score - a.score).slice(0, 6)
+}
+
+const OFFICIAL_HOST =/(^|\.)(edu|ac|gov)(\.[a-z]{2})?$|\.edu\.[a-z]{2}$|\.ac\.[a-z]{2}$|\.gov\.[a-z]{2}$/i
 
 const ref = (url: string, i: number) => `web:${createHash('sha256').update(url).digest('hex').slice(0, 8)}:${i}`
 
@@ -431,8 +528,17 @@ export interface ResearchInput {
   topics: string[]
   course: string | null
   universities: UniversitySite[]
-  /** Fallback university name for the search query when no site is known. */
+  /** The institution the student named, which may be absent from LockIn's directory (found on the internet instead). */
   universityName?: string | null
+  /** Destination countries the question is about (ISO codes and names), for visa and country-level questions. */
+  destinations?: { iso2: string; name: string }[]
+  /** Internet search for this answer (Gemini Google Search grounding); omitted = none beyond the optional Brave setting. */
+  search?: SearchProvider | null
+}
+
+/** The query for a question that names no institution: the topic and the country, nothing about the student. */
+export function buildTopicQuery(topics: string[], countries: string[]): string {
+  return [countries.slice(0, 2).join(' and '), topics.length ? topics.join(' ') : 'study', 'for international students official'].filter(Boolean).join(' ').slice(0, 200)
 }
 
 /**
@@ -445,34 +551,71 @@ export async function researchQuestion(input: ResearchInput, deps: ResearchDeps 
   const controller = new AbortController()
   const budget = setTimeout(() => controller.abort(), RESEARCH.totalBudgetMs)
   const get = deps.fetchPage ?? ((u: string, s: AbortSignal) => fetchPublicPage(u, AbortSignal.any([s, AbortSignal.timeout(RESEARCH.pageTimeoutMs)])))
-  const search = deps.search === undefined ? searchProviderFrom() : deps.search
+  const search = input.search !== undefined ? input.search : deps.search === undefined ? searchProviderFrom() : deps.search
   const items: EvidenceItem[] = []
   const sources: ResearchSource[] = []
   const outdated: string[] = []
   let failure: string | null = null
+  let searchFailure: string | null = null
   const topical = new Map<string, boolean>()
   const name = input.universities[0]?.name ?? input.universityName ?? null
   const q = parseQualification(input.course)
-  const query = name ? buildQuery(name, input.course, input.topics) : null
+  const query = name ? buildQuery(name, input.course, input.topics) : input.destinations?.length ? buildTopicQuery(input.topics, input.destinations.map((d) => d.name)) : null
+  const official: string[] = input.universities.flatMap((u) => [...u.courseUrls.slice(0, 1), u.officialWebsite])
   try {
     const queue: { url: string; via: ResearchSource['via']; publisher: string; depth: number; score: number }[] = []
     for (const u of input.universities) {
       for (const url of [...u.courseUrls.slice(0, 2), u.officialWebsite]) queue.push({ url, via: 'lockin_record', publisher: u.name, depth: 0, score: 100 })
     }
-    if (search && query) {
-      try {
-        const known = input.universities.map((u) => new URL(u.officialWebsite).hostname.replace(/^www\./, ''))
-        const found = await search.search(query, controller.signal)
-        const official = found.filter((u) => {
-          const h = new URL(u).hostname.replace(/^www\./, '')
-          return known.some((k) => h === k || h.endsWith(`.${k}`)) || OFFICIAL_HOST.test(h)
-        })
-        for (const url of (official.length ? official : found).slice(0, 3)) queue.push({ url, via: 'search', publisher: new URL(url).hostname, depth: 0, score: 90 })
-      } catch {
-        failure = 'The search service could not be reached.'
+    // 1. A university LockIn does not hold: its official website from Wikidata (free, no key).
+    if (!input.universities.length && name) {
+      const site = await (deps.siteFor ?? ((n: string, s: AbortSignal) => officialSiteFor(n, s)))(name, controller.signal).catch(() => null)
+      if (site) {
+        queue.push({ url: site, via: 'search', publisher: name, depth: 0, score: 100 })
+        official.push(site)
       }
     }
-    if (!queue.length && !failure) failure = 'LockIn holds no official page for this university, so there was nothing to read.'
+    // The official site's own sitemap is searched for the asked topic and qualification: a site search that needs no search engine.
+    const sites = [...new Set([...input.universities.map((u) => u.officialWebsite), ...official.filter((u) => !input.universities.some((x) => x.officialWebsite === u) && /^https:\/\/[^/]+\/?$/.test(u))])].slice(0, 2)
+    for (const site of sites) {
+      const urls = await (deps.sitemap ?? (deps.fetchPage ? async () => [] : fetchSitemapUrls))(site, controller.signal).catch(() => [])
+      for (const hit of rankSitemapUrls(urls, input.topics, input.course, q)) queue.push({ url: hit.url, via: 'linked_page', publisher: name ?? new URL(site).hostname, depth: 1, score: 80 + hit.score })
+    }
+    // 2. Official government pages for a visa question about a destination LockIn knows.
+    if (input.topics.some((t) => /visa|immigr|permit/.test(t)))
+      for (const d of input.destinations ?? []) for (const url of GOV_SEEDS[d.iso2] ?? []) queue.push({ url, via: 'search', publisher: new URL(url).hostname.replace(/^www\./, ''), depth: 0, score: 95 })
+    // 3. Internet search (Gemini Google Search grounding): up to two attempts, the second with a plainer query. A failure is
+    //    reported and the pages found above are still read; nothing is invented to fill the gap.
+    if (search && query) {
+      const known = [...input.universities.map((u) => u.officialWebsite), ...official].map((u) => new URL(u).hostname.replace(/^www\./, ''))
+      const attempts = [query, name ? `${name} ${input.topics[0] ?? 'admissions'} official site` : query]
+      let searchError: string | null = null
+      for (const attempt of attempts) {
+        if (controller.signal.aborted) break
+        try {
+          const found = (await search.search(attempt, controller.signal)).filter((u) => {
+            try {
+              return new URL(u).protocol === 'https:' && !NOT_A_SOURCE.test(new URL(u).hostname)
+            } catch {
+              return false
+            }
+          })
+          const preferred = found.filter((u) => {
+            const h = new URL(u).hostname.replace(/^www\./, '')
+            return known.some((k) => h === k || h.endsWith(`.${k}`)) || OFFICIAL_HOST.test(h)
+          })
+          // Official-looking pages first; other reputable pages only when no official one turned up.
+          for (const url of (preferred.length ? preferred : found).slice(0, 4)) queue.push({ url, via: 'search', publisher: new URL(url).hostname.replace(/^www\./, ''), depth: 0, score: 90 })
+          searchError = null
+          if (found.length) break
+        } catch (e) {
+          searchError = 'The internet search could not be completed.'
+          if ((e as { retryable?: boolean })?.retryable === false) break
+        }
+      }
+      searchFailure = searchError
+    }
+    if (!queue.length && !failure) failure = 'No official page could be found for this online, so there was nothing to read.'
     const seen = new Set<string>()
     const topicWords = wordsFor(input.topics)
     // Pages are read three at a time, so the budget goes to more pages rather than waiting on one slow site.
@@ -540,6 +683,7 @@ export async function researchQuestion(input: ResearchInput, deps: ResearchDeps 
   const aboutAsked = new Set(sources.filter((x) => q != null && matchesQualification(`${new URL(x.url).pathname} ${x.title}`, q)).map((x) => x.url))
   const rank = (i: EvidenceItem) => (aboutAsked.has(i.sourceUrl) ? 4 : 0) + (CLOSED_RE.test(i.text) ? 2 : 0) + (/english language|admission requirements/i.test(i.text) ? 2 : 0) + (/\d/.test(i.text) ? 1 : 0)
   items.sort((x, y) => rank(y) - rank(x))
+  if (!items.length && searchFailure) failure = searchFailure
   if (!items.length && !failure) failure = 'The university pages that could be read did not state this.'
-  return { items, record: { attempted: true, query, sources, conflicts: findConflicts(items, input.topics), outdated, official: input.universities.flatMap((u) => [...u.courseUrls.slice(0, 1), u.officialWebsite]), failure } }
+  return { items, record: { attempted: true, query, sources, conflicts: findConflicts(items, input.topics), outdated, official, failure } }
 }

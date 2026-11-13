@@ -3,14 +3,15 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ConversationBadge } from '@/components/admin/conversation-badge'
 import { EmptyState, PageHeader, Panel } from '@/components/admin/page-header'
-import { EraseStudentForm } from '@/components/admin/support-forms'
+import { EraseStudentForm, RestrictionReviewForm } from '@/components/admin/support-forms'
+import { activeRestriction } from '@/lib/derek/abuse'
 import { requireAdminPage } from '@/lib/admin/access'
 import { humanize } from '@/lib/admin/entities'
 import { actorCan } from '@/lib/admin/roles'
 import { formatUtc, positiveInt } from '@/lib/admin/view'
 import { getAdminPool } from '@/lib/db/pool'
 import { getStudent } from '@/lib/support/conversations'
-import { SupportError } from '@/lib/support/db'
+import { selectRows, SupportError } from '@/lib/support/db'
 
 export const metadata: Metadata = { title: 'Student' }
 
@@ -26,6 +27,8 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
     throw error
   }
   const erased = student.status === 'erased'
+  const restriction = erased ? null : await activeRestriction(getAdminPool(), id)
+  const incidents = erased ? [] : await selectRows(getAdminPool(), 'SELECT id, category, kind, action, reason, evidence, created_at AS createdAt FROM student_abuse_incidents WHERE student_profile_id = ? ORDER BY id DESC LIMIT 25', [id])
 
   return (
     <>
@@ -64,6 +67,29 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
             </ul>
           ) : (
             <EmptyState>No conversations.</EmptyState>
+          )}
+        </Panel>
+      ) : null}
+
+      {actorCan(actor, 'support.read') && !erased ? (
+        <Panel title="Conduct" description="Requests Derek refused as misuse, and any account restriction. Excerpts are redacted and for staff only.">
+          {restriction ? (
+            <div className="mb-4 flex flex-col gap-3 rounded-md border border-border p-3">
+              <p className="text-sm text-foreground">{`Restricted since ${formatUtc(restriction.createdAt)}: ${restriction.reason} (${restriction.policy}). Notice email: ${restriction.emailSentAt ? 'sent' : restriction.emailError ? `not sent (${restriction.emailError})` : 'pending'}.`}</p>
+              {actorCan(actor, 'students.erase') ? <RestrictionReviewForm restrictionId={Number(restriction.id)} emailSent={Boolean(restriction.emailSentAt)} /> : null}
+            </div>
+          ) : null}
+          {incidents.length ? (
+            <ul className="flex flex-col divide-y divide-border">
+              {incidents.map((i) => (
+                <li key={String(i.id)} className="flex flex-col gap-0.5 py-2 text-sm">
+                  <span className="text-foreground">{`${formatUtc(i.createdAt)} · category ${i.category} · ${i.kind} · ${i.action}`}</span>
+                  <span className="text-xs text-muted-foreground">{`${i.reason}${i.evidence ? ` — “${i.evidence}”` : ''}`}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <EmptyState>No misuse recorded.</EmptyState>
           )}
         </Panel>
       ) : null}

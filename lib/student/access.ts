@@ -22,6 +22,8 @@ export type StudentContext =
   | { state: 'error' }
   | { state: 'signed_out' }
   | { state: 'forbidden' }
+  /** The account is restricted for misuse; the student has been emailed and can ask for a review. */
+  | { state: 'restricted' }
   /** Signed in (any student method), no student profile yet: must confirm 18+ and the privacy notice first. */
   | { state: 'needs_profile'; userId: string; name: string }
   /**
@@ -47,6 +49,11 @@ export async function resolveStudentContext(requestHeaders: Headers): Promise<St
       [session.user.id],
     )
     const row = rows[0]
+    if (!row) {
+      // A restricted account (lib/derek/abuse.ts) is told so, rather than being sent to start a new profile.
+      const [held] = await getAdminPool().query<RowDataPacket[]>("SELECT id FROM student_profiles WHERE user_id = ? AND status = 'suspended' LIMIT 1", [session.user.id])
+      if (held[0]) return { state: 'restricted' }
+    }
     if (!row && (await canStartStudentProfile(session.user.id))) return { state: 'needs_profile', userId: session.user.id, name: session.user.name ?? '' }
     // Staff accounts (even revoked ones) are never students.
     if (!row || Number(row.memberships) > 0) return { state: 'forbidden' }
@@ -106,6 +113,8 @@ export async function requireStudentApi(request: Request, { mutation = false, co
       return jsonError(403, 'Finish setting up your student account first.', { state: 'needs_profile' })
     case 'forbidden':
       return jsonError(403, 'This account cannot use the student area.', { state: 'forbidden' })
+    case 'restricted':
+      return jsonError(403, 'Chat access on your account is restricted. We emailed you the details and how to ask for a review.', { state: 'restricted' })
     case 'needs_consent':
       return consentOptional ? ctx.student : jsonError(403, 'Accept the updated privacy notice to continue.', { state: 'needs_consent' })
     case 'ok':

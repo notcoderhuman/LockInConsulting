@@ -30,6 +30,8 @@ export interface MessageClassification {
   highRisk: string[]
   /** The message without a leading greeting: what Derek actually answers. */
   question: string
+  /** Set when the message is misuse (coding help, internals, instruction override, attempts on credentials or other students' data). */
+  misuse: Misuse | null
 }
 
 export const OFF_TOPIC_REPLY =
@@ -77,6 +79,62 @@ const INJECTION = [
   /(निर्देश|नियम)[^।\n]{0,30}(भूल|अनदेखा|छोड़|मत मानो)/,
 ]
 
+// ---------------------------------------------------------------------------------------------
+// Misuse (Owner brief, 13 Nov 2026). Deterministic, no model: a legitimate university question that mentions SQL, an API or
+// cybersecurity is never flagged, because every pattern below needs a sensitive target AND either LockIn's own systems
+// ("your database", "LockIn's admin") or an explicit hostile technique.
+//   security   Category C: credentials, keys, secrets, other students' data, bypassing security, attack techniques
+//   injection  Category B material: trying to read or override Derek's instructions
+//   internals  Category A+: LockIn's systems, source, staff contact details, or how the safeguards work
+//   off_topic  Category A: coding help and other unrelated requests
+// ---------------------------------------------------------------------------------------------
+
+export type MisuseKind = 'security' | 'injection' | 'internals' | 'off_topic'
+export interface Misuse {
+  kind: MisuseKind
+  /** Category-level wording for staff and (in the email) the student. Never the pattern that matched. */
+  reason: string
+}
+
+const OWNER_CONTEXT = /\b(lockin|lock in|derek|your (?:\w+ ){0,2}(?:api|keys?|tokens?|passwords?|credentials?|database|server|admin|smtp|env\w*|secrets?)|your (?:admin|staff|team|server|servers|database|db|system|systems|website|site|platform|backend|hosting|email|mail|code|app|api)|this (?:site|website|platform|app|system|chat|server)|the (?:lockin|admin|owner|platform|backend|website'?s?|site'?s?) )/
+const SECRET_TARGET =
+  /\b(passwords?|passcodes?|credentials?|login (?:details|info\w*|id)|usernames? and passwords?|api[ -]?keys?|secret[ -]?keys?|private[ -]?keys?|access[ -]?tokens?|auth(?:entication)? tokens?|session (?:cookies?|tokens?)|env(?:ironment)? (?:var\w*|file)|\.env\b|process\.env|smtp (?:password|credentials?|settings|login)|database (?:dump|contents?|credentials?|password|backup|records|access)|db (?:dump|password|credentials?|access)|connection string|ssh (?:key|access|login)|root access|server (?:ip|files?|logs?|access|password)|admin (?:account|login|access|password|panel|dashboard))\b/
+const HOSTILE = [
+  /\b(sql injection|xss payload|cross[- ]site scripting|union select|drop table|(?:delete|truncate) from \w+|ddos|backdoor|reverse shell|privilege escalation|brute[- ]?force (?:the |a |their )?(?:login|password|otp|admin)|keylogger|phishing (?:page|kit))\b/,
+  /\b(bypass|circumvent|crack|hack(?:ing)? (?:into)?|exploit)\b[^.\n]{0,40}\b(login|log in|authentication|admin\w*|security|firewall|otp|2fa|captcha|age (?:check|gate|verification)|rate[- ]?limit\w*|restrictions?|ban)\b/,
+  /\b(show|give|tell|send|share|read|list|leak|dump|export|reveal|forward|access|see|view)\b[^.\n]{0,40}\b(other|another|different|someone else'?s?)\b[^.\n]{0,10}\b(students?|users?|clients?|customers?)'?s?\b[^.\n]{0,30}\b(conversations?|chats?|messages?|data|records?|emails?|phone numbers?|files)\b/,
+  /\b(show|give|tell|send|share|read|list|leak|dump|export|reveal|forward|access|see|view)\b[^.\n]{0,40}\b(conversations?|chats?|messages?|emails?|phone numbers?|records?|data)\b[^.\n]{0,25}\b(?:of|from|by|belonging to)\b[^.\n]{0,12}\b(other|another|different)\b[^.\n]{0,8}\b(students?|users?|people|clients?)\b/,
+]
+const SECRET_VERB = /\b(give|show|tell|share|send|reveal|leak|print|dump|list|display|provide|what(?:'s| is| are)|read out|paste|forward|access|get me|find out|need)\b/
+const INTERNALS =
+  /\b(source code|tech(?:nology)? stack|which (?:database|hosting|server|framework|cloud)|what (?:database|hosting|server|framework)|how (?:is|are) (?:the )?(?:data|messages|students?) (?:stored|saved|logged)|staff (?:list|names|emails?|phones?|phone numbers?|numbers?|addresses|home)|team members?'?s? (?:emails?|phones?|phone numbers?|numbers?|home|addresses)|who (?:built|developed|made|coded) (?:you|this)|ban (?:threshold|rules?|limit)|how many (?:warnings|violations|strikes|messages) (?:before|until)|what (?:triggers|gets me) (?:a )?ban|internal (?:rules|policy|policies|tools?|documents?))\b/
+const INJECTION_ROLE = /\b(system prompt|developer mode|dan mode|jailbreak\w*|do anything now|reveal your (?:instructions|prompt|rules)|print your (?:instructions|prompt)|show (?:me )?your (?:instructions|prompt|rules)|repeat (?:the |your )?(?:text|words|instructions) above)\b/
+const CODING_REQUEST =
+  /(?:^|[.!?]\s+|\b(?:can|could|would|will) you\s+(?:please\s+)?|\bplease\s+|\bhelp me\s+(?:to\s+)?|\bi (?:need|want) you to\s+)(?:write|create|generate|make|fix|debug|solve|build|code|optimi[sz]e|refactor|convert|complete)\b[^.\n]{0,50}\b(code|script|program|function|algorithm|query|regex|html|css|component|app|website|bot|sql|python|javascript|java|c\+\+|typescript|react|assignment|homework|leetcode)\b|```|\b(?:def |function\s*\(|#include|public static void|console\.log|select \* from)/
+
+/** Whether a message is misuse, and which kind. `null` for every legitimate university question. */
+export function detectMisuse(text: string): Misuse | null {
+  const t = norm(text).replace(/[’‘]/g, "'")
+  const owner = OWNER_CONTEXT.test(t)
+  const asks = SECRET_VERB.test(t)
+  if (HOSTILE.some((re) => re.test(t)) || (owner && asks && SECRET_TARGET.test(t)))
+    return { kind: 'security', reason: 'Attempt to obtain credentials, secrets, other students’ information or access to LockIn’s systems, or to bypass its security' }
+  if (INJECTION_ROLE.test(t) || INJECTION.some((re) => re.test(t))) return { kind: 'injection', reason: 'Attempt to change or read Derek’s instructions' }
+  if (CODING_REQUEST.test(t)) return { kind: 'off_topic', reason: 'Request for coding or technical help unrelated to studying abroad' }
+  if (owner && INTERNALS.test(t)) return { kind: 'internals', reason: 'Request about LockIn’s internal systems, staff or safeguards' }
+  if (INTERNALS.test(t) && /\b(your|lockin|derek|this)\b/.test(t)) return { kind: 'internals', reason: 'Request about LockIn’s internal systems, staff or safeguards' }
+  return null
+}
+
+export const SECURITY_REPLY =
+  'I can’t help with that. I only answer study-abroad questions, and I can’t share or access LockIn’s accounts, systems or other students’ information. If you have a question about a university, course, fees or applying, I’m happy to help.'
+
+export const INTERNALS_REPLY =
+  'I can’t share details about how LockIn’s systems or team work internally, but I’m happy to help with universities, courses, admissions and studying abroad. What would you like to know?'
+
+export const WARNING_REPLY =
+  'Please keep to study-abroad questions. I can’t help with unrelated or unsafe requests, and repeated ones can lead to limits on your account. What would you like to know about universities, courses or applying?'
+
 // High-risk topics in Hindi and Hinglish (English ones live in lib/derek/safeguards.ts).
 const HIGH_RISK: [RegExp, string][] = [
   [/\b(veeza|vija|visa (reject|refus|mana)\w*|visa nahi|pr kaise|nagrikta|deport\w*|immigration)\b|(वीज़ा|वीजा|नागरिकता|आप्रवास|इमिग्रेशन)/, 'Visa or immigration question'],
@@ -114,24 +172,26 @@ export function classifyMessage(raw: string): MessageClassification {
   const whole = norm(raw).trim()
   const trimmed = raw.trim()
   // A bare greeting or thanks never reaches the model and is never turned into an essay.
-  if (GREETING.test(whole)) return { scope: 'greeting', language: detectLanguage(raw), injection: false, highRisk: [], question: trimmed }
-  if (THANKS.test(whole)) return { scope: 'thanks', language: detectLanguage(raw), injection: false, highRisk: [], question: trimmed }
+  if (GREETING.test(whole)) return { scope: 'greeting', language: detectLanguage(raw), injection: false, highRisk: [], question: trimmed, misuse: null }
+  if (THANKS.test(whole)) return { scope: 'thanks', language: detectLanguage(raw), injection: false, highRisk: [], question: trimmed, misuse: null }
 
   const question = trimmed.replace(LEADING_GREETING, '').trim() || trimmed
   const text = norm(question)
   const language = detectLanguage(question)
-  const injection = INJECTION.some((re) => re.test(text))
+  const misuse = detectMisuse(question)
+  const injection = INJECTION.some((re) => re.test(text)) || misuse?.kind === 'injection'
   const highRisk = [...new Set(HIGH_RISK.filter(([re]) => re.test(text)).map(([, label]) => label))]
   const study = STUDY.some((re) => re.test(text))
-  const offTopic = OFF_TOPIC.some((re) => re.test(text))
+  // A study question that merely mentions Python, SQL or an API ("does the programme teach Python?") is a study question.
+  const offTopic = OFF_TOPIC.slice(1).some((re) => re.test(text)) || (!study && OFF_TOPIC[0].test(text)) || misuse?.kind === 'off_topic'
   let scope: Scope
-  if (injection) scope = 'off_topic' // a study word cannot launder an override attempt
+  if (injection || misuse) scope = 'off_topic' // a study word cannot launder an override attempt or a misuse request
   else if (study && !offTopic) scope = 'in_scope'
   else if (offTopic && !study) scope = 'off_topic'
   else scope = 'unclear' // both or neither: a person decides
   // High-risk topics are never dismissed as "unrelated": a person must see them.
   if (highRisk.length && scope === 'off_topic' && !injection) scope = 'unclear'
-  return { scope, language, injection, highRisk, question }
+  return { scope, language, injection, highRisk, question, misuse }
 }
 
 /** A greeting or thanks: answered with a fixed line, and never a reason to drop an earlier question. */

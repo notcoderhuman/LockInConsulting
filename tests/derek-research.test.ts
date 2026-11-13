@@ -120,11 +120,11 @@ describe('web research', () => {
     expect(none.record.failure).toMatch(/did not state this/)
     const unknown = await researchQuestion({ topics: ['fees or costs'], course: null, universities: [] }, { fetchPage: fetcher({}), search: null, now: () => NOW })
     expect(unknown.items).toEqual([])
-    expect(unknown.record.failure).toMatch(/holds no official page/)
+    expect(unknown.record.failure).toMatch(/no official page/i)
     const throwing = { search: async () => { throw new Error('boom') } }
     const broken = await researchQuestion({ topics: ['fees or costs'], course: null, universities: [site] }, { fetchPage: fetcher({}), search: throwing, now: () => NOW })
     expect(broken.items).toEqual([])
-    expect(broken.record.failure).toMatch(/search service could not be reached/)
+    expect(broken.record.failure).toMatch(/internet search could not be completed/)
   })
 
   it('searches with only university, course and topic, prefers official hosts, and never includes personal text', async () => {

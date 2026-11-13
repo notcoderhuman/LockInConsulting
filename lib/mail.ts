@@ -135,3 +135,67 @@ export function otpMessage(email: string, otp: string, type: keyof typeof PURPOS
 
   return { to: email, subject: type === 'sign-in' ? 'Your LockIn sign-in code' : 'Your LockIn verification code', text, html }
 }
+
+export interface RestrictionNotice {
+  email: string
+  /** The policy area, in plain words ("Security and acceptable use"). */
+  policy: string
+  /** What the student is told happened: category level, no internal rules, thresholds or evidence. */
+  reason: string
+  /** Date the restriction started, as shown to the student. */
+  date: string
+  /** Where the student can write to ask for a review. */
+  contactEmail: string | null
+}
+
+/**
+ * The email a student gets when their account is restricted. LockIn branding, the status, the reason at policy level, the date and how to
+ * appeal. It never contains internal thresholds, rules, credentials or the content of the student's messages.
+ */
+export function restrictionMessage(n: RestrictionNotice): MailMessage {
+  const heading = 'Your LockIn account has been restricted'
+  const intro = 'We have restricted chat access on your LockIn Consulting student account.'
+  const appeal = n.contactEmail
+    ? `If you think this is a mistake, or you would like a member of our team to review it, reply to this email or write to ${n.contactEmail} from the address on your account, and tell us what you would like us to look at.`
+    : 'If you think this is a mistake, or you would like a member of our team to review it, reply to this email and tell us what you would like us to look at.'
+  const rows: [string, string][] = [
+    ['Status', 'Chat access restricted'],
+    ['Policy', n.policy],
+    ['Reason', n.reason],
+    ['Date', n.date],
+  ]
+  const tableRows = rows
+    .map(([k, v]) => `<tr><td style="padding:8px 12px 8px 0;font-family:${SANS};font-size:13px;line-height:20px;color:${MUTED};white-space:nowrap;vertical-align:top;">${escapeHtml(k)}</td><td style="padding:8px 0;font-family:${SANS};font-size:14px;line-height:22px;color:${INK};">${escapeHtml(v)}</td></tr>`)
+    .join('')
+  const html = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only">
+<meta name="supported-color-schemes" content="light only">
+<title>${escapeHtml(heading)}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f2efe8;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f2efe8" style="background-color:#f2efe8;">
+<tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;width:100%;border-collapse:separate;">
+<tr><td align="center" bgcolor="${INK}" style="background-color:${INK};padding:30px 24px 26px;border-radius:12px 12px 0 0;">
+<div style="font-family:${SERIF};font-size:30px;line-height:34px;letter-spacing:9px;color:#ffffff;padding-left:9px;">LOCKIN</div>
+<div style="font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:6px;color:${GOLD};padding-left:6px;padding-top:6px;">CONSULTING</div>
+</td></tr>
+<tr><td bgcolor="#ffffff" style="background-color:#ffffff;padding:40px 40px 32px;border:1px solid #e7e1d4;border-top:0;border-radius:0 0 12px 12px;">
+<h1 style="margin:0 0 14px;font-family:${SERIF};font-size:26px;line-height:32px;font-weight:normal;color:${INK};">${escapeHtml(heading)}</h1>
+<p style="margin:0 0 22px;font-family:${SANS};font-size:15px;line-height:24px;color:${BODY};">${escapeHtml(intro)}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid #ece6d9;border-bottom:1px solid #ece6d9;">${tableRows}</table>
+<p style="margin:22px 0 0;font-family:${SANS};font-size:14px;line-height:22px;color:${BODY};">${escapeHtml(appeal)}</p>
+</td></tr>
+<tr><td align="center" style="padding:22px 24px 0;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:3px;text-transform:uppercase;color:${MUTED};">LockIn Consulting</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>`
+  const text = [heading, '', intro, '', ...rows.map(([k, v]) => `${k}: ${v}`), '', appeal, '', '-- ', 'LockIn Consulting'].join('\n')
+  return { to: n.email, subject: 'Your LockIn account has been restricted', text, html }
+}

@@ -97,6 +97,9 @@ export default function PrivacyPage() {
           details, earlier messages, documents, or anything about your marks, money, health or visa history. If a question looks personal, it is not sent to Google at all and the LockIn
           team answers it instead. <strong>Please do not put personal details in your questions.</strong> Derek is for people outside the European Economic Area, Switzerland and the United
           Kingdom, because Google’s free service may not be used for people there. Your messages stay in LockIn’s own database as described below, and every reply says who or what wrote it.
+          To find current information, Derek also searches the public web through <strong>Tavily</strong>, a web-search service. For this LockIn sends Tavily <strong>only a short search query
+          made of the university, course and topic words from your question</strong> (for example “University of Waterloo Master of Data Science tuition fees official”), never your name, email,
+          account details or earlier messages, and then reads the public pages found on its own servers. Tavily may keep the queries it receives. A question that looks personal is not searched.
           Details: <Link href="/ai">AI disclosure</Link>.
         </p>
       </section>
@@ -106,6 +109,7 @@ export default function PrivacyPage() {
         <ul>
           <li>Our hosting provider (Hostinger), which stores the website and database.</li>
           <li>Google: if you choose to sign in with it, and (Gemini API, free service) for the screened general questions described above.</li>
+          <li>Tavily (web search): the short university, course and topic search queries described above.</li>
           <li>Hostinger’s email service, which sends your sign-in codes.</li>
         </ul>
         <p>

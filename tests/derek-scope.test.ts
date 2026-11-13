@@ -42,7 +42,9 @@ describe('scope guard: study abroad only, decided before any provider call', () 
     for (const q of ['hi', 'hello', 'hey', 'Heyy!', 'hii derek', 'Hello Derek!', 'namaste', 'namaste ji', 'Good morning sir', 'hi there, how are you?', 'kaise ho', 'hi bhai kaise ho', 'नमस्ते', 'sat sri akal'])
       expect(classifyMessage(q), q).toMatchObject({ scope: 'greeting', highRisk: [], injection: false })
     for (const q of ['hi', 'namaste ji', 'नमस्ते']) expect(risk(q), q).toBe('low')
-    for (const q of ['What should I do?', 'help', 'write a python script for my university assignment']) expect(scope(q), q).toBe('unclear')
+    for (const q of ['What should I do?', 'help']) expect(scope(q), q).toBe('unclear')
+    // Coding help is out of scope even when it mentions a university.
+    expect(scope('write a python script for my university assignment')).toBe('off_topic')
   })
 
   it('answers a greeting with a short greeting, not an essay about universities', () => {

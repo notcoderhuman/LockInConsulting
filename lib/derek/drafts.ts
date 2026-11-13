@@ -11,7 +11,9 @@ import { messageBody, reasonText } from '@/lib/support/validation'
 import { AUTO_REPLY_LIMITS, decideAutoReply, keepsQualifiers, maxCharsFor, NOT_CLEARED_HOLD, TEAM_ONLINE_HOLD } from './auto-reply'
 import { createProvider, derekDailyTokenLimit, derekMaxAttempts, getDerekStatus, type DerekStatus } from './config'
 import { loadEvidence } from './evidence'
-import { analyseQuestion, COMPARISON_TARGET_CHARS, studentPlanFromSubject } from './guidance'
+import { recordMisuse, sendRestrictionEmail } from './abuse'
+import { institutionNames } from './discovery'
+import { analyseQuestion, COMPARISON_TARGET_CHARS, detectDestinations, studentPlanFromSubject } from './guidance'
 import { commitAllowance, releaseAllowance, reserveAllowance } from './allowance'
 import { DEREK_GENERATION_SECONDS } from '@/lib/support/state'
 import { evidenceCovers, findUniversitySites, researchQuestion, type ResearchResult } from './research'
@@ -19,7 +21,7 @@ import { planFromSubject } from './suggestions'
 import { askedQualification, dropOtherCourseEvidence, parseQualification } from './qualification'
 import { DEREK_INSTRUCTIONS, type AiProvider, type DraftRequest, type EvidenceItem } from './provider'
 import { callProvider, MAX_ATTEMPTS, type CallOutcome } from './runtime'
-import { assessDraft, assessQuestion, combineRisk, MODEL_UNCERTAIN_REASON, redactPersonalData, trimUrl } from './safeguards'
+import { assessDraft, assessQuestion, combineRisk, MODEL_UNCERTAIN_REASON, redactPersonalData, trimUrl, VISA_INFO_REASON } from './safeguards'
 
 /** How a preliminary answer opens (Owner's wording, 12 Nov 2026). */
 export const PRELIMINARY_NOTE = 'I’m not fully certain about this, so please treat this as preliminary information. This needs confirmation from the LockIn team.'
@@ -55,6 +57,8 @@ export type WorkerOutcome =
   | { state: 'allowance' } // the student's 10 Derek answers for today are used: a person answers
   | { state: 'taken_over' } // a team member is handling this conversation; Derek stays out
   | { state: 'deferred' } // small talk after an unanswered message: that message is answered instead
+  | { state: 'cooldown' } // repeated misuse: Derek stays silent for a while and the team has been told
+  | { state: 'restricted' } // the account was restricted for security misuse; the student has been emailed
   | { state: 'superseded'; draftId: number }
   | { state: 'failed'; draftId: number; code: string }
   | { state: 'review'; draftId: number; risk: string }
@@ -78,7 +82,7 @@ export interface WorkerDeps {
 const HISTORY_TURNS = 6
 
 /** Question-side reasons that are ordinary uncertainty ("will I get in?"): Derek answers, without any guarantee, as preliminary. */
-const ORDINARY_UNCERTAIN_REASONS = new Set(['Admission-probability question', 'Asks for a guarantee'])
+const ORDINARY_UNCERTAIN_REASONS = new Set(['Admission-probability question', 'Asks for a guarantee', VISA_INFO_REASON])
 
 /** Plain words for the failure codes the team sees next to "Derek could not draft". */
 const FAILURE_WORDS: Record<string, string> = {
@@ -201,7 +205,22 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
 
     // Scope guard, before any provider is contacted (lib/derek/scope.ts).
     // A greeting or thanks gets a short reply of LockIn's own, never a model-written essay.
-    const fixed = { off_topic: OFF_TOPIC_REPLY, greeting: GREETING_REPLY, thanks: THANKS_REPLY, in_scope: null, unclear: null }[classification.scope]
+    let fixed = { off_topic: OFF_TOPIC_REPLY, greeting: GREETING_REPLY, thanks: THANKS_REPLY, in_scope: null, unclear: null }[classification.scope]
+    // Misuse (unrelated requests, LockIn's internals, attempts on credentials or other students' data): recorded, answered with a fixed
+    // refusal or warning, and escalated by lib/derek/abuse.ts. A cooldown or a restriction ends the exchange without a reply.
+    let restrictionId: number | null = null
+    if (classification.scope === 'off_topic') {
+      const misuse = classification.misuse ?? { kind: 'off_topic' as const, reason: 'Request unrelated to studying abroad' }
+      const misuseOutcome = await recordMisuse(conn, { studentProfileId: Number(conv.student_profile_id), conversationId, messageId: triggerMessageId, misuse, excerpt: classification.question, now: deps.now?.() })
+      restrictionId = misuseOutcome.restrictionId
+      if (misuseOutcome.reply === null || misuseOutcome.action === 'restricted') {
+        await applyEvent(conn, { id: conversationId, status: conv.status }, { type: 'ai_failed' }, { kind: 'system', id: null }, misuseOutcome.action === 'restricted' ? 'Student account restricted' : 'Derek paused after repeated misuse').catch((e) => {
+          if (!(e instanceof TransitionError)) throw e
+        })
+        return { restrictedId: restrictionId, cooldown: misuseOutcome.action === 'cooldown' } as const
+      }
+      fixed = misuseOutcome.reply
+    }
     if (fixed) {
       const [res] = await conn.query("INSERT INTO ai_drafts (conversation_id, trigger_message_id, status, provider, model) VALUES (?, ?, 'generating', ?, ?)", [
         conversationId,
@@ -286,6 +305,11 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
   if (claim === 'taken_over') return { state: 'taken_over' }
   if (claim === 'deferred') return { state: 'deferred' }
   if (!claim) return { state: 'stale' }
+  if ('restrictedId' in claim) {
+    // The notice email is sent after the transaction, once (a conditional update claims the send).
+    if (claim.restrictedId != null) await sendRestrictionEmail(pool, claim.restrictedId).catch(() => {})
+    return { state: claim.cooldown ? 'cooldown' : 'restricted' }
+  }
 
   // 2. Build the request from redacted text and verified evidence only. No lock is held during
   //    the provider call. A fixed reply needs neither evidence nor a provider.
@@ -341,13 +365,18 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     // for a high-risk topic (visa, legal, distress), which goes to a person. Nothing about the student leaves the server.
     // "Do not answer" is decided by what LockIn holds for THIS course: a fee for another course of the same university does not count.
     const asked = askedText
-    if (guidance.kind === 'specific_fact' && !evidenceCovers(evidence, guidance.topics, asked) && assessQuestion(claim.question, evidence, { general: false }).level !== 'high') {
+    // The internet comes first, LockIn's directory is a supplement: any institution the student names (in the directory or not), and any
+    // fact asked about a named country, is researched when LockIn's own records do not already answer it.
+    const institutions = institutionNames(claim.question)
+    if ((guidance.kind === 'specific_fact' || institutions.length > 0) && !evidenceCovers(evidence, guidance.topics, asked) && assessQuestion(claim.question, evidence, { general: false }).level !== 'high') {
       const universities = await findUniversitySites(pool, `${localEarlier}\n${claim.question}`).catch(() => [])
       // Tests never reach the network unless they inject a research function; DEREK_WEB_RESEARCH=off switches it off in production.
       const doResearch = deps.research ?? (process.env.NODE_ENV === 'test' || process.env.DEREK_WEB_RESEARCH === 'off' ? null : researchQuestion)
       // The student's chat shows "checking university sources" while this marker is set; the final update below replaces it.
       if (doResearch) await setPhase('researching')
-      research = await doResearch?.({ topics: guidance.topics, course: asked, universities })?.catch(() => null) ?? null
+      // The destination comes from the question, else from the plan the student gave LockIn (used on LockIn's side only).
+      const destinations = (detectDestinations(claim.question).length ? detectDestinations(claim.question) : detectDestinations(earlier)).map((d) => ({ iso2: d.iso2, name: d.name }))
+      research = await doResearch?.({ topics: guidance.topics, course: asked, universities, universityName: institutions[0] ?? null, destinations })?.catch(() => null) ?? null
       if (research) {
         // The official pages LockIn holds are listings, not facts: they only make the university's own link citable.
         const officialPages = (research.record.official ?? []).slice(0, 2).map((url, i) => ({ ref: `university:official:${i}`, text: `The university's official page: ${url}`, sourceUrl: url, publisher: 'University website', checkedAt: new Date().toISOString().slice(0, 10), unverified: true as const }))

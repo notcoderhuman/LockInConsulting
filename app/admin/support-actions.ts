@@ -191,6 +191,85 @@ export async function testGeminiAction(): Promise<ActionState> {
   })
 }
 
+export async function reviewRestrictionAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  return run('students.erase', async (actor) => {
+    const id = formId(form, 'restrictionId')
+    const decision = formText(form, 'decision')
+    const note = formText(form, 'note').trim()
+    if (id == null || (decision !== 'lift' && decision !== 'uphold')) throw new SupportError(400, 'Choose a decision.')
+    if (note.length < 3) throw new SupportError(400, 'Write a short note for the record.', { note: ['Write a short note for the record.'] })
+    const { reviewRestriction } = await import('@/lib/derek/abuse')
+    await reviewRestriction(getAdminPool(), id, actor.email, decision, note).catch((e) => {
+      throw new SupportError(409, e instanceof Error ? e.message : 'Could not record the review.')
+    })
+    revalidatePath('/admin/students')
+    return { message: decision === 'lift' ? 'Restriction lifted. The student can use the chat again.' : 'Review recorded. The restriction stays.' }
+  })
+}
+
+export async function resendRestrictionEmailAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  return run('students.erase', async () => {
+    const id = formId(form, 'restrictionId')
+    if (id == null) throw new SupportError(400, 'Missing restriction.')
+    const { sendRestrictionEmail } = await import('@/lib/derek/abuse')
+    const result = await sendRestrictionEmail(getAdminPool(), id)
+    if (result === 'failed') throw new SupportError(503, 'The email could not be sent. Check the mail settings and try again.')
+    return { message: result === 'sent' ? 'Notice email sent.' : 'The notice email was already sent.' }
+  })
+}
+
+let lastResearchTestAt = 0
+
+/**
+ * Owner-only live check of Derek's internet research with a real university absent from LockIn's directory: finds its official site (ROR/Wikidata),
+ * reads its pages (sitemap, links, web search when configured), extracts passages, has Gemini answer from them, and checks the failure path.
+ * Sends only a public university name and topic to the search service. Reports counts and host names. At most once a minute.
+ */
+export async function testResearchAction(): Promise<ActionState> {
+  return run('support.settings', async () => {
+    const key = readGeminiApiKey()
+    if (!key) throw new SupportError(400, 'GEMINI_API_KEY is not set in this environment.')
+    if (Date.now() - lastResearchTestAt < 60_000) throw new SupportError(429, 'A research test ran less than a minute ago.')
+    lastResearchTestAt = Date.now()
+    const R = await import('@/lib/derek/research')
+    const { GeminiProvider } = await import('@/lib/derek/providers/gemini')
+    const { DEREK_INSTRUCTIONS } = await import('@/lib/derek/provider')
+    const host = (u: string) => new URL(u).hostname.replace(/^www\./, '')
+    const input = { topics: ['entry or language requirements'], course: 'Master of Data Science', universities: [], universityName: 'University of Waterloo', destinations: [{ iso2: 'CA', name: 'Canada' }] }
+    const report: string[] = []
+    const search = R.searchProviderFrom()
+    report.push(`Search provider: ${search ? 'Tavily (free plan)' : 'none configured (TAVILY_API_KEY not set): official-site discovery only'}`)
+
+    // 1-3. A university LockIn does not list: its official site is found, programme pages are read, requirement passages extracted.
+    const result = await R.researchQuestion({ ...input, search })
+    const hosts = [...new Set(result.record.sources.map((x) => host(x.url)))]
+    report.push(`Official site: ${result.record.official?.[0] ? host(result.record.official[0]) : 'not found'}`)
+    report.push(`Pages read: ${result.record.sources.length} (${hosts.slice(0, 3).join(', ') || 'none'}); passages extracted: ${result.items.length}`)
+    if (result.record.failure) report.push(`Research note: ${result.record.failure}`)
+
+    // 4. Gemini writes a natural answer from those pages, with source links.
+    if (result.items.length) {
+      const provider = new GeminiProvider({ apiKey: key, dailyDraftLimit: 1 })
+      try {
+        const answer = await provider.generate(
+          { question: 'What are the entry requirements for the Master of Data Science at University of Waterloo?', history: [], evidence: result.items.slice(0, 12), instructions: DEREK_INSTRUCTIONS, guidance: undefined } as never,
+          { signal: AbortSignal.timeout(30_000) },
+        )
+        const links = [...answer.text.matchAll(/\]\((https:\/\/[^)\s]+)\)/g)].length
+        report.push(`Gemini answer: ${answer.text.length} characters, ${links} source link(s). Start: “${answer.text.replace(/\s+/g, ' ').slice(0, 220)}”`)
+      } catch (error) {
+        report.push(`Gemini answer failed: ${(error as { code?: string }).code ?? 'error'}`)
+      }
+    }
+
+    // 5. Search failure: the same question with a search service that fails still ends in an honest result, never invented pages.
+    const broken = await R.researchQuestion({ ...input, universityName: 'Nowhere Example University', search: { search: async () => Promise.reject(new Error('down')) } })
+    report.push(`With the search failing: ${broken.items.length} passage(s), note “${broken.record.failure ?? 'none'}”`)
+    console.info(`[derek:test] research ${report.join(' | ')}`)
+    return { message: report.join(' · ') }
+  })
+}
+
 export async function setSupportAccessAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   return run('members.manage', async (actor) => {
     const enabled = formText(form, 'enabled') === '1'

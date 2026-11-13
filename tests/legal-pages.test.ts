@@ -51,7 +51,7 @@ describe('legal drafts', () => {
   })
 
   it('records which notice version a student accepted, and the footer links all three pages', () => {
-    expect(read('lib/student/onboarding.ts')).toMatch(/PRIVACY_NOTICE_VERSION = 'student-2026-11-07b'/)
+    expect(read('lib/student/onboarding.ts')).toMatch(/PRIVACY_NOTICE_VERSION = 'student-2026-11-13'/)
     expect(read('app/privacy/page.tsx')).toContain('version={PRIVACY_NOTICE_VERSION}')
     const footer = read('components/site/site-footer.tsx')
     for (const href of ['/privacy', '/terms', '/ai']) expect(footer).toContain(`href="${href}"`)

@@ -14,7 +14,7 @@ import { ageAttestation, clearAttestationName, normalizeFullName } from '@/lib/s
 
 // Recorded on the profile as the consent record: which notice the student accepted, and when (created_at).
 // Change it whenever /privacy changes in substance, so consent can be traced to the exact text.
-export const PRIVACY_NOTICE_VERSION = 'student-2026-11-07b'
+export const PRIVACY_NOTICE_VERSION = 'student-2026-11-13'
 
 const ELIGIBLE = `SELECT u.id, u.name,
          (SELECT COUNT(*) FROM admin_members m WHERE m.user_id = u.id) AS memberships,

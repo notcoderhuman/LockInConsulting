@@ -139,7 +139,7 @@ function officialLabel(url: string): string {
   }
 }
 
-function researchNote(r: ResearchResult): string {
+export function researchNote(r: ResearchResult): string {
   if (!r.items.length)
     return `The university's own pages were checked just now and gave nothing usable for this (${r.record.failure ?? 'no relevant text'}). Start with [UNCERTAIN], say plainly that you could not confirm it, tell the student which official page will confirm it and what to look for there, and give no figure or date.`
   const parts = ["The EVIDENCE lines marked UNVERIFIED that come from web pages are the university's own pages, read just now. Tell the student what those pages say in natural words, name the page, and link it with descriptive text. When they state the answer, give it directly and completely, without [UNCERTAIN] and without saying anything is unverified: the source is the university itself."]

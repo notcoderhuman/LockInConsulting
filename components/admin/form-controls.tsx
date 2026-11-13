@@ -61,7 +61,7 @@ export function FormMessage({ state }: { state: { ok: boolean; message?: string;
         state.ok ? 'border-primary/40 bg-primary/10 text-foreground' : 'border-destructive/50 bg-destructive/10 text-foreground',
       )}
     >
-      <p>{state.message}</p>
+      <p className="whitespace-pre-wrap break-words">{state.message}</p>
       {state.blockers?.length ? (
         <ul className="mt-1 flex list-disc flex-col gap-0.5 pl-5 text-muted-foreground">
           {state.blockers.map((b) => (

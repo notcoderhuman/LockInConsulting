@@ -218,6 +218,53 @@ export async function resendRestrictionEmailAction(_prev: ActionState, form: For
   })
 }
 
+let lastGroundingTestAt = 0
+
+/**
+ * Owner-only diagnostic: does Google Search grounding work on THIS API key's free tier, for the configured model and for the 2.5 Flash models
+ * Google lists with free grounding? One fixed public question (no student data) per model, at most once a minute. Reports only HTTP status,
+ * Google's error text, and whether grounded results and Search Suggestions came back. Nothing is stored, crawled or reused.
+ */
+export async function testGroundingAction(): Promise<ActionState> {
+  return run('support.settings', async () => {
+    const key = readGeminiApiKey()
+    if (!key) throw new SupportError(400, 'GEMINI_API_KEY is not set in this environment.')
+    if (Date.now() - lastGroundingTestAt < 60_000) throw new SupportError(429, 'A grounding test ran less than a minute ago.')
+    lastGroundingTestAt = Date.now()
+    const report: string[] = []
+    for (const model of [GEMINI_MODEL, 'gemini-2.5-flash-lite', 'gemini-2.5-flash']) {
+      try {
+        const res = await fetch(`${GEMINI_ENDPOINT}/${model}:generateContent`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: 'What are the entry requirements for the Master of Data Science at the University of Waterloo?' }] }],
+            tools: [{ google_search: {} }],
+            generationConfig: { maxOutputTokens: 400, temperature: 0.2 },
+          }),
+          signal: AbortSignal.timeout(30_000),
+        })
+        const body = (await res.json().catch(() => null)) as {
+          error?: { status?: string; message?: string }
+          candidates?: { content?: { parts?: { text?: string }[] }; groundingMetadata?: { groundingChunks?: unknown[]; webSearchQueries?: unknown[]; searchEntryPoint?: { renderedContent?: string } } }[]
+        } | null
+        if (!res.ok) {
+          report.push(`${model}: HTTP ${res.status} ${body?.error?.status ?? ''} — ${(body?.error?.message ?? '').slice(0, 160)}`)
+          continue
+        }
+        const c = body?.candidates?.[0]
+        const g = c?.groundingMetadata
+        const text = (c?.content?.parts ?? []).map((p) => p.text ?? '').join('')
+        report.push(`${model}: HTTP 200; answer ${text.length} chars; grounded sources ${g?.groundingChunks?.length ?? 0}; searches ${g?.webSearchQueries?.length ?? 0}; Search Suggestions ${g?.searchEntryPoint?.renderedContent ? `${g.searchEntryPoint.renderedContent.length} chars` : 'none'}`)
+      } catch (error) {
+        report.push(`${model}: ${error instanceof Error ? error.name : 'error'}`)
+      }
+    }
+    console.info(`[derek:test] grounding ${report.join(' | ')}`)
+    return { message: report.join(' · ') }
+  })
+}
+
 let lastResearchTestAt = 0
 
 /**

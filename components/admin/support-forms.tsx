@@ -16,6 +16,7 @@ import {
   sendTestEmailAction,
   testGeminiAction,
   testResearchAction,
+  testGroundingAction,
   reviewRestrictionAction,
   resendRestrictionEmailAction,
   setStatusAction,
@@ -358,6 +359,19 @@ export function ResearchTestForm() {
       <FormMessage state={state} />
       <Button type="submit" variant="outline" disabled={pending} className="self-start">
         {pending ? 'Testing…' : 'Test internet research'}
+      </Button>
+    </form>
+  )
+}
+
+export function GroundingTestForm() {
+  const { state, pending, onSubmit } = useFormAction(testGroundingAction)
+  return (
+    <form onSubmit={onSubmit} className="flex flex-col gap-3">
+      <p className="text-sm leading-relaxed text-muted-foreground">Diagnostic: asks Gemini one fixed public question with Google Search grounding, on the configured model and on Gemini 2.5 Flash-Lite and Flash, and reports whether this key&apos;s free tier allows it. No student data; nothing is stored.</p>
+      <FormMessage state={state} />
+      <Button type="submit" variant="outline" disabled={pending} className="self-start">
+        {pending ? 'Testing…' : 'Test Gemini grounding'}
       </Button>
     </form>
   )

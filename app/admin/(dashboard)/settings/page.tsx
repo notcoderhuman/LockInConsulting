@@ -4,7 +4,7 @@ import { EmptyState, PageHeader, Panel } from '@/components/admin/page-header'
 import { AcademicYearForm } from '@/components/admin/data-tools-forms'
 import { FxRateForm, FxTermsForm, RankingRightsForm } from '@/components/admin/settings-forms'
 import { listAcademicYears } from '@/lib/admin/data-tools'
-import { GeminiTestForm, ResearchTestForm, SupportSettingsForm, TestEmailForm } from '@/components/admin/support-forms'
+import { GeminiTestForm, GroundingTestForm, ResearchTestForm, SupportSettingsForm, TestEmailForm } from '@/components/admin/support-forms'
 import { requireAdminPage } from '@/lib/admin/access'
 import { humanize } from '@/lib/admin/entities'
 import { getSettingsData, type Row } from '@/lib/admin/queries'
@@ -102,6 +102,7 @@ export default async function SettingsPage() {
         ) : null}
         {can(actor.role, 'support.settings') && readGeminiApiKey() ? <GeminiTestForm /> : null}
         {can(actor.role, 'support.settings') && readGeminiApiKey() ? <ResearchTestForm /> : null}
+        {can(actor.role, 'support.settings') && readGeminiApiKey() ? <GroundingTestForm /> : null}
         {can(actor.role, 'support.settings') ? (
           <SupportSettingsForm autoReplyEnabled={support.autoReplyEnabled} autoReplyPermitted={derek.autoReply.permitted} />
         ) : null}

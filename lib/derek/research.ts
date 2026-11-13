@@ -473,6 +473,21 @@ export function searchProviderFrom(env: Record<string, string | undefined> = pro
   }
 }
 
+/** One spelling of a page address: no fragment, tracking query or trailing slash. */
+export function canonicalUrl(raw: string): string {
+  try {
+    const u = new URL(raw)
+    u.hash = ''
+    for (const k of [...u.searchParams.keys()]) if (/^(utm_|fbclid|gclid|ref$)/i.test(k)) u.searchParams.delete(k)
+    return `${u.hostname.replace(/^www\./, '')}${u.pathname.replace(/\/+$/, '')}${u.search}`.toLowerCase()
+  } catch {
+    return raw
+  }
+}
+
+/** Pages about people, news or the department itself say nothing about entry requirements, fees or deadlines. */
+const NOT_ABOUT_ADMISSION = /\/(?:[^/]*-)?(?:advisory-board|board|contacts?|people|staff|faculty-members|news|events?|stories|story|alumni|blog|careers|giving|media)(?:-[^/]*)?(?:\/|$)/i
+
 const SITEMAP_BYTES = 1_500_000
 
 /** Page addresses listed in a site's sitemap.xml (robots.txt "Sitemap:" line, else /sitemap.xml), one level of sitemap index followed. Public https only. */
@@ -619,6 +634,7 @@ export async function researchQuestion(input: ResearchInput, deps: ResearchDeps 
     const seen = new Set<string>()
     const topicWords = wordsFor(input.topics)
     // Pages are read three at a time, so the budget goes to more pages rather than waiting on one slow site.
+    const readPages = new Set<string>()
     let fetched = 0
     let onTopicCount = 0 // pages about the asked topic; side pages read on the way do not use up the allowance
     for (;;) {
@@ -632,6 +648,10 @@ export async function researchQuestion(input: ResearchInput, deps: ResearchDeps 
       wave.forEach((next, w) => {
         const page = pages[w]
         if (!page) return
+        // The same page reached by two spellings (trailing slash, redirect, tracking query) is read once.
+        const pageKey = canonicalUrl(page.url)
+        if (readPages.has(pageKey)) return
+        readPages.add(pageKey)
         const text = pageText(page.html)
         const published = pageDate(page.html, page.lastModified)
         const stale = isOutdated(published, now)
@@ -644,6 +664,8 @@ export async function researchQuestion(input: ResearchInput, deps: ResearchDeps 
         const onTopic = topicWords.some((word) => `${new URL(page.url).pathname} ${title}`.toLowerCase().includes(word)) || (q != null && matchesQualification(`${new URL(page.url).pathname} ${title}`, q))
         // A page about the topic is kept as a source even when its text gives no readable figure (tables and PDFs), so the answer can point to it.
         if (!passages.length && !onTopic) return
+        // A people, news or department page that happens to share the programme's name is not a source for this answer.
+        if (NOT_ABOUT_ADMISSION.test(new URL(page.url).pathname) && !topicWords.some((word) => new URL(page.url).pathname.toLowerCase().includes(word))) return
         topical.set(page.url, onTopic)
         if (onTopic) onTopicCount++
         sources.push({ url: page.url, publisher: next.publisher, title, retrievedAt: today, published, outdated: stale, via: next.via })

@@ -219,3 +219,37 @@ describe('a programme’s full official name is still the asked programme', () =
     expect(isOtherQualification('Bachelor of Data Science', q)).toBe(true)
   })
 })
+
+describe('research hygiene: one read per page, no people or news pages, exact thresholds asked for', () => {
+  const ADMIT = 'https://www.example-uni.test/data-science/admission-requirements'
+  const BOARD = 'https://www.example-uni.test/data-science/about/advisory-board'
+  const html = (title: string, body: string) => `<html><title>${title}</title><body>${body}</body></html>`
+  const pages: Record<string, Page> = {
+    'https://www.example-uni.test/': page('https://www.example-uni.test/', html('Example University', '<a href="/data-science/admission-requirements/">Admission requirements for the Master of Data Science</a><a href="/data-science/about/advisory-board">Advisory board</a>')),
+    [ADMIT]: page(ADMIT, html('Admission requirements - Master of Data Science', '<p>Applicants need an honours bachelor’s degree in computer science or statistics with a minimum overall average of 78%.</p><p>IELTS 7.5 with 7.0 in writing and speaking is required for the Master of Data Science.</p>')),
+    [BOARD]: page(BOARD, html('Advisory board - Master of Data Science', '<p>Eric Rancourt is a former strategic adviser with 36 years of experience in statistics and professional experience in data science.</p>')),
+  }
+  beforeEach(() => clearResearchCache())
+
+  it('reads a page once however its address is spelled, and ignores the advisory-board page', async () => {
+    const result = await researchQuestion(
+      { topics: ['entry or language requirements'], course: 'Master of Data Science', universities: [], universityName: 'Example University', search: { search: async () => [`${ADMIT}/`, `${ADMIT}?utm_source=x`, BOARD] } },
+      { fetchPage: async (u) => pages[u.replace(/\/$/, '').replace(/\?.*/, '')] ?? pages[u] ?? null, siteFor: async () => 'https://www.example-uni.test/' },
+    )
+    expect(result.record.sources.filter((s) => /admission-requirements/.test(s.url))).toHaveLength(1)
+    expect(result.items.filter((i) => /78%/.test(i.text))).toHaveLength(1)
+    expect(result.items.some((i) => /Rancourt/.test(i.text))).toBe(false)
+  })
+
+  it('canonicalUrl treats trailing slashes, fragments and tracking parameters as one page', async () => {
+    const { canonicalUrl } = await import('@/lib/derek/research')
+    expect(canonicalUrl('https://www.example.edu/a/b/?utm_source=x#top')).toBe(canonicalUrl('https://example.edu/a/b'))
+    expect(canonicalUrl('https://example.edu/a?id=1')).not.toBe(canonicalUrl('https://example.edu/a?id=2'))
+  })
+
+  it('tells Derek to state exact thresholds and prerequisite courses, not vague areas', async () => {
+    const { DEREK_INSTRUCTIONS } = await import('@/lib/derek/provider')
+    expect(DEREK_INSTRUCTIONS).toMatch(/stating exactly every threshold EVIDENCE gives[^;]*prerequisite courses by name and code/)
+    expect(DEREK_INSTRUCTIONS).toMatch(/never replacing a number or a named course with a vague phrase/)
+  })
+})

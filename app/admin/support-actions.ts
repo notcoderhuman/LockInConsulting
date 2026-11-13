@@ -288,7 +288,12 @@ export async function testResearchAction(): Promise<ActionState> {
     report.push(`Search provider: ${search ? 'Tavily (free plan)' : 'none configured (TAVILY_API_KEY not set): official-site discovery only'}`)
 
     // 1-3. A university LockIn does not list: its official site is found, programme pages are read, requirement passages extracted.
-    const result = await R.researchQuestion({ ...input, search })
+    const seen: string[] = []
+    const spy = search ? { search: async (q: string, sig: AbortSignal) => { const urls = await search.search(q, sig); seen.push(...urls); return urls } } : null
+    const result = await R.researchQuestion({ ...input, search: spy })
+    const where = (u: string) => `${new URL(u).hostname.replace(/^www\./, '')}${new URL(u).pathname.slice(0, 70)}`
+    report.push(`Search returned ${seen.length}: ${seen.slice(0, 6).map(where).join(', ') || 'none'}`)
+    report.push(`Read: ${result.record.sources.slice(0, 8).map((x) => where(x.url)).join(', ') || 'none'}`)
     const hosts = [...new Set(result.record.sources.map((x) => host(x.url)))]
     report.push(`Official site: ${result.record.official?.[0] ? host(result.record.official[0]) : 'not found'}`)
     report.push(`Pages read: ${result.record.sources.length} (${hosts.slice(0, 3).join(', ') || 'none'}); passages extracted: ${result.items.length}`)

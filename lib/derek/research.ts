@@ -701,6 +701,9 @@ export async function researchQuestion(input: ResearchInput, deps: ResearchDeps 
     for (let i = sources.length - 1; i >= 0; i--) if (!topical.get(sources[i].url)) sources.splice(i, 1)
     outdated.splice(0, outdated.length, ...sources.filter((x) => x.outdated).map((x) => `${new URL(x.url).hostname} (page last updated ${x.published})`))
   }
+  // Only a page the answer actually rests on can make it "possibly out of date": an old, unrelated page that gave no passage does not.
+  const usedUrls = new Set(items.filter((i) => !/text gave no figure/.test(i.text)).map((i) => i.sourceUrl))
+  outdated.splice(0, outdated.length, ...sources.filter((x) => x.outdated && usedUrls.has(x.url)).map((x) => `${new URL(x.url).hostname} (page last updated ${x.published})`))
   // Best first: lines from pages about the asked qualification, lines that say a programme is closed, then lines with figures.
   const aboutAsked = new Set(sources.filter((x) => q != null && matchesQualification(`${new URL(x.url).pathname} ${x.title}`, q)).map((x) => x.url))
   const rank = (i: EvidenceItem) => (aboutAsked.has(i.sourceUrl) ? 4 : 0) + (CLOSED_RE.test(i.text) ? 2 : 0) + (/english language|admission requirements/i.test(i.text) ? 2 : 0) + (/\d/.test(i.text) ? 1 : 0)

@@ -58,7 +58,10 @@ type Json = Record<string, unknown>
 const isObj = (v: unknown): v is Json => typeof v === 'object' && v !== null && !Array.isArray(v)
 const count = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.floor(v) : undefined)
 
-export function buildGeminiRequest(req: DraftRequest, maxOutputTokens = GEMINI_MAX_OUTPUT_TOKENS) {
+/** An answer built from several university pages (requirements with routes, scores and prerequisites) needs room to finish its links and caveats. */
+export const GEMINI_MAX_OUTPUT_TOKENS_RESEARCHED = 1200
+
+export function buildGeminiRequest(req: DraftRequest, maxOutputTokens = req.evidence.some((e) => e.ref.startsWith('web:')) ? GEMINI_MAX_OUTPUT_TOKENS_RESEARCHED : GEMINI_MAX_OUTPUT_TOKENS) {
   const evidence = req.evidence.length
     ? req.evidence.map((e) => `- [${e.ref}] ${e.text} ${citation(e)}`).join('\n')
     : '- none: there is no verified LockIn directory record for this question.'

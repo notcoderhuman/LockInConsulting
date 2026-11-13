@@ -253,3 +253,27 @@ describe('research hygiene: one read per page, no people or news pages, exact th
     expect(DEREK_INSTRUCTIONS).toMatch(/never replacing a number or a named course with a vague phrase/)
   })
 })
+
+describe('researched answers have room to finish, and an unrelated old page does not make them "out of date"', () => {
+  it('allows a longer reply only when the evidence comes from web pages', async () => {
+    const { buildGeminiRequest, GEMINI_MAX_OUTPUT_TOKENS, GEMINI_MAX_OUTPUT_TOKENS_RESEARCHED } = await import('@/lib/derek/providers/gemini')
+    const web = { ref: 'web:ab12cd34:0', text: 'x', sourceUrl: 'https://u.test/a', publisher: 'u', checkedAt: '2026-11-13', unverified: true as const }
+    expect(buildGeminiRequest({ question: 'q', history: [], evidence: [web], instructions: 'i' } as never).generationConfig.maxOutputTokens).toBe(GEMINI_MAX_OUTPUT_TOKENS_RESEARCHED)
+    expect(buildGeminiRequest({ question: 'q', history: [], evidence: [], instructions: 'i' } as never).generationConfig.maxOutputTokens).toBe(GEMINI_MAX_OUTPUT_TOKENS)
+    expect(GEMINI_MAX_OUTPUT_TOKENS_RESEARCHED * 3).toBeGreaterThan(3000) // enough for the 3000-character researched answer limit
+  })
+  it('only pages that supplied a passage can be reported as outdated', async () => {
+    const OLD = 'https://www.example-uni.test/data-science/graduate-programs'
+    const NEW = 'https://www.example-uni.test/data-science/admission-requirements'
+    const pages: Record<string, Page> = {
+      [NEW]: { url: NEW, lastModified: null, html: '<html><title>Admission requirements - Master of Data Science</title><body><p>Applicants need an honours bachelor’s degree with a minimum overall average of 78% for the Master of Data Science.</p><meta name="dateModified" content="2026-10-01"></body></html>' },
+      [OLD]: { url: OLD, lastModified: 'Fri, 14 Feb 2025 10:00:00 GMT', html: '<html><title>Graduate programs - Master of Data Science</title><body><nav>menu</nav></body></html>' },
+    }
+    const result = await researchQuestion(
+      { topics: ['entry or language requirements'], course: 'Master of Data Science', universities: [], universityName: 'Example University', search: { search: async () => [NEW, OLD] } },
+      { fetchPage: async (u) => pages[u] ?? null, siteFor: async () => null, now: () => new Date('2026-11-13T00:00:00Z') },
+    )
+    expect(result.items.some((i) => /78%/.test(i.text))).toBe(true)
+    expect(result.record.outdated).toEqual([])
+  })
+})

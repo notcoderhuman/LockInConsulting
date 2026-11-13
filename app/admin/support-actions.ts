@@ -294,6 +294,11 @@ export async function testResearchAction(): Promise<ActionState> {
     const where = (u: string) => `${new URL(u).hostname.replace(/^www\./, '')}${new URL(u).pathname.slice(0, 70)}`
     report.push(`Search returned ${seen.length}: ${seen.slice(0, 6).map(where).join(', ') || 'none'}`)
     report.push(`Read: ${result.record.sources.slice(0, 8).map((x) => where(x.url)).join(', ') || 'none'}`)
+    for (const u of seen.filter((x) => /uwaterloo\.ca/.test(x)).slice(0, 2)) {
+      const page = await R.fetchPublicPage(u, AbortSignal.timeout(10_000)).catch(() => null)
+      const text = page ? R.pageText(page.html) : ''
+      report.push(`Fetch ${where(u)}: ${page ? `${Math.round(page.html.length / 1024)} KB html, ${text.length} chars text, ${R.relevantPassages(text, input.topics, input.course).length} passages` : 'no page (blocked, timed out or not HTML)'}`)
+    }
     const hosts = [...new Set(result.record.sources.map((x) => host(x.url)))]
     report.push(`Official site: ${result.record.official?.[0] ? host(result.record.official[0]) : 'not found'}`)
     report.push(`Pages read: ${result.record.sources.length} (${hosts.slice(0, 3).join(', ') || 'none'}); passages extracted: ${result.items.length}`)

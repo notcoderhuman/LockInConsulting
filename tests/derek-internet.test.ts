@@ -277,3 +277,20 @@ describe('researched answers have room to finish, and an unrelated old page does
     expect(result.record.outdated).toEqual([])
   })
 })
+
+describe('a different science degree never stands in for the asked one (Waterloo regression)', () => {
+  it('"Master of Mathematics in Computer Science" does not cover "Master of Data Science"', async () => {
+    const { dropOtherCourseEvidence, matchesQualification, parseQualification } = await import('@/lib/derek/qualification')
+    const { evidenceCovers } = await import('@/lib/derek/research')
+    const q = parseQualification('Master of Data Science')!
+    expect(matchesQualification('University of Waterloo: Master of Mathematics (MMath) in Computer Science', q)).toBe(false)
+    expect(matchesQualification('Master of Data Science and Artificial Intelligence', q)).toBe(true)
+    const records = [
+      { ref: 'draft_course:19', text: 'Course: Master of Mathematics (MMath) in Computer Science, University of Waterloo', sourceUrl: 'https://uwaterloo.ca/cs', publisher: 'u', checkedAt: '2026-11-13', unverified: true as const },
+      { ref: 'draft_course:19:language', text: 'Course language requirement: IELTS 7.0 for the Master of Mathematics in Computer Science (science)', sourceUrl: 'https://uwaterloo.ca/cs', publisher: 'u', checkedAt: '2026-11-13', unverified: true as const },
+    ]
+    const kept = dropOtherCourseEvidence(records, q)
+    expect(kept).toEqual([])
+    expect(evidenceCovers(kept, ['entry or language requirements'], 'Master of Data Science')).toBe(false)
+  })
+})

@@ -48,7 +48,9 @@ export function parseQualification(text: string | null | undefined): Qualificati
   const t = normalise((text ?? '').trim())
   if (t.length < 3) return null
   const level = (Object.keys(LEVEL_WORDS) as Level[]).find((l) => LEVEL_WORDS[l].test(t)) ?? null
-  const own = t.split(/[^a-z0-9]+/).filter((w) => w.length >= 4 && !GENERIC.has(w))
+  let own = t.split(/[^a-z0-9]+/).filter((w) => w.length >= 4 && !GENERIC.has(w))
+  // "Data Science" is matched by its own phrase (see ALIASES), not by the bare word "science", which would also match Computer Science, Dairy Science and the like.
+  if (/data science/.test(t)) own = own.filter((w) => w !== 'science')
   const aliases = ALIASES.filter(([re]) => re.test(t)).flatMap(([, list]) => list)
   const words = [...new Set([...own, ...aliases])]
   return words.length ? { text: text!.trim(), level, words } : null

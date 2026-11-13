@@ -3035,6 +3035,22 @@ describe('Derek on the open internet, and student conduct (Owner brief, 13 Nov 2
       expect(body).toContain(`(${GOV})`)
     })
 
+    it('a university whose directory entry is a different course (Computer Science) is still researched for Data Science (production regression)', async () => {
+      const s = await makeStudent('Asha Rao')
+      await accept(s)
+      const q = await C.createConversation(pool(), s, { body: 'What are the entry requirements for the Master of Data Science at University of Waterloo?', clientRequestId: rid(), subject: 'Canada · Master of Data Science' })
+      const draftRecords = [
+        { ref: 'draft_university:25', text: 'University of Waterloo (Canada), official website https://uwaterloo.ca', sourceUrl: 'https://uwaterloo.ca/', publisher: 'University website', checkedAt: TODAY, unverified: true as const },
+        { ref: 'draft_course:19', text: 'Course: Master of Mathematics (MMath) in Computer Science at the University of Waterloo', sourceUrl: 'https://uwaterloo.ca/future-graduate-students/programs/by-faculty/math/computer-science-master-math-mmath', publisher: 'University website', checkedAt: TODAY, unverified: true as const },
+        { ref: 'draft_course:19:language', text: 'Language requirement for the Master of Mathematics in Computer Science: IELTS 7.0', sourceUrl: 'https://uwaterloo.ca/future-graduate-students/programs/by-faculty/math/computer-science-master-math-mmath', publisher: 'University website', checkedAt: TODAY, unverified: true as const },
+      ]
+      const calls: import('@/lib/derek/research').ResearchInput[] = []
+      const { provider } = counting((req) => `Waterloo’s [international tuition page](${FEES}) lists the entry requirement for the Master of Data Science; ${req.evidence.length} notes were read. Confirm on that page.`)
+      await D.prepareDerekDraft(pool(), q.conversationId, q.triggerMessageId!, { provider, status: FREE, research: real(calls), loadEvidence: async () => draftRecords })
+      expect(calls).toHaveLength(1) // the other course's record did not count as "LockIn already has the answer"
+      expect(calls[0]).toMatchObject({ topics: ['entry or language requirements'], course: 'Master of Data Science' })
+    })
+
     it('a refused visa, deportation or an appeal still goes to a person, never to Derek', async () => {
       const s = await makeStudent('Asha Rao')
       await accept(s)

@@ -209,3 +209,13 @@ describe('visa questions: information is answered carefully, adverse cases go to
     expect(assessDraft(invented, { level: 'low', reasons: [] }, ev).reasons.join()).toMatch(/visa or work-rights rule/)
   })
 })
+
+describe('a programme’s full official name is still the asked programme', () => {
+  it('does not treat "Master of Data Science and Artificial Intelligence" as another qualification, but still rejects other subjects', async () => {
+    const { isOtherQualification, parseQualification } = await import('@/lib/derek/qualification')
+    const q = parseQualification('Master of Data Science')!
+    expect(isOtherQualification('Master of Data Science and Artificial Intelligence', q)).toBe(false)
+    expect(isOtherQualification('Master of Dairy Science and Technology', q)).toBe(true)
+    expect(isOtherQualification('Bachelor of Data Science', q)).toBe(true)
+  })
+})

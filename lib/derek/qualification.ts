@@ -81,6 +81,9 @@ export function isOtherQualification(title: string, q: Qualification, { ignoreLe
   // "Master of Dairy Science and Technology" shares the common word "science" with a Computer Science question but names another subject.
   const head = normalise(title).split(/\s[-–—|:]\s/)[0]
   const subject = head.split(/[^a-z0-9]+/).filter((t) => t.length >= 4 && !GENERIC.has(t) && !PAGE_WORDS.has(t))
+  // "Master of Data Science and Artificial Intelligence" is the asked Data Science programme under its full name, not another subject.
+  const own = normalise(q.text).split(/[^a-z0-9]+/).filter((w) => w.length >= 4 && !GENERIC.has(w))
+  if (own.length > 0 && own.every((w) => head.includes(w))) return false
   return subject.some((t) => !q.words.some((w) => w.includes(t) || t.includes(w)))
 }
 

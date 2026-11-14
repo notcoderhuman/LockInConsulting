@@ -26,6 +26,7 @@ import {
   updateSupportSettingsAction,
 } from '@/app/admin/support-actions'
 import { controlClass, describedBy, Field, FormMessage } from './form-controls'
+import { EVAL_QUESTIONS } from '@/lib/derek/eval-questions'
 import { useFormAction } from './use-form-action'
 
 const MESSAGE_MAX = 4000
@@ -355,7 +356,14 @@ export function ResearchTestForm() {
   const { state, pending, onSubmit } = useFormAction(testResearchAction)
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-3">
-      <p className="text-sm leading-relaxed text-muted-foreground">Runs a live internet research test for a university that is not in the directory (no student data): finds its official site, reads its pages, and has Gemini answer from them.</p>
+      <p className="text-sm leading-relaxed text-muted-foreground">Evaluates Derek&apos;s internet research on one representative question (no student, no student quota): the pages read, what each says, the answer a student would get, and what it left out. One web search per run.</p>
+      <select name="preset" defaultValue="admissions" className={controlClass} aria-label="Question to evaluate">
+        {EVAL_QUESTIONS.map((q) => (
+          <option key={q.id} value={q.id}>
+            {q.label}
+          </option>
+        ))}
+      </select>
       <FormMessage state={state} />
       <Button type="submit" variant="outline" disabled={pending} className="self-start">
         {pending ? 'Testing…' : 'Test internet research'}

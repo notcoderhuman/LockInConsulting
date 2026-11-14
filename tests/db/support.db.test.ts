@@ -3051,6 +3051,53 @@ describe('Derek on the open internet, and student conduct (Owner brief, 13 Nov 2
       expect(calls[0]).toMatchObject({ topics: ['entry or language requirements'], course: 'Master of Data Science' })
     })
 
+    it('completes an answer that drops published prerequisites, never repeats an impossible score as settled, and asks the team to follow up', async () => {
+      const s = await makeStudent('Asha Rao')
+      await accept(s)
+      const q = await C.createConversation(pool(), s, { body: 'What are the entry requirements for the Master of Data Science at University of Waterloo?', clientRequestId: rid(), subject: 'Canada · Master of Data Science' })
+      const PROG = 'https://uwaterloo.test/programmes/data-science'
+      const ADMIT = 'https://uwaterloo.test/data-science/admission-requirements'
+      const ENGLISH = 'https://uwaterloo.test/admissions/english-language-requirements'
+      const item = (url: string, ref: string, text: string): EvidenceItem => ({ ref, text: `${UNVERIFIED_TAG}: ${text}`, sourceUrl: url, publisher: 'uwaterloo.test', checkedAt: TODAY, unverified: true })
+      const researchResult: ResearchResult = {
+        items: [
+          item(ADMIT, 'web:aaaa1111:prereq', 'the prerequisite courses listed on the page "Admission Requirements" ::: Intro to computer science, e.g., CS 115 and CS 116 ;; Probability, e.g., STAT 230 ;; Algorithms, e.g., CS 341'),
+          item(PROG, 'web:bbbb2222:0', 'from the web page "Master of Data Science": Honours bachelor’s degree or equivalent with a minimum overall average of 78%.'),
+          item(PROG, 'web:bbbb2222:1', 'from the web page "Master of Data Science": TOEFL 5 (writing 5, speaking 5), IELTS 7.5 (writing 7.0, speaking 7.0)'),
+          item(ENGLISH, 'web:cccc3333:0', 'from the web page "English language requirements": The official language of instruction is English and accepted tests include IELTS Academic and TOEFL iBT.'),
+        ],
+        record: {
+          attempted: true,
+          query: 'University of Waterloo Master of Data Science entry or language requirements official',
+          sources: [PROG, ADMIT, ENGLISH].map((url) => ({ url, publisher: 'uwaterloo.test', title: url.includes('admission') ? 'Admission Requirements | Data Science' : url.includes('english') ? 'English language requirements' : 'Master of Data Science', retrievedAt: TODAY, published: null, outdated: false, via: 'search' as const })),
+          conflicts: [],
+          outdated: [],
+          sourceProblems: ['TOEFL 5 on uwaterloo.test/programmes/data-science cannot be a TOEFL total score, so the page probably has an error'],
+          failure: null,
+        },
+      }
+      const { provider, state } = counting(
+        () => `Waterloo asks for an honours bachelor’s degree with a minimum overall average of 78%, plus some prerequisite courses. For English you need TOEFL 5 or IELTS 7.5 with 7.0 in writing and speaking, as the [programme page](${PROG}) lists. Meeting the minimum does not guarantee admission.`,
+      )
+      const out = await D.prepareDerekDraft(pool(), q.conversationId, q.triggerMessageId!, { provider, status: FREE, research: async () => researchResult, loadEvidence: async () => [] })
+      expect(out, JSON.stringify(await D.listDrafts(pool(), owner, q.conversationId))).toMatchObject({ state: 'auto_sent' })
+      // The model was told about every course, and about the figure that cannot be right.
+      const note = String(state.requests[0].guidance?.note)
+      expect(note).toMatch(/CS 115[\s\S]*STAT 230[\s\S]*CS 341[\s\S]*give ALL of these/)
+      expect(note).toMatch(/SOURCE PROBLEM[\s\S]*TOEFL 5[\s\S]*\[English language requirements\]\(https:\/\/uwaterloo\.test\/admissions\/english-language-requirements\)/)
+      const [body] = await bodies(q.conversationId)
+      for (const code of ['CS 115', 'STAT 230', 'CS 341']) expect(body).toContain(code) // completed from the evidence
+      expect(body).toMatch(/looks like a typing error, because a TOEFL total cannot be 5/)
+      expect(body).toContain('](https://uwaterloo.test/admissions/english-language-requirements)')
+      expect(body).toContain(D.PRELIMINARY_NOTE) // an unresolved source problem is preliminary
+      expect(body).not.toMatch(/UNVERIFIED|Not yet checked|From the LockIn directory|:::|web:[0-9a-f]{8}/)
+      // The team is asked to follow up, naming the problem.
+      const notes = await rows<{ title: string }>("SELECT title FROM notifications WHERE conversation_id = ? AND kind = 'preliminary_answer'", [q.conversationId]).catch(() => [] as { title: string }[])
+      const all = await rows<{ title: string }>('SELECT title FROM notifications WHERE conversation_id = ?', [q.conversationId])
+      expect(JSON.stringify([...notes, ...all])).toMatch(/cannot be right/)
+      expect(await left(s)).toBe(9)
+    })
+
     it('a refused visa, deportation or an appeal still goes to a person, never to Derek', async () => {
       const s = await makeStudent('Asha Rao')
       await accept(s)

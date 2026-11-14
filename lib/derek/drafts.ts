@@ -12,6 +12,7 @@ import { AUTO_REPLY_LIMITS, decideAutoReply, keepsQualifiers, maxCharsFor, NOT_C
 import { createProvider, derekDailyTokenLimit, derekMaxAttempts, getDerekStatus, type DerekStatus } from './config'
 import { loadEvidence } from './evidence'
 import { recordMisuse, sendRestrictionEmail } from './abuse'
+import { completeAnswer, completenessNote } from './completeness'
 import { institutionNames } from './discovery'
 import { analyseQuestion, COMPARISON_TARGET_CHARS, detectDestinations, studentPlanFromSubject } from './guidance'
 import { commitAllowance, releaseAllowance, reserveAllowance } from './allowance'
@@ -144,7 +145,9 @@ export function researchNote(r: ResearchResult): string {
     return `The university's own pages were checked just now and gave nothing usable for this (${r.record.failure ?? 'no relevant text'}). Start with [UNCERTAIN], say plainly that you could not confirm it, tell the student which official page will confirm it and what to look for there, and give no figure or date.`
   const parts = ["The EVIDENCE lines marked UNVERIFIED that come from web pages are the university's own pages, read just now. Tell the student what those pages say in natural words, name the page, and link it with descriptive text. When they state the answer, give it directly and completely, without [UNCERTAIN] and without saying anything is unverified: the source is the university itself."]
   if (r.record.outdated.length) parts.push(`Some pages are old (${r.record.outdated.join('; ')}): say the information may be out of date and start with [UNCERTAIN].`)
-  if (r.record.conflicts.length) parts.push(`The sources disagree (${r.record.conflicts.join('; ')}): say so plainly, do not pick one as correct, and start with [UNCERTAIN].`)
+  if (r.record.conflicts.length) parts.push(`The sources disagree (${r.record.conflicts.join('; ')}): explain the difference naturally in one or two sentences, link each page, say which one is the university-wide or authoritative page to confirm on, do not pick one as correct, and start with [UNCERTAIN].`)
+  const extra = completenessNote(r.items, r.record.sources)
+  if (extra) parts.push(extra)
   return parts.join(' ')
 }
 
@@ -153,12 +156,13 @@ export function researchFlags(r: ResearchResult): string[] {
   const flags: string[] = []
   if (!r.items.length) flags.push(`Web research could not verify this: ${r.record.failure ?? 'nothing relevant was found'}`)
   for (const c of r.record.conflicts) flags.push(`Sources conflict: ${c}`)
+  for (const p of r.record.sourceProblems ?? []) flags.push(`Source problem: ${p}`)
   for (const o of r.record.outdated) flags.push(`Outdated source: ${o}`)
   return flags
 }
 
 async function notifyPreliminary(conn: PoolConnection, conversationId: number, draftId: number, flags: string[]) {
-  const why = flags.some((f) => f.startsWith('Sources conflict')) ? 'the sources conflict' : flags.some((f) => f.startsWith('Outdated')) ? 'the only source is out of date' : flags.some((f) => f.startsWith('Web research')) ? 'web research found nothing' : 'he was not sure'
+  const why = flags.some((f) => f.startsWith('Sources conflict')) ? 'the sources conflict' : flags.some((f) => f.startsWith('Source problem')) ? 'a university page publishes a figure that cannot be right' : flags.some((f) => f.startsWith('Outdated')) ? 'the only source is out of date' : flags.some((f) => f.startsWith('Web research')) ? 'web research found nothing' : 'he was not sure'
   // One notification per draft, however many paths send it.
   await createNotification(conn, {
     audience: 'staff_support',
@@ -480,7 +484,9 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
     const bestSource = research ? [...research.record.sources].sort((x, y) => Number(/\bnon-/.test(x.url)) - Number(/\bnon-/.test(y.url)) || x.url.length - y.url.length)[0]?.url : undefined
     const officialPage = research ? (bestSource ?? research.record.official?.[0] ?? null) : null
     // What the student reads: internal labels, citation brackets and evidence tags are turned into plain Markdown (lib/derek/style.ts).
-    const readable = claim.fixed ? text.data : studentFacingText(text.data)
+    const cleaned = claim.fixed ? text.data : studentFacingText(text.data)
+    // A published prerequisite the answer left out, or an impossible score repeated without caution, is completed from the evidence itself (lib/derek/completeness.ts).
+    const readable = research && !claim.fixed ? completeAnswer(cleaned, evidence, research.record.sources) : cleaned
     const pointer = preliminary && officialPage && !readable.includes(officialPage) ? `\n\nYou can start from the official page: [${officialLabel(officialPage)}](${officialPage})` : ''
     const body = preliminary ? `${PRELIMINARY_NOTE}\n\n${readable}${pointer}` : readable
     if (preliminary) risk.reasons = [PRELIMINARY_REASON, ...flags]

@@ -272,95 +272,106 @@ let lastResearchTestAt = 0
  * reads its pages (sitemap, links, web search when configured), extracts passages, has Gemini answer from them, and checks the failure path.
  * Sends only a public university name and topic to the search service. Reports counts and host names. At most once a minute.
  */
-export async function testResearchAction(): Promise<ActionState> {
+export async function testResearchAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   return run('support.settings', async () => {
     const key = readGeminiApiKey()
     if (!key) throw new SupportError(400, 'GEMINI_API_KEY is not set in this environment.')
-    if (Date.now() - lastResearchTestAt < 60_000) throw new SupportError(429, 'A research test ran less than a minute ago.')
+    if (Date.now() - lastResearchTestAt < 45_000) throw new SupportError(429, 'A research test ran less than 45 seconds ago.')
+    const { EVAL_QUESTIONS } = await import('@/lib/derek/eval-questions')
+    const chosen = EVAL_QUESTIONS.find((q) => q.id === formText(form, 'preset')) ?? EVAL_QUESTIONS[0]
     lastResearchTestAt = Date.now()
     const R = await import('@/lib/derek/research')
     const { GeminiProvider } = await import('@/lib/derek/providers/gemini')
     const { DEREK_INSTRUCTIONS } = await import('@/lib/derek/provider')
-    const { analyseQuestion } = await import('@/lib/derek/guidance')
-    const { researchNote } = await import('@/lib/derek/drafts')
+    const { analyseQuestion, detectDestinations } = await import('@/lib/derek/guidance')
+    const { institutionNames } = await import('@/lib/derek/discovery')
+    const { askedQualification } = await import('@/lib/derek/qualification')
+    const { researchNote, researchFlags } = await import('@/lib/derek/drafts')
+    const { completeAnswer, impossibleScores } = await import('@/lib/derek/completeness')
     const { studentFacingText, tidyDraft } = await import('@/lib/derek/style')
     const host = (u: string) => new URL(u).hostname.replace(/^www\./, '')
-    const question = 'What are the entry requirements for the Master of Data Science at University of Waterloo?'
-    const input = { topics: ['entry or language requirements'], course: 'Master of Data Science', universities: [], universityName: 'University of Waterloo', destinations: [{ iso2: 'CA', name: 'Canada' }] }
+    const question = chosen.question
+    // The same inputs the student pipeline derives from the question itself (no directory records, no student data).
+    const guidance0 = analyseQuestion(question, [])
+    const institutions = institutionNames(question)
+    const input = {
+      topics: guidance0.topics,
+      course: askedQualification(question),
+      universities: [],
+      universityName: institutions[0] ?? null,
+      destinations: detectDestinations(question).map((d) => ({ iso2: d.iso2, name: d.name })),
+    }
     const out: string[] = []
     const search = R.searchProviderFrom()
-    out.push(`SEARCH PROVIDER: ${search ? 'Tavily (free plan)' : 'none configured (TAVILY_API_KEY not set): official-site discovery only'}`)
+    out.push(`QUESTION (${chosen.id}): ${question}`)
+    out.push(`DERIVED: kind ${guidance0.kind}; topics ${input.topics.join(', ') || 'none'}; course ${input.course ?? 'none'}; university ${input.universityName ?? 'none'}; destinations ${input.destinations.map((d) => d.iso2).join(', ') || 'none'}\nPRODUCTION WOULD RESEARCH: ${guidance0.kind === 'specific_fact' || institutions.length > 0 ? 'yes' : 'no (general question: answered without research)'}`)
+    out.push(`SEARCH PROVIDER: ${search ? 'Tavily (free plan)' : 'none configured (TAVILY_API_KEY not set)'}`)
 
-    // One real research run, exactly as a student's question would use (one Tavily search at most; the spy only records what it returns).
     const seen: string[] = []
     const spy = search ? { search: async (q: string, sig: AbortSignal) => { const urls = await search.search(q, sig); seen.push(...urls); return urls } } : null
     const result = await R.researchQuestion({ ...input, search: spy })
     out.push(`OFFICIAL SITE: ${result.record.official?.[0] ? host(result.record.official[0]) : 'not found'}`)
     out.push(`SEARCH RETURNED ${seen.length} URL(s):\n${seen.map((u) => `  ${u}`).join('\n') || '  none'}`)
-    // Source URLs and the passages read from each.
     const bySource = new Map<string, typeof result.items>()
     for (const i of result.items) bySource.set(i.sourceUrl, [...(bySource.get(i.sourceUrl) ?? []), i])
     const passageText = (t: string) => t.replace(/^UNVERIFIED[^:]*: from the web page "[^"]*"(?: \([^)]*\))?: /, '').replace(/^UNVERIFIED[^:]*: /, '')
     out.push(`PAGES READ (${result.record.sources.length}) and passages taken (${result.items.length}):`)
     for (const s of result.record.sources) {
       const items = bySource.get(s.url) ?? []
-      out.push(`  ${s.url}${s.published ? ` (page dated ${s.published})` : ''}\n${items.map((i, n) => `    [${n + 1}] ${passageText(i.text).slice(0, 260)}`).join('\n') || '    (no readable figure on this page)'}`)
+      out.push(`  ${s.url}${s.published ? ` (page dated ${s.published})` : ''}\n${items.map((i, n) => `    [${n + 1}] ${passageText(i.text).slice(0, 230)}`).join('\n') || '    (no readable figure on this page)'}`)
     }
     if (result.record.failure) out.push(`RESEARCH NOTE: ${result.record.failure}`)
+    out.push(`SOURCE CONFLICTS: ${result.record.conflicts.join('; ') || 'none'}\nIMPLAUSIBLE FIGURES: ${(result.record.sourceProblems ?? []).join('; ') || 'none'}\nOUTDATED: ${result.record.outdated.join('; ') || 'none'}\nWHAT THE TEAM WOULD BE TOLD: ${researchFlags(result).join(' | ') || 'nothing (no flag)'}`)
 
-    // The answer, built the way the student pipeline builds it (same instructions, guidance note and evidence order), then cleaned for the student.
-    if (result.items.length) {
-      const provider = new GeminiProvider({ apiKey: key, dailyDraftLimit: 1 })
-      const officialPages = (result.record.official ?? []).slice(0, 2).map((url, i) => ({ ref: `university:official:${i}`, text: `The university's official page: ${url}`, sourceUrl: url, publisher: 'University website', checkedAt: new Date().toISOString().slice(0, 10), unverified: true as const }))
-      const evidence = [...result.items, ...officialPages].slice(0, 30)
-      const analysed = analyseQuestion(question, evidence)
-      try {
-        const answer = await provider.generate({ question, history: [], evidence, instructions: DEREK_INSTRUCTIONS, guidance: { ...analysed, note: `${analysed.note} ${researchNote(result)}` } }, { signal: AbortSignal.timeout(40_000) })
-        const text = studentFacingText(tidyDraft(answer.text))
-        out.push(`GEMINI ANSWER AS THE STUDENT READS IT (${text.length} characters):\n${text}`)
-        const links = [...text.matchAll(/\]\((https:\/\/[^)\s]+)\)/g)].map((m) => m[1])
-        const bare = /(?<!\]\()https?:\/\//.test(text)
-        const internal = /UNVERIFIED|not yet checked|From the LockIn directory|\[(?:web|university|course):|\(source:|evidence:/i.test(text)
-        out.push(`CHECKS: ${links.length} clickable link(s) (${links.map(host).join(', ') || 'none'}); bare addresses ${bare ? 'PRESENT' : 'none'}; internal wording ${internal ? 'PRESENT' : 'none'}`)
+    // The answer, built the way the student pipeline builds it, then cleaned and completed.
+    const provider = new GeminiProvider({ apiKey: key, dailyDraftLimit: 1 })
+    const officialPages = (result.record.official ?? []).slice(0, 2).map((url, i) => ({ ref: `university:official:${i}`, text: `The university's official page: ${url}`, sourceUrl: url, publisher: 'University website', checkedAt: new Date().toISOString().slice(0, 10), unverified: true as const }))
+    const evidence = [...result.items, ...officialPages].slice(0, 30)
+    const analysed = analyseQuestion(question, evidence)
+    try {
+      const answer = await provider.generate({ question, history: [], evidence, instructions: DEREK_INSTRUCTIONS, guidance: { ...analysed, note: `${analysed.note} ${researchNote(result)}` } }, { signal: AbortSignal.timeout(40_000) })
+      const cleaned = studentFacingText(tidyDraft(answer.text))
+      const text = completeAnswer(cleaned, evidence, result.record.sources)
+      const added = text.length - cleaned.length
+      out.push(`GEMINI ANSWER AS THE STUDENT READS IT (${text.length} characters${answer.uncertain ? '; Derek marked it uncertain' : ''}${answer.incomplete ? '; CUT OFF' : ''}${added > 0 ? `; ${added} characters were added from the evidence to complete it` : ''}):\n${text}`)
+      const links = [...text.matchAll(/\]\((https:\/\/[^)\s]+)\)/g)].map((m) => m[1])
+      const bare = /(?<!\]\()https?:\/\//.test(text)
+      const internal = /UNVERIFIED|not yet checked|From the LockIn directory|\[(?:web|university|course):|\(source:|evidence:/i.test(text)
+      const foreign = links.filter((l) => !new Set(evidence.map((e) => e.sourceUrl)).has(l))
+      out.push(`CHECKS: ${links.length} clickable link(s) (${[...new Set(links.map(host))].join(', ') || 'none'}); links not from the evidence ${foreign.length ? `PRESENT (${foreign.join(', ')})` : 'none'}; bare addresses ${bare ? 'PRESENT' : 'none'}; internal wording ${internal ? 'PRESENT' : 'none'}; impossible figure repeated: ${impossibleScores(evidence).some((s) => new RegExp(`${s.test}[^.\\n]{0,40}\\b${s.value}\\b`, 'i').test(text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')) && !/error|typo|mistake|unusual/i.test(text)) ? 'YES' : 'no'}`)
 
-        // Which passage supports each sentence that states a requirement.
-        const words = (s: string) => new Set((s.toLowerCase().match(/[a-z]{4,}|\d+(?:\.\d+)?/g) ?? []).filter((w) => !['that', 'with', 'this', 'from', 'have', 'will', 'their', 'which', 'also'].includes(w)))
-        const nums = (s: string) => new Set(s.match(/\d+(?:\.\d+)?/g) ?? [])
-        const plain = text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-        const claims = plain.split(/(?<=[.!?])\s+|\n+/).map((s) => s.trim()).filter((s) => s.length > 25 && (/\d/.test(s) || /\b(?:degree|bachelor|honours|average|minimum|ielts|toefl|pte|duolingo|gpa|grade|transcript|reference|statement|resume|interview|prerequisite|course)\b/i.test(s)))
-        out.push('CLAIM SUPPORT:')
-        for (const c of claims.slice(0, 14)) {
-          const cw = words(c)
-          const cn = nums(c)
-          let best: { score: number; item: (typeof result.items)[number] } | null = null
-          for (const i of result.items) {
-            const p = passageText(i.text)
-            const pw = words(p)
-            const pn = nums(p)
-            const score = [...cn].filter((n) => pn.has(n)).length * 3 + [...cw].filter((w) => pw.has(w)).length
-            if (!best || score > best.score) best = { score, item: i }
-          }
-          out.push(`  • ${c.slice(0, 200)}\n    ${best && best.score >= 4 ? `← ${best.item.sourceUrl}\n      “${passageText(best.item.text).slice(0, 220)}”` : '← no single passage matches (general wording)'}`)
-        }
-        // Figures the official pages publish that the answer does not mention.
-        const answerNums = nums(plain)
-        const missed = new Map<string, string>()
+      // Which passage supports each sentence that states a fact, and which facts the pages publish that the answer leaves out.
+      const words = (s: string) => new Set((s.toLowerCase().match(/[a-z]{4,}|\d+(?:\.\d+)?/g) ?? []).filter((w) => !['that', 'with', 'this', 'from', 'have', 'will', 'their', 'which', 'also'].includes(w)))
+      const nums = (s: string) => new Set(s.match(/\d+(?:\.\d+)?/g) ?? [])
+      const plain = text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      const claims = plain.split(/(?<=[.!?])\s+|\n+/).map((s) => s.trim()).filter((s) => s.length > 25 && (/\d/.test(s) || /\b(?:degree|bachelor|honours|average|minimum|ielts|toefl|pte|duolingo|gpa|grade|transcript|reference|statement|resume|interview|prerequisite|course|scholarship|deadline|fee|tuition|permit|visa|apply|application|document)\b/i.test(s)))
+      out.push('CLAIM SUPPORT:')
+      for (const c of claims.slice(0, 16)) {
+        const cw = words(c)
+        const cn = nums(c)
+        let best: { score: number; item: (typeof result.items)[number] } | null = null
         for (const i of result.items) {
-          for (const m of passageText(i.text).matchAll(/[^.\n]{0,80}(?:\d{2}(?:\.\d+)?\s?%|\b[A-D][+-]?\s?(?:average|or higher)|\bIELTS\b[^.\n]{0,30}\d|\bTOEFL\b[^.\n]{0,30}\d|\bminimum\b[^.\n]{0,60}\d|\b\d\.\d{1,2}\b)[^.\n]{0,60}/gi)) {
-            const n = [...nums(m[0])]
-            if (n.length && !n.some((x) => answerNums.has(x)) && missed.size < 8) missed.set(m[0].trim(), i.sourceUrl)
-          }
+          const pw = words(passageText(i.text))
+          const pn = nums(passageText(i.text))
+          const score = [...cn].filter((n) => pn.has(n)).length * 3 + [...cw].filter((w) => pw.has(w)).length
+          if (!best || score > best.score) best = { score, item: i }
         }
-        out.push(`FIGURES ON THE PAGES NOT IN THE ANSWER: ${missed.size ? '' : 'none found'}${[...missed].map(([m, u]) => `\n  • “${m.slice(0, 160)}” (${host(u)})`).join('')}`)
-      } catch (error) {
-        out.push(`GEMINI ANSWER FAILED: ${(error as { code?: string }).code ?? 'error'}`)
+        out.push(`  • ${c.slice(0, 190)}\n    ${best && best.score >= 4 ? `← ${best.item.sourceUrl}\n      “${passageText(best.item.text).slice(0, 200)}”` : '← no single passage matches (general wording)'}`)
       }
+      const answerNums = nums(plain)
+      const missed = new Map<string, string>()
+      for (const i of result.items) {
+        for (const m of passageText(i.text).matchAll(/[^.\n]{0,80}(?:\d{1,3}(?:,\d{3})*(?:\.\d+)?\s?%|(?:[$€£]|CAD|USD|EUR|GBP|AUD)\s?\d[\d,]*|\bIELTS\b[^.\n]{0,30}\d|\bTOEFL\b[^.\n]{0,30}\d|\bminimum\b[^.\n]{0,60}\d|\b\d\.\d{1,2}\b|\b(?:January|February|March|April|May|June|July|August|September|October|November|December) \d{1,2}\b)[^.\n]{0,60}/gi)) {
+          const n = [...nums(m[0])]
+          if (n.length && !n.some((x) => answerNums.has(x)) && missed.size < 10) missed.set(m[0].trim(), i.sourceUrl)
+        }
+      }
+      out.push(`FACTS ON THE PAGES NOT IN THE ANSWER: ${missed.size ? '' : 'none found'}${[...missed].map(([m, u]) => `\n  • “${m.slice(0, 170)}” (${host(u)})`).join('')}`)
+    } catch (error) {
+      out.push(`GEMINI ANSWER FAILED: ${(error as { code?: string }).code ?? 'error'}`)
     }
 
-    // Search failure: the same question with a failing search service still ends honestly (no Tavily call).
-    const broken = await R.researchQuestion({ ...input, universityName: 'Nowhere Example University', search: { search: async () => Promise.reject(new Error('down')) } })
-    out.push(`WITH THE SEARCH FAILING: ${broken.items.length} passage(s), note “${broken.record.failure ?? 'none'}”`)
-    console.info(`[derek:test] research ${out.length} sections, ${result.items.length} passages`)
+    console.info(`[derek:test] research ${chosen.id}: ${result.record.sources.length} pages, ${result.items.length} passages`)
     return { message: out.join('\n\n') }
   })
 }

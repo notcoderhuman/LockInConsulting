@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import dns from 'node:dns/promises'
 import net from 'node:net'
 import type { Pool, RowDataPacket } from 'mysql2/promise'
+import { conflictingScores, impossibleProblems, PREREQ_TAG, prerequisiteLines } from './completeness'
 import { GOV_SEEDS, NOT_A_SOURCE, officialSiteFor } from './discovery'
 import { screenForFreeTier } from './free-tier'
 import { CLOSED_RE, isOtherQualification, matchesQualification, parseQualification, type Qualification } from './qualification'
@@ -54,6 +55,8 @@ export interface ResearchRecord {
   outdated: string[]
   /** The official pages LockIn holds for the universities asked about (their website and course pages). */
   official?: string[]
+  /** Figures a page publishes that cannot be right (a TOEFL total of 5): the answer must not repeat them as settled, and the team follows up. */
+  sourceProblems?: string[]
   /** Why nothing could be used (no site known, fetch failed, no relevant text); null when something was found. */
   failure: string | null
 }
@@ -670,6 +673,17 @@ export async function researchQuestion(input: ResearchInput, deps: ResearchDeps 
         if (onTopic) onTopicCount++
         sources.push({ url: page.url, publisher: next.publisher, title, retrievedAt: today, published, outdated: stale, via: next.via })
         if (stale) outdated.push(`${new URL(page.url).hostname} (page last updated ${published})`)
+        // Prerequisite courses are kept whole and apart from the general passages (short list lines would otherwise be dropped).
+        const prereq = onTopic && /requirement|eligib|entry|appl|document|step/.test(input.topics.join(' ')) ? prerequisiteLines(text.split('\n')) : []
+        if (prereq.length)
+          items.push({
+            ref: `${ref(page.url, 0).slice(0, -2)}:prereq`,
+            text: `${UNVERIFIED_TAG}: ${PREREQ_TAG} "${title}" ::: ${prereq.join(' ;; ')}`,
+            sourceUrl: page.url,
+            publisher: next.publisher,
+            checkedAt: today,
+            unverified: true,
+          })
         if (!passages.length)
           items.push({
             ref: ref(page.url, 0),
@@ -679,7 +693,7 @@ export async function researchQuestion(input: ResearchInput, deps: ResearchDeps 
             checkedAt: today,
             unverified: true,
           })
-        passages.forEach((pass, i) =>
+        passages.filter((p) => !prereq.includes(p.replace(/\s+/g, ' ').trim())).forEach((pass, i) =>
           items.push({
             ref: ref(page.url, i),
             text: `${UNVERIFIED_TAG}: from the web page "${title}"${stale ? ` (last updated ${published}, possibly out of date)` : ''}: ${pass}`,
@@ -706,9 +720,10 @@ export async function researchQuestion(input: ResearchInput, deps: ResearchDeps 
   outdated.splice(0, outdated.length, ...sources.filter((x) => x.outdated && usedUrls.has(x.url)).map((x) => `${new URL(x.url).hostname} (page last updated ${x.published})`))
   // Best first: lines from pages about the asked qualification, lines that say a programme is closed, then lines with figures.
   const aboutAsked = new Set(sources.filter((x) => q != null && matchesQualification(`${new URL(x.url).pathname} ${x.title}`, q)).map((x) => x.url))
-  const rank = (i: EvidenceItem) => (aboutAsked.has(i.sourceUrl) ? 4 : 0) + (CLOSED_RE.test(i.text) ? 2 : 0) + (/english language|admission requirements/i.test(i.text) ? 2 : 0) + (/\d/.test(i.text) ? 1 : 0)
+  const rank = (i: EvidenceItem) => (aboutAsked.has(i.sourceUrl) ? 4 : 0) + (CLOSED_RE.test(i.text) ? 2 : 0) + (/english language|admission requirements/i.test(i.text) ? 2 : 0) + (/\d/.test(i.text) ? 1 : 0) + (i.ref.endsWith(':prereq') ? 5 : 0)
   items.sort((x, y) => rank(y) - rank(x))
   if (!items.length && searchFailure) failure = searchFailure
   if (!items.length && !failure) failure = 'The university pages that could be read did not state this.'
-  return { items, record: { attempted: true, query, sources, conflicts: findConflicts(items, input.topics), outdated, official, failure } }
+  const sourceProblems = impossibleProblems(items)
+  return { items, record: { attempted: true, query, sources, conflicts: [...findConflicts(items, input.topics), ...conflictingScores(items)], outdated, official, ...(sourceProblems.length ? { sourceProblems } : {}), failure } }
 }

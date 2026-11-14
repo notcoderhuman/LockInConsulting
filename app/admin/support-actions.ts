@@ -311,10 +311,20 @@ export async function testResearchAction(_prev: ActionState, form: FormData): Pr
     out.push(`SEARCH PROVIDER: ${search ? 'Tavily (free plan)' : 'none configured (TAVILY_API_KEY not set)'}`)
 
     const seen: string[] = []
-    const spy = search ? { search: async (q: string, sig: AbortSignal) => { const urls = await search.search(q, sig); seen.push(...urls); return urls } } : null
+    const calls: string[] = []
+    const spy = search
+      ? {
+          search: async (q: string, sig: AbortSignal, options?: { domains?: string[] }) => {
+            const urls = await search.search(q, sig, options)
+            seen.push(...urls)
+            calls.push(`${options?.domains ? `[only ${options.domains.join(', ')}] ` : ''}${q.slice(0, 90)} -> ${urls.length}: ${[...new Set(urls.map((u) => new URL(u).hostname.replace(/^www\./, '')))].join(', ')}`)
+            return urls
+          },
+        }
+      : null
     const result = await R.researchAll((i) => R.researchQuestion({ ...i, search: spy }), input, institutions)
     out.push(`OFFICIAL SITE: ${result.record.official?.[0] ? host(result.record.official[0]) : 'not found'}`)
-    out.push(`SEARCH RETURNED ${seen.length} URL(s):\n${seen.map((u) => `  ${u}`).join('\n') || '  none'}`)
+    out.push(`SEARCH CALLS (${calls.length}, ${seen.length} URLs):\n${calls.map((c) => `  ${c}`).join('\n') || '  none'}`)
     const bySource = new Map<string, typeof result.items>()
     for (const i of result.items) bySource.set(i.sourceUrl, [...(bySource.get(i.sourceUrl) ?? []), i])
     const passageText = (t: string) => t.replace(/^UNVERIFIED[^:]*: from the web page "[^"]*"(?: \([^)]*\))?: /, '').replace(/^UNVERIFIED[^:]*: /, '')

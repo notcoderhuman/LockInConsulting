@@ -22,7 +22,10 @@ export function prerequisiteLines(pageLines: string[]): string[] {
     if (line.length > 140 && !/e\.g\.|alt\./i.test(line)) continue
     if (seen.has(line.toLowerCase())) continue
     seen.add(line.toLowerCase())
-    out.push(line)
+    // A footnote ("** STAT334 does not cover…") becomes a labelled note, and inline asterisks are dropped so no stray Markdown reaches the student.
+    const note = line.startsWith('*')
+    const clean = line.replace(/\s*\*+\s*/g, ' ').replace(/\(\s+/g, '(').replace(/\s+\)/g, ')').trim()
+    out.push(note ? `Note: ${clean}` : clean)
     if (out.length >= 16) break
   }
   return out
@@ -138,7 +141,7 @@ export function completeAnswer(answer: string, items: EvidenceItem[], sources: {
   if (blocks.length) {
     const have = codesIn(out)
     // A line counts as covered when the answer names any course of it (alternatives and footnotes need no repeat).
-    const missing = blocks[0].lines.filter((l) => !l.startsWith('*') && codesIn(l).size > 0 && ![...codesIn(l)].some((c) => have.has(c)))
+    const missing = blocks[0].lines.filter((l) => !l.startsWith('Note:') && codesIn(l).size > 0 && ![...codesIn(l)].some((c) => have.has(c)))
     if (missing.length) {
       const title = sources.find((s) => s.url === blocks[0].url)?.title.split(/\s[|–-]\s/)[0].trim() || 'the university’s page'
       out += `\n\nThe university also lists these prerequisite courses on [${title}](${blocks[0].url}):\n${blocks[0].lines.map((l) => `- ${l}`).join('\n')}`

@@ -326,7 +326,7 @@ export async function testResearchAction(_prev: ActionState, form: FormData): Pr
     // The answer, built the way the student pipeline builds it, then cleaned and completed.
     const provider = new GeminiProvider({ apiKey: key, dailyDraftLimit: 1 })
     const officialPages = (result.record.official ?? []).slice(0, 2).map((url, i) => ({ ref: `university:official:${i}`, text: `The university's official page: ${url}`, sourceUrl: url, publisher: 'University website', checkedAt: new Date().toISOString().slice(0, 10), unverified: true as const }))
-    const evidence = [...result.items, ...officialPages].slice(0, 30)
+    const evidence = R.capEvidence([...result.items, ...officialPages], 30)
     const analysed = analyseQuestion(question, evidence)
     try {
       const answer = await provider.generate({ question, history: [], evidence, instructions: DEREK_INSTRUCTIONS, guidance: { ...analysed, note: `${analysed.note} ${researchNote(result)}` } }, { signal: AbortSignal.timeout(40_000) })

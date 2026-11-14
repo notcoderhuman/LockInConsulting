@@ -204,9 +204,11 @@ const decode = (s: string) => s.replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (m, e: stri
 export function pageText(html: string): string {
   return decode(
     html
-      .replace(/<(script|style|noscript|svg|template|nav|footer|header|form)\b[\s\S]*?<\/\1>/gi, ' ')
+      .replace(/<(script|style|noscript|svg|template|nav|footer|header|form|head)\b[\s\S]*?<\/\1>/gi, ' ')
       .replace(/<!--[\s\S]*?-->/g, ' ')
-      .replace(/<\/(p|div|li|tr|h[1-6]|section|article|br)\s*>|<br\s*\/?>/gi, '\n')
+      // Line breaks inside the source ("graduate\nfee\nschedules") are not line breaks of the page: only block tags are.
+      .replace(/\s+/g, ' ')
+      .replace(/<\/(p|div|li|tr|h[1-6]|section|article|br|ul|ol|table|dd|dt|caption)\s*>|<br\s*\/?>|<\/t[dh]>(?=\s*<t[dh])/gi, (m) => (/^<\/t[dh]/i.test(m) ? ' | ' : '\n'))
       .replace(/<[^>]+>/g, ' '),
   )
     .replace(/[ \t\f\v]+/g, ' ')
@@ -272,17 +274,20 @@ function namesOnlyOtherQualifications(line: string, q: Qualification): boolean {
   return names.length > 0 && names.every((n) => isOtherQualification(n, q, { ignoreLevel: true }))
 }
 
+/** A short table row or list item that is itself a fact: an amount, a percentage, a test score or a course code. */
+const SHORT_FACT = /(?:[$€£₹]|\b(?:CAD|USD|EUR|GBP|AUD|NZD)\b)\s?\d|\d\s?%|\b(?:IELTS|TOEFL|PTE|Duolingo)\b.{0,20}\d|\b[A-Z]{2,5}\s?\d{3,4}[A-Z]?\b/
+
 /** The lines of a page that speak about the topic, best first. */
 export function relevantPassages(text: string, topics: string[], course: string | null, max: number = RESEARCH.passagesPerPage, q: Qualification | null = null): string[] {
   const words = wordsFor(topics)
   const courseWords = q ? q.words : (course ?? '').toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length >= 4)
-  const lines = [...new Set(text.split('\n').flatMap((l) => (l.length > 400 ? l.split(/(?<=[.!?])\s+/) : [l])).map((l) => l.trim()).filter((l) => l.length >= 40 && l.length <= 400))]
+  const lines = [...new Set(text.split('\n').flatMap((l) => (l.length > 400 ? l.split(/(?<=[.!?])\s+/) : [l])).map((l) => l.trim()).filter((l) => (l.length >= 40 && l.length <= 400) || (l.length >= 12 && l.length < 40 && SHORT_FACT.test(l))))]
   return lines
     .map((line, i) => {
       const lower = line.toLowerCase()
       const hits = words.filter((w) => lower.includes(w)).length
       // A line that says the programme is closed to new students, or under transitional rules, is always worth keeping.
-      return { line, i, score: hits * 2 + courseWords.filter((w) => lower.includes(w)).length + (/\d/.test(line) ? 1 : 0) + (CLOSED_RE.test(line) ? 4 : 0) }
+      return { line, i, score: hits * 2 + courseWords.filter((w) => lower.includes(w)).length + (/\d/.test(line) ? 1 : 0) + (CLOSED_RE.test(line) ? 4 : 0) + (line.length < 40 && SHORT_FACT.test(line) ? 3 : 0) }
     })
     .filter((x) => x.score >= 2 && substantive(x.line, topics) && !(q && namesOnlyOtherQualifications(x.line, q)))
     .sort((a, b) => b.score - a.score || a.i - b.i)
@@ -474,6 +479,19 @@ export function searchProviderFrom(env: Record<string, string | undefined> = pro
       return (body.web?.results ?? []).map((r) => r.url).filter((u): u is string => typeof u === 'string' && u.startsWith('https://'))
     },
   }
+}
+
+/**
+ * At most `max` evidence items, but never dropping a whole source: every page the research used keeps its best item, so any page the answer links is
+ * in the evidence the link check reads. The rest of the room goes to the best-ranked items, in rank order.
+ */
+export function capEvidence<T extends { sourceUrl: string }>(items: T[], max: number): T[] {
+  const firstOf = new Set<T>()
+  const seen = new Set<string>()
+  for (const i of items) if (!seen.has(i.sourceUrl) && firstOf.size < max) (seen.add(i.sourceUrl), firstOf.add(i))
+  const rest = items.filter((i) => !firstOf.has(i)).slice(0, Math.max(0, max - firstOf.size))
+  const keep = new Set([...firstOf, ...rest])
+  return items.filter((i) => keep.has(i))
 }
 
 /** One spelling of a page address: no fragment, tracking query or trailing slash. */

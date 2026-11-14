@@ -294,3 +294,24 @@ describe('a different science degree never stands in for the asked one (Waterloo
     expect(evidenceCovers(kept, ['entry or language requirements'], 'Master of Data Science')).toBe(false)
   })
 })
+
+describe('page text and short facts (Waterloo tuition regression)', () => {
+  it('line breaks inside the source HTML do not split sentences, and table rows stay on one line', async () => {
+    const { pageText, relevantPassages } = await import('@/lib/derek/research')
+    const html = `<html><head><title>Tuition</title></head><body><p>The\nMDSAI tuition\nis paid per term. See the\n<a href="/fees">graduate\nfee\nschedules</a>.</p><table><tr><td>Per course</td>\n<td>CAD 2,300</td>\n</tr></table></body></html>`
+    const text = pageText(html)
+    expect(text).toContain('The MDSAI tuition is paid per term. See the graduate fee schedules .')
+    expect(text).not.toContain('Tuition\n') // the <title> is not page text
+    expect(text).toContain('Per course | CAD 2,300')
+    // A short amount row is a fact in itself and is kept for a fees question.
+    expect(relevantPassages(text, ['fees or costs'], 'Master of Data Science')).toContain('Per course | CAD 2,300')
+  })
+  it('a Data Analytics lab or a Statistics department is not the Data Science programme', async () => {
+    const { scoredLinks } = await import('@/lib/derek/research')
+    const { parseQualification } = await import('@/lib/derek/qualification')
+    const html = '<a href="/data-analytics/students">Students of the Data Analytics Lab</a><a href="/statistics-and-actuarial-science/">Statistics</a><a href="/finance/tuition-fee-schedules">Graduate tuition fee schedules</a>'
+    const links = scoredLinks(html, 'https://uni.test/data-science/tuition', ['fees or costs'], 'Master of Data Science', parseQualification('Master of Data Science')).map((l) => l.url)
+    expect(links[0]).toBe('https://uni.test/finance/tuition-fee-schedules')
+    expect(links.join(' ')).not.toMatch(/data-analytics|statistics/)
+  })
+})

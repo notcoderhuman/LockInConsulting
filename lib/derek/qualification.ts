@@ -35,7 +35,8 @@ const GENERIC = new Set(['master', 'masters', 'bachelor', 'bachelors', 'degree',
 const ALIASES: [RegExp, string[]][] = [
   [/computer science|computing/, ['computer', 'computing', 'information science', 'information sciences', 'informatics', 'software engineering', 'information technology']],
   [/information technology|\bit\b/, ['information technology', 'information systems', 'computing', 'computer science']],
-  [/data science/, ['data science', 'data analytics', 'analytics', 'statistics']],
+  // Only its own name: "analytics" and "statistics" would also match a Data Analytics lab or a Statistics department, which are not this programme.
+  [/data science/, ['data science']],
   [/artificial intelligence|machine learning/, ['artificial intelligence', 'machine learning', 'intelligent systems']],
   [/business administration|\bmba\b/, ['business administration', 'mba', 'management']],
   [/electrical/, ['electrical', 'electronic']],
@@ -50,7 +51,7 @@ export function parseQualification(text: string | null | undefined): Qualificati
   const level = (Object.keys(LEVEL_WORDS) as Level[]).find((l) => LEVEL_WORDS[l].test(t)) ?? null
   let own = t.split(/[^a-z0-9]+/).filter((w) => w.length >= 4 && !GENERIC.has(w))
   // "Data Science" is matched by its own phrase (see ALIASES), not by the bare word "science", which would also match Computer Science, Dairy Science and the like.
-  if (/data science/.test(t)) own = own.filter((w) => w !== 'science')
+  if (/data science/.test(t)) own = own.filter((w) => w !== 'science' && w !== 'data')
   const aliases = ALIASES.filter(([re]) => re.test(t)).flatMap(([, list]) => list)
   const words = [...new Set([...own, ...aliases])]
   return words.length ? { text: text!.trim(), level, words } : null

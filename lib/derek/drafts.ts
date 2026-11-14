@@ -17,7 +17,7 @@ import { institutionNames } from './discovery'
 import { analyseQuestion, COMPARISON_TARGET_CHARS, detectDestinations, studentPlanFromSubject } from './guidance'
 import { commitAllowance, releaseAllowance, reserveAllowance } from './allowance'
 import { DEREK_GENERATION_SECONDS } from '@/lib/support/state'
-import { evidenceCovers, findUniversitySites, researchQuestion, type ResearchResult } from './research'
+import { capEvidence, evidenceCovers, findUniversitySites, researchQuestion, type ResearchResult } from './research'
 import { planFromSubject } from './suggestions'
 import { askedQualification, dropOtherCourseEvidence, parseQualification } from './qualification'
 import { DEREK_INSTRUCTIONS, type AiProvider, type DraftRequest, type EvidenceItem } from './provider'
@@ -384,7 +384,7 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
       if (research) {
         // The official pages LockIn holds are listings, not facts: they only make the university's own link citable.
         const officialPages = (research.record.official ?? []).slice(0, 2).map((url, i) => ({ ref: `university:official:${i}`, text: `The university's official page: ${url}`, sourceUrl: url, publisher: 'University website', checkedAt: new Date().toISOString().slice(0, 10), unverified: true as const }))
-        evidence = [...evidence, ...research.items, ...officialPages].slice(0, 30)
+        evidence = capEvidence([...evidence, ...research.items, ...officialPages], 30)
         // What was read now counts as evidence, so the guidance is built again: it must not still say LockIn has nothing.
         const again = analyseQuestion(question, evidence, earlier, history.filter((h) => h.role === 'team').at(-1)?.text)
         guidance = {

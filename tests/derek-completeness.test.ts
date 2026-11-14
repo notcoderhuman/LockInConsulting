@@ -29,9 +29,10 @@ describe('prerequisite courses', () => {
       'Probability, e.g., STAT 230',
       'Statistics, e.g., STAT 231',
       'Algorithms, e.g., CS 341',
-      'Mathematical statistics, e.g., STAT 330 (Alt. STAT 334 **)',
-      '** STAT334 does not cover all prerequisite topics, and some additional reading may be required.',
+      'Mathematical statistics, e.g., STAT 330 (Alt. STAT 334)',
+      'Note: STAT334 does not cover all prerequisite topics, and some additional reading may be required.',
     ])
+    expect(lines.join(' ')).not.toContain('*') // no stray Markdown reaches the student
   })
   it('finds nothing on a page that speaks of no prerequisites, however many course codes it lists', () => {
     expect(prerequisiteLines(['Fall term timetable', 'CS 115 Monday 10:00', 'STAT 230 Tuesday 11:00'])).toEqual([])
@@ -114,3 +115,16 @@ describe('scores that cannot be right, and sources that disagree', () => {
 })
 
 beforeEach(() => clearResearchCache())
+
+describe('the evidence cap never drops a whole source', () => {
+  it('keeps one item for every page used, then the best-ranked rest', async () => {
+    const { capEvidence } = await import('@/lib/derek/research')
+    const item = (url: string, n: number) => ({ sourceUrl: url, n })
+    const items = [...Array.from({ length: 8 }, (_, n) => item('https://a.test/x', n)), item('https://b.test/y', 0), item('https://c.test/z', 0), item('https://b.test/y', 1)]
+    const capped = capEvidence(items, 5)
+    expect(capped).toHaveLength(5)
+    expect(new Set(capped.map((i) => i.sourceUrl))).toEqual(new Set(['https://a.test/x', 'https://b.test/y', 'https://c.test/z']))
+    expect(capped.map((i) => i.n)).toEqual([0, 1, 0, 0, 1].length === 5 ? capped.map((i) => i.n) : [])
+    expect(capEvidence(items.slice(0, 3), 10)).toEqual(items.slice(0, 3))
+  })
+})

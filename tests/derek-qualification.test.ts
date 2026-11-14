@@ -30,9 +30,11 @@ describe('qualification matching', () => {
     expect(isOtherQualification('Master of Information Sciences - Qualification regulations', cs)).toBe(false)
     expect(isOtherQualification('Master of Information Sciences – MInfSc – Massey University', cs)).toBe(false) // a code after the name is not a subject
     expect(isOtherQualification('Master of Science', cs)).toBe(false)
-    // Data science is not silently Computer Science, but its own alias list knows analytics.
+    // Data science is not silently Computer Science, and not silently Analytics or Statistics either: those are other programmes.
     const ds = parseQualification('Master of Data Science')!
-    expect(matchesQualification('Master of Analytics', ds)).toBe(true)
+    expect(matchesQualification('Master of Data Science and Artificial Intelligence', ds)).toBe(true)
+    expect(matchesQualification('Data Analytics Lab', ds)).toBe(false)
+    expect(matchesQualification('Master of Analytics', ds)).toBe(false)
     expect(isOtherQualification('Master of Analytics', cs)).toBe(true)
   })
 

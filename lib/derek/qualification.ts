@@ -86,7 +86,8 @@ export function isOtherQualification(title: string, q: Qualification, { ignoreLe
   const subject = head.split(/[^a-z0-9]+/).filter((t) => t.length >= 4 && !GENERIC.has(t) && !PAGE_WORDS.has(t))
   // "Master of Data Science and Artificial Intelligence" is the asked Data Science programme under its full name, not another subject.
   const own = normalise(q.text).split(/[^a-z0-9]+/).filter((w) => w.length >= 4 && !GENERIC.has(w))
-  if (own.length > 0 && own.every((w) => head.includes(w))) return false
+  // The programme can be named in any segment: "Tuition - Master of Data Science", "Master of Data Science | Admissions".
+  if (own.length > 0 && normalise(title).split(/\s[-–—|:]\s/).some((seg) => own.every((w) => seg.includes(w)))) return false
   return subject.some((t) => !q.words.some((w) => w.includes(t) || t.includes(w)))
 }
 

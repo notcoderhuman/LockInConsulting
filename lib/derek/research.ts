@@ -120,7 +120,48 @@ export async function assertPublicUrl(raw: string, lookup: typeof dns.lookup = d
 }
 
 const cache = new Map<string, { at: number; page: Page | null }>()
-const robotsCache = new Map<string, { at: number; disallow: string[] }>()
+const robotsCache = new Map<string, { at: number; rules: RobotsRules }>()
+
+interface RobotsRules {
+  allow: string[]
+  disallow: string[]
+}
+
+/** The rules of a robots.txt that apply to "*" or to Derek, with grouped User-agent lines handled as the standard describes. */
+export function parseRobots(text: string): RobotsRules {
+  const rules: RobotsRules = { allow: [], disallow: [] }
+  let applies = false
+  let afterAgent = false
+  for (const line of text.split(/\r?\n/)) {
+    const [k, ...rest] = line.split('#')[0].split(':')
+    const key = k.trim().toLowerCase()
+    const value = rest.join(':').trim()
+    if (key === 'user-agent') {
+      const mine = value === '*' || /derek/i.test(value)
+      applies = afterAgent ? applies || mine : mine
+      afterAgent = true
+      continue
+    }
+    afterAgent = false
+    if (!applies || !value) continue
+    if (key === 'disallow') rules.disallow.push(value)
+    else if (key === 'allow') rules.allow.push(value)
+  }
+  return rules
+}
+
+/** Whether a path (with query) may be fetched: the longest matching rule wins, Allow beating Disallow on a tie; `*` is any text and `$` ends the path. */
+export function robotsPermits(rules: RobotsRules, pathAndQuery: string): boolean {
+  const matchLength = (rule: string) => {
+    const anchored = rule.endsWith('$')
+    const core = anchored ? rule.slice(0, -1) : rule
+    const pattern = core.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*')
+    return new RegExp(`^${pattern}${anchored ? '$' : ''}`).test(pathAndQuery) ? core.length : -1
+  }
+  const blocked = Math.max(-1, ...rules.disallow.map(matchLength))
+  if (blocked < 0) return true
+  return Math.max(-1, ...rules.allow.map(matchLength)) >= blocked
+}
 
 /** Test hook. */
 export const clearResearchCache = () => (cache.clear(), robotsCache.clear())
@@ -144,27 +185,18 @@ const AGENT = 'LockInDerek/1.0 (+https://lockinconsulting.com)'
 
 async function robotsAllow(url: URL, signal: AbortSignal): Promise<boolean> {
   const hit = robotsCache.get(url.origin)
-  let disallow = hit && Date.now() - hit.at < RESEARCH.cacheMs ? hit.disallow : null
-  if (!disallow) {
-    disallow = []
+  let rules = hit && Date.now() - hit.at < RESEARCH.cacheMs ? hit.rules : null
+  if (!rules) {
+    rules = { allow: [], disallow: [] }
     try {
       const res = await fetch(`${url.origin}/robots.txt`, { signal, headers: { 'user-agent': AGENT }, redirect: 'manual' })
-      if (res.ok) {
-        let applies = false
-        for (const line of (await readLimited(res, 100_000)).split(/\r?\n/)) {
-          const [k, ...rest] = line.split('#')[0].split(':')
-          const key = k.trim().toLowerCase()
-          const value = rest.join(':').trim()
-          if (key === 'user-agent') applies = value === '*' || /derek/i.test(value)
-          else if (applies && key === 'disallow' && value) disallow.push(value)
-        }
-      }
+      if (res.ok) rules = parseRobots(await readLimited(res, 100_000))
     } catch {
       // No robots.txt reachable: nothing is disallowed.
     }
-    robotsCache.set(url.origin, { at: Date.now(), disallow })
+    robotsCache.set(url.origin, { at: Date.now(), rules })
   }
-  return !disallow.some((rule) => url.pathname.startsWith(rule.replace(/\*.*$/, '')))
+  return robotsPermits(rules, url.pathname + url.search)
 }
 
 /** One public page, or null. Never throws: a failure is simply "no page". */
@@ -681,7 +713,7 @@ export async function researchQuestion(input: ResearchInput, deps: ResearchDeps 
         if (q && isOtherQualification(title, q)) return
         const passages = relevantPassages(text, input.topics, input.course, /requirement|eligib|entry/.test(input.topics.join(' ')) ? 10 : RESEARCH.passagesPerPage, q)
         // Follow the page's own links to the admissions, fees or deadlines page (up to two hops from a page LockIn holds).
-        if (next.depth < 3) for (const link of scoredLinks(page.html, page.url, input.topics, input.course, q)) queue.push({ url: link.url, via: 'linked_page', publisher: next.publisher, depth: next.depth + 1, score: link.score })
+        if (next.depth < 3) for (const link of scoredLinks(page.html, page.url, input.topics, input.course, q)) queue.push({ url: link.url, via: 'linked_page', publisher: next.publisher, depth: next.depth + 1, score: link.score >= 2 ? 82 + Math.min(12, link.score * 3) : link.score })
         const onTopic = topicWords.some((word) => `${new URL(page.url).pathname} ${title}`.toLowerCase().includes(word)) || (q != null && matchesQualification(`${new URL(page.url).pathname} ${title}`, q))
         // A page about the topic is kept as a source even when its text gives no readable figure (tables and PDFs), so the answer can point to it.
         if (!passages.length && !onTopic) return

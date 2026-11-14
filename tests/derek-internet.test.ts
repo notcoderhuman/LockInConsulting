@@ -315,3 +315,62 @@ describe('page text and short facts (Waterloo tuition regression)', () => {
     expect(links.join(' ')).not.toMatch(/data-analytics|statistics/)
   })
 })
+
+describe('robots.txt is read the way the standard says (Toronto regression: one wildcard rule blocked the whole site)', () => {
+  it('a rule with a leading wildcard blocks only what it matches', async () => {
+    const { parseRobots, robotsPermits } = await import('@/lib/derek/research')
+    const rules = parseRobots(['User-agent: *', 'Allow: /core/*.css$', 'Disallow: /*/media/oembed', 'Disallow: /search/', 'Disallow: /private'].join('\n'))
+    expect(robotsPermits(rules, '/scholarships-international-students')).toBe(true)
+    expect(robotsPermits(rules, '/search/results?q=x')).toBe(false)
+    expect(robotsPermits(rules, '/en/media/oembed')).toBe(false)
+    expect(robotsPermits(rules, '/private/report')).toBe(false)
+  })
+  it('the longest matching rule wins, and Allow beats Disallow on a tie', async () => {
+    const { parseRobots, robotsPermits } = await import('@/lib/derek/research')
+    const rules = parseRobots(['User-agent: *', 'Disallow: /fees', 'Allow: /fees/international', 'Disallow: /*.pdf$'].join('\n'))
+    expect(robotsPermits(rules, '/fees/domestic')).toBe(false)
+    expect(robotsPermits(rules, '/fees/international')).toBe(true)
+    expect(robotsPermits(rules, '/files/a.pdf')).toBe(false)
+    expect(robotsPermits(rules, '/files/a.pdf.html')).toBe(true)
+    expect(robotsPermits(parseRobots(''), '/anything')).toBe(true)
+  })
+  it('rules for other crawlers do not apply, grouped agents share their rules, and Derek-specific rules do', async () => {
+    const { parseRobots, robotsPermits } = await import('@/lib/derek/research')
+    const other = parseRobots(['User-agent: Googlebot', 'Disallow: /'].join('\n'))
+    expect(robotsPermits(other, '/x')).toBe(true)
+    const grouped = parseRobots(['User-agent: *', 'User-agent: Googlebot', 'Disallow: /hidden'].join('\n'))
+    expect(robotsPermits(grouped, '/hidden/page')).toBe(false)
+    expect(robotsPermits(parseRobots(['User-agent: LockInDerek', 'Disallow: /'].join('\n')), '/x')).toBe(false)
+  })
+})
+
+describe('a strong fee or requirement link competes with weak sitemap hits', () => {
+  it('queues a "tuition fee schedules" link ahead of weaker pages', async () => {
+    const { clearResearchCache, researchQuestion } = await import('@/lib/derek/research')
+    clearResearchCache()
+    const home = 'https://www.example-uni.test/data-science/tuition'
+    const schedule = 'https://www.example-uni.test/finance/tuition-fee-schedules'
+    const pages: Record<string, { url: string; html: string; lastModified: null }> = {
+      'https://www.example-uni.test/': { url: 'https://www.example-uni.test/', lastModified: null, html: `<html><title>Example</title><body><a href="${home}">Tuition for the Master of Data Science</a></body></html>` },
+      [home]: { url: home, lastModified: null, html: `<html><title>Tuition - Master of Data Science</title><body><p>Tuition is charged per course and listed in the <a href="${schedule}">graduate tuition fee schedules</a>.</p></body></html>` },
+      [schedule]: { url: schedule, lastModified: null, html: '<html><title>Graduate tuition fee schedules</title><body><table><tr><td>Master of Data Science per course</td><td>CAD 2,300</td></tr></table></body></html>' },
+    }
+    const noise = Array.from({ length: 14 }, (_, n) => `https://www.example-uni.test/data-science/fees-news-${n}`)
+    const result = await researchQuestion(
+      { topics: ['fees or costs'], course: 'Master of Data Science', universities: [], universityName: 'Example University', search: null },
+      { fetchPage: async (u) => pages[u] ?? null, siteFor: async () => 'https://www.example-uni.test/', sitemap: async () => [home, ...noise] },
+    )
+    expect(result.items.some((i) => /CAD 2,300/.test(i.text))).toBe(true)
+  })
+})
+
+describe('the programme can be named in any part of a page title', () => {
+  it('"Tuition - Master of Data Science" is the asked programme; "Tuition - Master of Dairy Science" is not', async () => {
+    const { isOtherQualification, parseQualification } = await import('@/lib/derek/qualification')
+    const q = parseQualification('Master of Data Science')!
+    expect(isOtherQualification('Tuition - Master of Data Science', q)).toBe(false)
+    expect(isOtherQualification('Master of Data Science | Admission requirements | Example University', q)).toBe(false)
+    expect(isOtherQualification('Tuition - Master of Dairy Science', q)).toBe(true)
+    expect(isOtherQualification('Fees - Bachelor of Data Science', q)).toBe(true)
+  })
+})

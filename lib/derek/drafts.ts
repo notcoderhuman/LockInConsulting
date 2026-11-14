@@ -581,8 +581,16 @@ ${asked ?? ''}`) ?? askedLevel(earlier)
  * either way the result then goes through every usual check, and a long answer stays held.
  */
 /** The one rewrite request for an answer over the automatic-send limit. */
-export function shorteningInstruction(original: string): string {
+export function shorteningInstruction(original: string, researched = false): string {
   const { min, max } = COMPARISON_TARGET_CHARS
+  // An answer built from the university's own pages keeps its requirements, figures and links: it is tightened, not reduced to a few bullets.
+  if (researched)
+    return [
+      `REWRITE SHORTER: your previous answer (below) is ${original.length} characters; automatic replies from researched pages are limited to ${AUTO_REPLY_LIMITS.maxCharsResearched}.`,
+      'Rewrite it in about 1,600 to 2,200 characters: answer the question first, keep the most important requirements, figures (with their currency) and the official page links you used, as short bullets or short paragraphs, and drop repetition and minor detail.',
+      'Keep every statement of uncertainty. Do not add any fact, figure, name, fee, deadline or requirement that is not in the previous answer or in EVIDENCE.',
+      `Previous answer: """${original}"""`,
+    ].join(' ')
   return [
     `REWRITE SHORTER: your previous answer (below) is ${original.length} characters; automatic replies are limited to ${AUTO_REPLY_LIMITS.maxChars}.`,
     `Rewrite it in ${min} to ${max} characters: at most four short bullets, each starting with a label, then one short line that details vary by university and are on each official course page.`,
@@ -604,7 +612,7 @@ async function shortenIfTooLong(
   const original = tidyDraft(outcome.result.text)
   const budget = options.maxAttempts ?? MAX_ATTEMPTS
   if (!request.guidance || original.length <= maxCharsFor(request.evidence) || outcome.attempts >= budget || !(await autoReplyPossible())) return outcome
-  const guidance = { ...request.guidance, note: `${request.guidance.note} ${shorteningInstruction(original)}` }
+  const guidance = { ...request.guidance, note: `${request.guidance.note} ${shorteningInstruction(original, request.evidence.some((e) => e.ref.startsWith('web:')))}` }
   const shorter = await callProvider(provider, { ...request, guidance }, { ...options, maxAttempts: 1 })
   const spent = { attempts: outcome.attempts + shorter.attempts, latencyMs: outcome.latencyMs + shorter.latencyMs }
   const usage = {

@@ -164,3 +164,27 @@ describe('false alarms the evaluation found', () => {
     expect(askedQualification('How do I write a statement of purpose?')).toBeNull()
   })
 })
+
+describe('fee and date conflicts need two focused claims, not two tables', () => {
+  it('pages that list many amounts never contradict each other', async () => {
+    const { findConflicts } = await import('@/lib/derek/research')
+    const table = (url: string, amounts: string[]) => web(url, `Tuition fee table: ${amounts.join(', ')}`)
+    const a = table('https://cs.example-a.test/fees', ['CAD 8,622', 'CAD 9,608', 'CAD 9,892', 'CAD 9,570'])
+    const b = table('https://sgs.example-b.test/fees', ['CAD 5,738', 'CAD 10,081', 'CAD 1,203'])
+    expect(findConflicts([a, b], ['fees or costs'])).toEqual([])
+    const one = web('https://one.example-c.test/fees', 'The tuition fee is CAD 9,000 per year')
+    const two = web('https://two.example-d.test/fees', 'The tuition fee is CAD 12,000 per year')
+    expect(findConflicts([one, two], ['fees or costs'])).toHaveLength(1)
+  })
+})
+
+describe('shortening a researched answer keeps its substance', () => {
+  it('asks for a tightened rewrite with figures and links, not four short bullets', async () => {
+    const { shorteningInstruction } = await import('@/lib/derek/drafts')
+    const researched = shorteningInstruction('x'.repeat(3200), true)
+    expect(researched).toMatch(/about 1,600 to 2,200 characters/)
+    expect(researched).toMatch(/keep the most important requirements, figures \(with their currency\) and the official page links/)
+    expect(researched).not.toMatch(/at most four short bullets/)
+    expect(shorteningInstruction('x'.repeat(1200))).toMatch(/at most four short bullets/) // the short, country-level form is unchanged
+  })
+})

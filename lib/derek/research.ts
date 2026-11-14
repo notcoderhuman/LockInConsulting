@@ -397,7 +397,9 @@ export function findConflicts(items: EvidenceItem[], topics: string[]): string[]
       const found = [...i.text.matchAll(re)].map((m) => squash(m[0]))
       if (found.length) bySource.set(i.sourceUrl, new Set([...(bySource.get(i.sourceUrl) ?? []), ...found]))
     }
-    const entries = [...bySource]
+    // A page that states many amounts or dates (a fee table, a list of deadlines by programme) is not one claim that another page can contradict:
+    // only pages that each state one or two figures are compared.
+    const entries = [...bySource].filter(([, figures]) => figures.size <= 2)
     for (let a = 0; a < entries.length; a++)
       for (let b = a + 1; b < entries.length; b++)
         // Pages of one site (a tuition page, an application-fee page, a programme page) legitimately state different amounts; only different sites can contradict each other.

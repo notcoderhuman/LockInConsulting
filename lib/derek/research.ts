@@ -391,7 +391,8 @@ export function findConflicts(items: EvidenceItem[], topics: string[]): string[]
     const entries = [...bySource]
     for (let a = 0; a < entries.length; a++)
       for (let b = a + 1; b < entries.length; b++)
-        if (![...entries[a][1]].some((v) => entries[b][1].has(v))) out.push(`${label} differ between ${new URL(entries[a][0]).hostname} and ${new URL(entries[b][0]).hostname}`)
+        // Pages of one site (a tuition page, an application-fee page, a programme page) legitimately state different amounts; only different sites can contradict each other.
+        if (new URL(entries[a][0]).hostname !== new URL(entries[b][0]).hostname && ![...entries[a][1]].some((v) => entries[b][1].has(v))) out.push(`${label} differ between ${new URL(entries[a][0]).hostname} and ${new URL(entries[b][0]).hostname}`)
   }
   if (topics.some((t) => /fee|tuition|cost/.test(t))) check('Fee figures', MONEY, (i) => /tuition|fee/i.test(i.text))
   if (topics.some((t) => /deadline|intake|date/.test(t))) check('Application deadlines', DATE_RE, (i) => /deadline|apply by|closing date|closes/i.test(i.text))

@@ -128,3 +128,39 @@ describe('the evidence cap never drops a whole source', () => {
     expect(capEvidence(items.slice(0, 3), 10)).toEqual(items.slice(0, 3))
   })
 })
+
+describe('false alarms the evaluation found', () => {
+  it('only a score written right after the test name counts, and a zero filler is ignored', () => {
+    const w = (text: string) => web(PROGRAMME, text)
+    expect(impossibleScores([w('TOEFL scores are valid for 2 years; IELTS results for 2 years')])).toEqual([])
+    expect(impossibleScores([w('Program | TOEFL | 0 ; TOEFL 0')])).toEqual([])
+    expect(impossibleScores([w('IELTS Academic: 6.5 overall; TOEFL iBT score of 90; PTE Academic minimum score of 65')])).toEqual([])
+    expect(impossibleScores([w('Applicants need TOEFL iBT total of 5')]).map((s) => s.value)).toEqual([5])
+    expect(impossibleScores([w('TOEFL 5 (writing 5, speaking 5)')]).map((s) => s.value)).toEqual([5])
+  })
+  it('pages of one site never make a fee "conflict" (application fee versus tuition)', async () => {
+    const { findConflicts } = await import('@/lib/derek/research')
+    const a = web('https://grad.example.test/application-fee', 'The tuition and application fee for international applicants is CDN $168.25')
+    const b = web('https://grad.example.test/tuition', 'Tuition fee for international students is CDN $9,000 per year')
+    const c = web('https://other.example.test/fees', 'Tuition fee for international students is CDN $12,500 per year')
+    expect(findConflicts([a, b], ['fees or costs'])).toEqual([])
+    expect(findConflicts([b, c], ['fees or costs'])).toHaveLength(1) // two different sites disagreeing is still reported
+  })
+  it('the uncertainty marker is removed wherever the model puts it, and still marks the answer uncertain', async () => {
+    const { parseGeminiResponse } = await import('@/lib/derek/providers/gemini')
+    const body = (text: string) => ({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text }] } }] })
+    const mid = parseGeminiResponse(body('Apply online.\n\n[UNCERTAIN] These pages are old, so confirm on the page.'), 'm')
+    expect(mid.uncertain).toBe(true)
+    expect(mid.text).toBe('Apply online.\n\nThese pages are old, so confirm on the page.')
+    const start = parseGeminiResponse(body('[UNCERTAIN] I could not confirm the fee.'), 'm')
+    expect(start).toMatchObject({ uncertain: true, text: 'I could not confirm the fee.' })
+    expect(parseGeminiResponse(body('A plain answer.'), 'm').uncertain).toBe(false)
+  })
+  it('a comparison question yields the course too ("for a master’s in computer science")', async () => {
+    const { askedQualification } = await import('@/lib/derek/qualification')
+    expect(askedQualification('Compare the University of Toronto and the University of British Columbia for a master’s in computer science.')).toBe("master's in computer science")
+    expect(askedQualification('What are the entry requirements for the MSc in Data Science at University of Waterloo?')).toBe('msc in data science')
+    expect(askedQualification('How do I apply to a master’s programme at McGill University?')).toBe("master's programme")
+    expect(askedQualification('How do I write a statement of purpose?')).toBeNull()
+  })
+})

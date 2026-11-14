@@ -59,7 +59,7 @@ export function parseQualification(text: string | null | undefined): Qualificati
 
 /** The qualification named in a question ("…for Master's in Computer Science at Massey University"), when the student did not choose one beforehand. */
 export function askedQualification(question: string): string | null {
-  const m = normalise(question).match(/\b(?:for|of|in|on|about|into)\s+(?:the\s+|an?\s+)?((?:master|masters|master's|bachelor|bachelor's|msc|bsc|mba|phd|postgraduate|undergraduate|diploma)[^?.,;]{2,70}?)\s+(?:at|from|@)\s+[a-z]/i)
+  const m = normalise(question).match(/\b(?:for|of|in|on|about|into|to)\s+(?:the\s+|an?\s+)?((?:master|masters|master's|bachelor|bachelor's|msc|bsc|mba|phd|postgraduate|undergraduate|diploma)[^?.,;]{2,70}?)(?=\s+(?:at|from|@)\s+[a-z]|\s*[?.,;!]|\s*$)/i)
   return m ? m[1].trim() : null
 }
 

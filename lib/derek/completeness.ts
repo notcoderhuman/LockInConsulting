@@ -53,7 +53,8 @@ const codesIn = (text: string) => new Set([...text.matchAll(COURSE_CODE)].map((m
 // ---------------------------------------------------------------------------------------------
 
 type Test = 'TOEFL' | 'IELTS' | 'PTE' | 'Duolingo'
-const SCORE = /\b(TOEFL(?: iBT)?|IELTS(?: Academic)?|PTE(?: Academic)?|Duolingo(?: English Test)?)\b[^0-9\n.]{0,24}(\d{1,3}(?:\.\d)?)/gi
+// The number must follow the test name directly ("TOEFL 5", "IELTS: 6.5", "TOEFL iBT score of 90"), never an unrelated figure further along ("TOEFL scores are valid for 2 years").
+const SCORE = /\b(TOEFL(?: iBT)?|IELTS(?: Academic)?|PTE(?: Academic)?|Duolingo(?: English Test)?)\b\s*(?:[:=–-]\s*|\(?(?:(?:minimum |overall |total )?(?:score|band)|minimum|overall|total)(?: of)?\)?\s*[:=]?\s*)?(?:of\s+|at least\s+)?(\d{1,3}(?:\.\d)?)\b(?!\s*(?:years?|months?|days?|hours?|minutes?|%|times?))/gi
 // What a total score can be, and the lowest total any university plausibly asks for.
 const RANGE: Record<Test, [number, number, number]> = { TOEFL: [0, 120, 40], IELTS: [0, 9, 4], PTE: [10, 90, 30], Duolingo: [10, 160, 70] }
 const testName = (raw: string): Test => (/toefl/i.test(raw) ? 'TOEFL' : /ielts/i.test(raw) ? 'IELTS' : /pte/i.test(raw) ? 'PTE' : 'Duolingo')
@@ -72,7 +73,8 @@ export function scoreMentions(items: EvidenceItem[]): ScoreMention[] {
     const text = stripTag(i.text)
     for (const m of text.matchAll(SCORE)) {
       const value = Number(m[2])
-      if (Number.isFinite(value)) out.push({ test: testName(m[1]), value, line: text.slice(Math.max(0, (m.index ?? 0) - 20), (m.index ?? 0) + m[0].length + 60).replace(/\s+/g, ' ').trim(), url: i.sourceUrl })
+      // 0 is a table filler ("no requirement"), not a required score.
+      if (Number.isFinite(value) && value > 0) out.push({ test: testName(m[1]), value, line: text.slice(Math.max(0, (m.index ?? 0) - 20), (m.index ?? 0) + m[0].length + 60).replace(/\s+/g, ' ').trim(), url: i.sourceUrl })
     }
   }
   return out

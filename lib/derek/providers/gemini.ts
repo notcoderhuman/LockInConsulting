@@ -107,6 +107,12 @@ export function parseGeminiResponse(body: unknown, fallbackModel: string): Draft
     .trim()
   if (!text) throw new ProviderError('invalid_response', true)
   let uncertain = false
+  // The marker may sit anywhere (the model sometimes opens a later paragraph with it): it is removed wherever it is and still means "uncertain".
+  if (text.includes(UNCERTAIN_MARKER) && !text.startsWith(UNCERTAIN_MARKER)) {
+    uncertain = true
+    text = text.split(UNCERTAIN_MARKER).join('').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').replace(/\n +/g, '\n').replace(/ {2,}/g, ' ').trim()
+    if (!text) throw new ProviderError('invalid_response', true)
+  }
   if (text.startsWith(UNCERTAIN_MARKER)) {
     uncertain = true
     text = text.slice(UNCERTAIN_MARKER.length).trim()

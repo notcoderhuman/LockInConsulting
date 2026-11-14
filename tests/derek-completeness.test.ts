@@ -188,3 +188,13 @@ describe('shortening a researched answer keeps its substance', () => {
     expect(shorteningInstruction('x'.repeat(1200))).toMatch(/at most four short bullets/) // the short, country-level form is unchanged
   })
 })
+
+describe('the answer rules ask for stated amounts and never call a stated amount missing', () => {
+  it('says so in the fixed instructions', async () => {
+    const { DEREK_INSTRUCTIONS } = await import('@/lib/derek/provider')
+    expect(DEREK_INSTRUCTIONS).toMatch(/Include the main amounts, scores, deadlines and durations that EVIDENCE states/)
+    expect(DEREK_INSTRUCTIONS).toMatch(/never say an amount is "not stated" while any EVIDENCE line gives it/)
+    expect(DEREK_INSTRUCTIONS).toMatch(/Give the currency with every amount/)
+    expect(DEREK_INSTRUCTIONS).toMatch(/answer the question that was asked, in your first sentence/)
+  })
+})

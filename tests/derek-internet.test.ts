@@ -440,3 +440,46 @@ describe('level, destinations and comparisons (McGill and Toronto-UBC regression
     expect(half.record.failure).toBeNull()
   })
 })
+
+describe('official pages first: a second search restricted to the university site, and no third parties beside official pages', () => {
+  const html = (title: string, body: string) => `<html><title>${title}</title><body>${body}</body></html>`
+  it('asks for the university site’s own pages when the open search returned only third parties', async () => {
+    const { clearResearchCache, researchQuestion } = await import('@/lib/derek/research')
+    clearResearchCache()
+    const OWN = 'https://grad.example-uni.test/programmes/computer-science/admission'
+    const BLOG = 'https://aggregator.test/universities/example/computer-science'
+    const pages: Record<string, { url: string; html: string; lastModified: null }> = {
+      [OWN]: { url: OWN, lastModified: null, html: html('Admission - Master of Computer Science', '<p>Applicants need a four-year bachelor’s degree with a minimum overall average of 80% for the Master of Computer Science.</p>') },
+      [BLOG]: { url: BLOG, lastModified: null, html: html('Computer Science at Example', '<p>Average tuition for the Master of Computer Science is CAD 9,000 per year according to our estimates.</p>') },
+    }
+    const calls: { query: string; domains?: string[] }[] = []
+    const search = { search: async (query: string, _s: AbortSignal, options?: { domains?: string[] }) => (calls.push({ query, domains: options?.domains }), options?.domains ? [OWN] : [BLOG]) }
+    const result = await researchQuestion(
+      { topics: ['entry or language requirements'], course: 'Master of Computer Science', universities: [], universityName: 'Example University', search },
+      { fetchPage: async (u) => pages[u] ?? null, siteFor: async () => 'https://www.example-uni.test/', sitemap: async () => [] },
+    )
+    expect(calls).toHaveLength(2)
+    expect(calls[1].domains).toEqual(['example-uni.test'])
+    expect(result.record.sources.map((s) => s.url)).toEqual([OWN]) // the aggregator page is dropped beside the official one
+    expect(result.items.some((i) => /80%/.test(i.text))).toBe(true)
+    expect(result.items.some((i) => /aggregator/.test(i.sourceUrl))).toBe(false)
+  })
+  it('knows which hostnames are one site', async () => {
+    const { registrableDomain } = await import('@/lib/derek/research')
+    expect(registrableDomain('prep.yocket.com')).toBe('yocket.com')
+    expect(registrableDomain('www.grad.ubc.ca')).toBe('ubc.ca')
+    expect(registrableDomain('www.ox.ac.uk')).toBe('ox.ac.uk')
+    expect(registrableDomain('uwaterloo.ca')).toBe('uwaterloo.ca')
+  })
+  it('sends the domain restriction to Tavily as include_domains', async () => {
+    const { tavilyProviderFrom, resetTavilyLimits } = await import('@/lib/derek/research')
+    resetTavilyLimits()
+    let body: Record<string, unknown> = {}
+    const fetchImpl = (async (_u: unknown, init?: RequestInit) => ((body = JSON.parse(String(init?.body))), Response.json({ results: [{ url: 'https://ubc.ca/a' }] }))) as unknown as typeof fetch
+    const provider = tavilyProviderFrom({ TAVILY_API_KEY: 'k' }, fetchImpl)!
+    await provider.search('q', new AbortController().signal, { domains: ['ubc.ca'] })
+    expect(body.include_domains).toEqual(['ubc.ca'])
+    await provider.search('q', new AbortController().signal)
+    expect(body.include_domains).toBeUndefined()
+  })
+})

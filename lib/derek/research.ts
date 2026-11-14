@@ -79,7 +79,16 @@ export interface Page {
 }
 
 export interface SearchProvider {
-  search(query: string, signal: AbortSignal): Promise<string[]>
+  /** `domains`: restrict the results to these sites (used to look for a university's own pages when the open search returned only third parties). */
+  search(query: string, signal: AbortSignal, options?: { domains?: string[] }): Promise<string[]>
+}
+
+/** The site a host belongs to ("prep.yocket.com" and "yocket.com" are one site; "ox.ac.uk" is its own). */
+export function registrableDomain(host: string): string {
+  const labels = host.toLowerCase().replace(/^www\./, '').split('.')
+  if (labels.length <= 2) return labels.join('.')
+  const secondLevel = ['co', 'ac', 'edu', 'gov', 'com', 'org', 'net']
+  return labels.slice(secondLevel.includes(labels.at(-2) as string) && (labels.at(-1) as string).length === 2 ? -3 : -2).join('.')
 }
 
 export interface ResearchDeps {
@@ -392,7 +401,7 @@ export function findConflicts(items: EvidenceItem[], topics: string[]): string[]
     for (let a = 0; a < entries.length; a++)
       for (let b = a + 1; b < entries.length; b++)
         // Pages of one site (a tuition page, an application-fee page, a programme page) legitimately state different amounts; only different sites can contradict each other.
-        if (new URL(entries[a][0]).hostname !== new URL(entries[b][0]).hostname && ![...entries[a][1]].some((v) => entries[b][1].has(v))) out.push(`${label} differ between ${new URL(entries[a][0]).hostname} and ${new URL(entries[b][0]).hostname}`)
+        if (registrableDomain(new URL(entries[a][0]).hostname) !== registrableDomain(new URL(entries[b][0]).hostname) && ![...entries[a][1]].some((v) => entries[b][1].has(v))) out.push(`${label} differ between ${new URL(entries[a][0]).hostname} and ${new URL(entries[b][0]).hostname}`)
   }
   if (topics.some((t) => /fee|tuition|cost/.test(t))) check('Fee figures', MONEY, (i) => /tuition|fee/i.test(i.text))
   if (topics.some((t) => /deadline|intake|date/.test(t))) check('Application deadlines', DATE_RE, (i) => /deadline|apply by|closing date|closes/i.test(i.text))
@@ -466,7 +475,7 @@ export function tavilyProviderFrom(env: Record<string, string | undefined> = pro
   const key = (env.TAVILY_API_KEY ?? '').trim()
   if (!key) return null
   return {
-    async search(query, signal) {
+    async search(query, signal, options) {
       const now = Date.now()
       const month = new Date(now).toISOString().slice(0, 7)
       if (tavily.month !== month) Object.assign(tavily, { month, used: 0 })
@@ -478,7 +487,7 @@ export function tavilyProviderFrom(env: Record<string, string | undefined> = pro
         method: 'POST',
         signal,
         headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` },
-        body: JSON.stringify({ query: query.slice(0, 300), search_depth: 'basic', max_results: 6, include_answer: false, include_raw_content: false, include_images: false }),
+        body: JSON.stringify({ query: query.slice(0, 300), search_depth: 'basic', max_results: 6, include_answer: false, include_raw_content: false, include_images: false, ...(options?.domains?.length ? { include_domains: options.domains.slice(0, 3) } : {}) }),
         redirect: 'error',
       })
       if (!res.ok) {
@@ -663,27 +672,42 @@ export async function researchQuestion(input: ResearchInput, deps: ResearchDeps 
       const known = [...input.universities.map((u) => u.officialWebsite), ...official].map((u) => new URL(u).hostname.replace(/^www\./, ''))
       const attempts = [query, name ? `${name} ${input.topics[0] ?? 'admissions'} official site` : query]
       let searchError: string | null = null
+      let gotOfficial = false
+      const officialUrl = (u: string) => {
+        const h = new URL(u).hostname.replace(/^www\./, '')
+        return known.some((k) => h === k || h.endsWith(`.${k}`)) || OFFICIAL_HOST.test(h)
+      }
+      const take = (urls: string[]) => {
+        const found = urls.filter((u) => {
+          try {
+            return new URL(u).protocol === 'https:' && !NOT_A_SOURCE.test(new URL(u).hostname) && !wrongLevelPage(u, '', input.level ?? null)
+          } catch {
+            return false
+          }
+        })
+        const preferred = found.filter(officialUrl)
+        // Official-looking pages first; other reputable pages only when no official one turned up.
+        for (const url of (preferred.length ? preferred : found).slice(0, 4)) queue.push({ url, via: 'search', publisher: new URL(url).hostname.replace(/^www\./, ''), depth: 0, score: 90 })
+        if (preferred.length) gotOfficial = true
+        return found.length
+      }
       for (const attempt of attempts) {
         if (controller.signal.aborted) break
         try {
-          const found = (await search.search(attempt, controller.signal)).filter((u) => {
-            try {
-              return new URL(u).protocol === 'https:' && !NOT_A_SOURCE.test(new URL(u).hostname) && !wrongLevelPage(u, '', input.level ?? null)
-            } catch {
-              return false
-            }
-          })
-          const preferred = found.filter((u) => {
-            const h = new URL(u).hostname.replace(/^www\./, '')
-            return known.some((k) => h === k || h.endsWith(`.${k}`)) || OFFICIAL_HOST.test(h)
-          })
-          // Official-looking pages first; other reputable pages only when no official one turned up.
-          for (const url of (preferred.length ? preferred : found).slice(0, 4)) queue.push({ url, via: 'search', publisher: new URL(url).hostname.replace(/^www\./, ''), depth: 0, score: 90 })
+          const count = take(await search.search(attempt, controller.signal))
           searchError = null
-          if (found.length) break
+          if (count) break
         } catch (e) {
           searchError = 'The internet search could not be completed.'
           if ((e as { retryable?: boolean })?.retryable === false) break
+        }
+      }
+      // The open search returned only third parties although the university's own site is known: ask once for that site's pages.
+      if (!gotOfficial && known.length && !searchError && !controller.signal.aborted) {
+        try {
+          take(await search.search(query, controller.signal, { domains: [...new Set(known.map(registrableDomain))].slice(0, 2) }))
+        } catch {
+          // The open-search results already queued remain; nothing else to do.
         }
       }
       searchFailure = searchError
@@ -771,6 +795,21 @@ export async function researchQuestion(input: ResearchInput, deps: ResearchDeps 
     for (let i = items.length - 1; i >= 0; i--) if (!topical.get(items[i].sourceUrl)) items.splice(i, 1)
     for (let i = sources.length - 1; i >= 0; i--) if (!topical.get(sources[i].url)) sources.splice(i, 1)
     outdated.splice(0, outdated.length, ...sources.filter((x) => x.outdated).map((x) => `${new URL(x.url).hostname} (page last updated ${x.published})`))
+  }
+  // Third-party pages (aggregators, blogs, exam-fee sites) are kept only when no page of the university's own site, or of a government site, gave anything.
+  const trusted = new Set(
+    [...official, ...input.universities.map((u) => u.officialWebsite), ...(input.destinations ?? []).flatMap((d) => GOV_SEEDS[d.iso2] ?? [])].map((u) => {
+      try {
+        return registrableDomain(new URL(u).hostname)
+      } catch {
+        return ''
+      }
+    }),
+  )
+  const trustedUrl = (u: string) => trusted.has(registrableDomain(new URL(u).hostname)) || OFFICIAL_HOST.test(new URL(u).hostname.replace(/^www\./, ''))
+  if (sources.some((s) => trustedUrl(s.url) && items.some((i) => i.sourceUrl === s.url))) {
+    for (let i = items.length - 1; i >= 0; i--) if (!trustedUrl(items[i].sourceUrl)) items.splice(i, 1)
+    for (let i = sources.length - 1; i >= 0; i--) if (!trustedUrl(sources[i].url)) sources.splice(i, 1)
   }
   // Only a page the answer actually rests on can make it "possibly out of date": an old, unrelated page that gave no passage does not.
   const usedUrls = new Set(items.filter((i) => !/text gave no figure/.test(i.text)).map((i) => i.sourceUrl))

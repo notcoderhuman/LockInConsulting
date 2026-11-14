@@ -142,7 +142,7 @@ describe('false alarms the evaluation found', () => {
     const { findConflicts } = await import('@/lib/derek/research')
     const a = web('https://grad.example.test/application-fee', 'The tuition and application fee for international applicants is CDN $168.25')
     const b = web('https://grad.example.test/tuition', 'Tuition fee for international students is CDN $9,000 per year')
-    const c = web('https://other.example.test/fees', 'Tuition fee for international students is CDN $12,500 per year')
+    const c = web('https://other-site.test/fees', 'Tuition fee for international students is CDN $12,500 per year')
     expect(findConflicts([a, b], ['fees or costs'])).toEqual([])
     expect(findConflicts([b, c], ['fees or costs'])).toHaveLength(1) // two different sites disagreeing is still reported
   })

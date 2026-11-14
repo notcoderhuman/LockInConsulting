@@ -706,6 +706,8 @@ export async function researchQuestion(input: ResearchInput, deps: ResearchDeps 
       if (!gotOfficial && known.length && !searchError && !controller.signal.aborted) {
         try {
           take(await search.search(query, controller.signal, { domains: [...new Set(known.map(registrableDomain))].slice(0, 2) }))
+          // The third-party pages were only a fallback: with the university's own pages found, they are not read at all.
+          if (gotOfficial) for (let i = queue.length - 1; i >= 0; i--) if (queue[i].via === 'search' && !officialUrl(queue[i].url)) queue.splice(i, 1)
         } catch {
           // The open-search results already queued remain; nothing else to do.
         }

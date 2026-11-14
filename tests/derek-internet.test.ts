@@ -483,3 +483,20 @@ describe('official pages first: a second search restricted to the university sit
     expect(body.include_domains).toBeUndefined()
   })
 })
+
+describe('third-party fallbacks are not read once the university’s own pages are found', () => {
+  it('drops the aggregator pages from the reading queue when the restricted search finds official ones', async () => {
+    const { clearResearchCache, researchQuestion } = await import('@/lib/derek/research')
+    clearResearchCache()
+    const OWN = 'https://grad.example-uni.test/programmes/computer-science/admission'
+    const BLOGS = Array.from({ length: 4 }, (_, n) => `https://aggregator.test/universities/example/page-${n}`)
+    const fetched: string[] = []
+    const search = { search: async (_q: string, _s: AbortSignal, options?: { domains?: string[] }) => (options?.domains ? [OWN] : BLOGS) }
+    await researchQuestion(
+      { topics: ['entry or language requirements'], course: 'Master of Computer Science', universities: [], universityName: 'Example University', search },
+      { fetchPage: async (u) => (fetched.push(u), u === OWN ? { url: OWN, lastModified: null, html: '<html><title>Admission - Master of Computer Science</title><body><p>A minimum overall average of 80% is required for the Master of Computer Science.</p></body></html>' } : null), siteFor: async () => 'https://www.example-uni.test/', sitemap: async () => [] },
+    )
+    expect(fetched).toContain(OWN)
+    expect(fetched.filter((u) => u.startsWith('https://aggregator.test'))).toEqual([])
+  })
+})

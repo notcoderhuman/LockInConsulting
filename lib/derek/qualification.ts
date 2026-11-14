@@ -104,3 +104,28 @@ export function dropOtherCourseEvidence(evidence: EvidenceItem[], q: Qualificati
   if (!q) return evidence
   return evidence.filter((e) => !COURSE_RECORD.test(e.ref) || matchesQualification(e.text, q))
 }
+
+export type AskedLevel = 'graduate' | 'undergraduate'
+
+/** Whether the student asks about graduate (master's, PhD) or undergraduate study, from their own words. */
+export function askedLevel(text: string): AskedLevel | null {
+  const t = normalise(text)
+  const grad = /\b(?:master'?s?|masters|msc|m\.sc|meng|mphil|mtech|mba|ma|ms|phd|ph\.d|doctoral|doctorate|postgraduate|post-graduate|graduate (?:school|studies|programme|program|admission))\b/.test(t)
+  const under = /\b(?:bachelor'?s?|bsc|b\.sc|beng|btech|ba|undergraduate|undergrad)\b/.test(t)
+  return grad && !under ? 'graduate' : under && !grad ? 'undergraduate' : null
+}
+
+/** A page (by address and title) that is plainly about the other level: undergraduate admissions for a master's question, or the reverse. */
+export function wrongLevelPage(url: string, title: string, level: AskedLevel | null): boolean {
+  if (!level) return false
+  let path = ''
+  try {
+    path = new URL(url).pathname.toLowerCase().replace(/[-_/]+/g, ' ')
+  } catch {
+    return false
+  }
+  const hay = `${path} ${normalise(title)}`
+  const undergrad = /\b(?:undergraduate|undergrad|bachelor'?s?|first[- ]year|high school|secondary school|cegep)\b/.test(hay)
+  const grad = /\b(?:graduate|postgraduate|master'?s?|masters|doctoral|phd|gradapplicants|gradstudies|sgs)\b/.test(hay.replace(/undergraduate/g, ''))
+  return level === 'graduate' ? undergrad && !grad : grad && !undergrad
+}

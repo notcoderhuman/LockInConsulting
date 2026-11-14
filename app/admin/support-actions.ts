@@ -285,7 +285,7 @@ export async function testResearchAction(_prev: ActionState, form: FormData): Pr
     const { DEREK_INSTRUCTIONS } = await import('@/lib/derek/provider')
     const { analyseQuestion, detectDestinations } = await import('@/lib/derek/guidance')
     const { institutionNames } = await import('@/lib/derek/discovery')
-    const { askedQualification } = await import('@/lib/derek/qualification')
+    const { askedQualification, askedLevel } = await import('@/lib/derek/qualification')
     const { researchNote, researchFlags } = await import('@/lib/derek/drafts')
     const { completeAnswer, impossibleScores } = await import('@/lib/derek/completeness')
     const { studentFacingText, tidyDraft } = await import('@/lib/derek/style')
@@ -294,22 +294,25 @@ export async function testResearchAction(_prev: ActionState, form: FormData): Pr
     // The same inputs the student pipeline derives from the question itself (no directory records, no student data).
     const guidance0 = analyseQuestion(question, [])
     const institutions = institutionNames(question)
+    const course = askedQualification(question)
     const input = {
-      topics: guidance0.topics,
-      course: askedQualification(question),
+      // As in the student pipeline: a comparison of two universities with no topic named compares requirements and fees.
+      topics: guidance0.topics.length || institutions.length < 2 ? guidance0.topics : ['entry or language requirements', 'fees or costs'],
+      course,
       universities: [],
       universityName: institutions[0] ?? null,
       destinations: detectDestinations(question).map((d) => ({ iso2: d.iso2, name: d.name })),
+      level: askedLevel(question),
     }
     const out: string[] = []
     const search = R.searchProviderFrom()
     out.push(`QUESTION (${chosen.id}): ${question}`)
-    out.push(`DERIVED: kind ${guidance0.kind}; topics ${input.topics.join(', ') || 'none'}; course ${input.course ?? 'none'}; university ${input.universityName ?? 'none'}; destinations ${input.destinations.map((d) => d.iso2).join(', ') || 'none'}\nPRODUCTION WOULD RESEARCH: ${guidance0.kind === 'specific_fact' || institutions.length > 0 ? 'yes' : 'no (general question: answered without research)'}`)
+    out.push(`DERIVED: level ${input.level ?? 'not stated'}; universities ${institutions.join(' + ') || 'none'}; kind ${guidance0.kind}; topics ${input.topics.join(', ') || 'none'}; course ${input.course ?? 'none'}; university ${input.universityName ?? 'none'}; destinations ${input.destinations.map((d) => d.iso2).join(', ') || 'none'}\nPRODUCTION WOULD RESEARCH: ${guidance0.kind === 'specific_fact' || institutions.length > 0 ? 'yes' : 'no (general question: answered without research)'}`)
     out.push(`SEARCH PROVIDER: ${search ? 'Tavily (free plan)' : 'none configured (TAVILY_API_KEY not set)'}`)
 
     const seen: string[] = []
     const spy = search ? { search: async (q: string, sig: AbortSignal) => { const urls = await search.search(q, sig); seen.push(...urls); return urls } } : null
-    const result = await R.researchQuestion({ ...input, search: spy })
+    const result = await R.researchAll((i) => R.researchQuestion({ ...i, search: spy }), input, institutions)
     out.push(`OFFICIAL SITE: ${result.record.official?.[0] ? host(result.record.official[0]) : 'not found'}`)
     out.push(`SEARCH RETURNED ${seen.length} URL(s):\n${seen.map((u) => `  ${u}`).join('\n') || '  none'}`)
     const bySource = new Map<string, typeof result.items>()
@@ -329,7 +332,7 @@ export async function testResearchAction(_prev: ActionState, form: FormData): Pr
     const evidence = R.capEvidence([...result.items, ...officialPages], 30)
     const analysed = analyseQuestion(question, evidence)
     try {
-      const answer = await provider.generate({ question, history: [], evidence, instructions: DEREK_INSTRUCTIONS, guidance: { ...analysed, note: `${analysed.note} ${researchNote(result)}` } }, { signal: AbortSignal.timeout(40_000) })
+      const answer = await provider.generate({ question, history: [], evidence, instructions: DEREK_INSTRUCTIONS, guidance: { ...analysed, note: `${analysed.note} ${researchNote(result, institutions.length >= 2)}` } }, { signal: AbortSignal.timeout(40_000) })
       const cleaned = studentFacingText(tidyDraft(answer.text))
       const text = completeAnswer(cleaned, evidence, result.record.sources)
       const added = text.length - cleaned.length

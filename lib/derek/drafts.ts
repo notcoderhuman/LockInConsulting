@@ -17,7 +17,8 @@ import { institutionNames } from './discovery'
 import { analyseQuestion, COMPARISON_TARGET_CHARS, detectDestinations, studentPlanFromSubject } from './guidance'
 import { commitAllowance, releaseAllowance, reserveAllowance } from './allowance'
 import { DEREK_GENERATION_SECONDS } from '@/lib/support/state'
-import { capEvidence, evidenceCovers, findUniversitySites, researchQuestion, type ResearchResult } from './research'
+import { askedLevel } from './qualification'
+import { capEvidence, evidenceCovers, findUniversitySites, researchAll, researchQuestion, type ResearchResult } from './research'
 import { planFromSubject } from './suggestions'
 import { askedQualification, dropOtherCourseEvidence, parseQualification } from './qualification'
 import { DEREK_INSTRUCTIONS, type AiProvider, type DraftRequest, type EvidenceItem } from './provider'
@@ -140,12 +141,13 @@ function officialLabel(url: string): string {
   }
 }
 
-export function researchNote(r: ResearchResult): string {
+export function researchNote(r: ResearchResult, compare = false): string {
   if (!r.items.length)
     return `The university's own pages were checked just now and gave nothing usable for this (${r.record.failure ?? 'no relevant text'}). Start with [UNCERTAIN], say plainly that you could not confirm it, tell the student which official page will confirm it and what to look for there, and give no figure or date.`
   const parts = ["The EVIDENCE lines marked UNVERIFIED that come from web pages are the university's own pages, read just now. Tell the student what those pages say in natural words, name the page, and link it with descriptive text. When they state the answer, give it directly and completely, without [UNCERTAIN] and without saying anything is unverified: the source is the university itself."]
-  if (r.record.outdated.length) parts.push(`Some pages are old (${r.record.outdated.join('; ')}): say the information may be out of date and start with [UNCERTAIN].`)
+  if (r.record.outdated.length) parts.push(`Some pages are old (${r.record.outdated.join('; ')}): answer the question first, then add one sentence near the end that this information may be out of date and should be confirmed on the page, and start with [UNCERTAIN].`)
   if (r.record.conflicts.length) parts.push(`The sources disagree (${r.record.conflicts.join('; ')}): explain the difference naturally in one or two sentences, link each page, say which one is the university-wide or authoritative page to confirm on, do not pick one as correct, and start with [UNCERTAIN].`)
+  if (compare) parts.push('This is a comparison of two universities. Give a short side-by-side comparison in plain words, naming each university, using only what each one’s pages state in EVIDENCE (entry requirements, fees and anything else stated), with each university’s official page linked. Where one university’s pages did not state something, say so and what to check, never filling it from the other. The earlier instruction to avoid figures does not apply to figures stated in EVIDENCE.')
   const extra = completenessNote(r.items, r.record.sources)
   if (extra) parts.push(extra)
   return parts.join(' ')
@@ -380,7 +382,11 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
       if (doResearch) await setPhase('researching')
       // The destination comes from the question, else from the plan the student gave LockIn (used on LockIn's side only).
       const destinations = (detectDestinations(claim.question).length ? detectDestinations(claim.question) : detectDestinations(earlier)).map((d) => ({ iso2: d.iso2, name: d.name }))
-      research = await doResearch?.({ topics: guidance.topics, course: asked, universities, universityName: institutions[0] ?? null, destinations })?.catch(() => null) ?? null
+      // A comparison of two universities researches both (in parallel) and merges the evidence; with no topic named, requirements and fees are compared.
+      const topics = guidance.topics.length || institutions.length < 2 ? guidance.topics : ['entry or language requirements', 'fees or costs']
+      const level = askedLevel(`${claim.question}
+${asked ?? ''}`) ?? askedLevel(earlier)
+      research = doResearch ? await researchAll(doResearch, { topics, course: asked, universities, universityName: institutions[0] ?? null, destinations, level }, institutions, universities).catch(() => null) : null
       if (research) {
         // The official pages LockIn holds are listings, not facts: they only make the university's own link citable.
         const officialPages = (research.record.official ?? []).slice(0, 2).map((url, i) => ({ ref: `university:official:${i}`, text: `The university's official page: ${url}`, sourceUrl: url, publisher: 'University website', checkedAt: new Date().toISOString().slice(0, 10), unverified: true as const }))
@@ -389,7 +395,7 @@ export async function prepareDerekDraft(pool: Pool, conversationId: number, trig
         const again = analyseQuestion(question, evidence, earlier, history.filter((h) => h.role === 'team').at(-1)?.text)
         guidance = {
           ...again,
-          note: `${scrub(again.note, again.isFollowUp === true)}${planOk ? ` The student told LockIn before asking: "${redactPersonalData(claim.plan ?? '')}" Use this and do not ask for it again.` : ''} ${researchNote(research)}`,
+          note: `${scrub(again.note, again.isFollowUp === true)}${planOk ? ` The student told LockIn before asking: "${redactPersonalData(claim.plan ?? '')}" Use this and do not ask for it again.` : ''} ${researchNote(research, institutions.length >= 2)}`,
         }
       }
     }

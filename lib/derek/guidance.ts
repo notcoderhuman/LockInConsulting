@@ -31,7 +31,8 @@ const ALIASES: Record<string, string[]> = {
 const norm = (s: string) => ` ${s.toLowerCase().replace(/[^a-z0-9.]+/g, ' ').replace(/\.(?= |$)/g, '').trim()} `
 
 export function detectDestinations(text: string): Destination[] {
-  const t = norm(text)
+  // "British Columbia" and the Canadian provinces are Canada, not Britain.
+  const t = norm(text.replace(/british columbia|ontario|quebec|alberta|nova scotia|manitoba|saskatchewan/gi, "canada"))
   return DESTINATIONS.filter((d) => (ALIASES[d.iso2] ?? [d.shortName.toLowerCase(), d.name.toLowerCase()]).some((a) => t.includes(` ${a.replace(/\.$/, '')} `)))
 }
 

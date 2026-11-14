@@ -374,3 +374,69 @@ describe('the programme can be named in any part of a page title', () => {
     expect(isOtherQualification('Fees - Bachelor of Data Science', q)).toBe(true)
   })
 })
+
+describe('a topical link is not crowded out by navigation links that repeat the programme name', () => {
+  it('queues the fee-schedule link even when a dozen links contain "data science"', async () => {
+    const { scoredLinks } = await import('@/lib/derek/research')
+    const { parseQualification } = await import('@/lib/derek/qualification')
+    const nav = Array.from({ length: 14 }, (_, n) => `<a href="/data-science/section-${n}">Data Science section ${n}</a>`).join('')
+    const html = `${nav}<p>See the <a href="/finance/student-financial-services/tuition-fee-schedules">graduate fee schedules</a>.</p>`
+    const links = scoredLinks(html, 'https://uni.test/data-science/tuition', ['fees or costs'], 'Master of Data Science', parseQualification('Master of Data Science'))
+    expect(links[0].url).toBe('https://uni.test/finance/student-financial-services/tuition-fee-schedules')
+    expect(links[0].topic).toBeGreaterThanOrEqual(2)
+    expect(links.length).toBeLessThanOrEqual(8)
+  })
+})
+
+describe('level, destinations and comparisons (McGill and Toronto-UBC regressions)', () => {
+  it('knows whether the student asks about graduate or undergraduate study, and which pages are about the other level', async () => {
+    const { askedLevel, wrongLevelPage } = await import('@/lib/derek/qualification')
+    expect(askedLevel('How do I apply to a master’s programme at McGill University?')).toBe('graduate')
+    expect(askedLevel('entry requirements for the Bachelor of Nursing')).toBe('undergraduate')
+    expect(askedLevel('How do I apply to McGill?')).toBeNull()
+    expect(askedLevel('compare undergraduate and master’s fees')).toBeNull()
+    expect(wrongLevelPage('https://www.mcgill.ca/undergraduate-admissions/apply/requirements/quebec', 'Requirements for Quebec applicants', 'graduate')).toBe(true)
+    expect(wrongLevelPage('https://www.mcgill.ca/gradapplicants/how-apply', 'Applying and admissions', 'graduate')).toBe(false)
+    expect(wrongLevelPage('https://future.utoronto.ca/how-to-apply', 'How to apply', 'graduate')).toBe(false)
+    expect(wrongLevelPage('https://uni.test/graduate/admission', 'Graduate admission', 'undergraduate')).toBe(true)
+    expect(wrongLevelPage('https://uni.test/undergraduate-admissions/apply', 'Apply', null)).toBe(false)
+  })
+  it('British Columbia and the provinces are Canada, never the UK', async () => {
+    const { detectDestinations } = await import('@/lib/derek/guidance')
+    expect(detectDestinations('Compare the University of Toronto and the University of British Columbia').map((d) => d.iso2)).toEqual(['CA'])
+    expect(detectDestinations('studying in Ontario').map((d) => d.iso2)).toEqual(['CA'])
+    expect(detectDestinations('studying in the UK').map((d) => d.iso2)).toEqual(['GB'])
+  })
+  it('a master’s question does not read the undergraduate pages, and keeps its graduate ones', async () => {
+    const { clearResearchCache, researchQuestion } = await import('@/lib/derek/research')
+    clearResearchCache()
+    const UG = 'https://www.example-uni.test/undergraduate-admissions/apply'
+    const GR = 'https://www.example-uni.test/gradapplicants/how-apply'
+    const html = (title: string, body: string) => `<html><title>${title}</title><body>${body}</body></html>`
+    const pages: Record<string, { url: string; html: string; lastModified: null }> = {
+      [UG]: { url: UG, lastModified: null, html: html('How to apply - undergraduate', '<p>Submit your CEGEP transcript and Quebec college documents through the undergraduate application portal.</p>') },
+      [GR]: { url: GR, lastModified: null, html: html('How to apply - graduate applicants', '<p>Apply online, upload your transcripts, two references and a statement of purpose, and pay the application fee.</p>') },
+    }
+    const result = await researchQuestion(
+      { topics: ['application steps'], course: null, universities: [], universityName: 'Example University', level: 'graduate', search: { search: async () => [UG, GR] } },
+      { fetchPage: async (u) => pages[u] ?? null, siteFor: async () => null },
+    )
+    expect(result.record.sources.map((s) => s.url)).toEqual([GR])
+    expect(result.items.some((i) => /CEGEP/.test(i.text))).toBe(false)
+  })
+  it('two universities are researched separately and their evidence interleaved', async () => {
+    const { researchAll } = await import('@/lib/derek/research')
+    const make = (name: string, n: number) => ({
+      items: Array.from({ length: n }, (_, i) => ({ ref: `web:${name}:${i}`, text: `${name} fact ${i}`, sourceUrl: `https://${name}.test/p${i}`, publisher: name, checkedAt: '2026-11-14', unverified: true as const })),
+      record: { attempted: true as const, query: name, sources: [], conflicts: [], outdated: [], failure: null },
+    })
+    const seen: (string | null | undefined)[] = []
+    const merged = await researchAll(async (i) => (seen.push(i.universityName), make(String(i.universityName).split(' ').at(-1) as string, 2)), { topics: [], course: null, universities: [] }, ['University of Toronto', 'University of Waterloo'])
+    expect(seen.sort()).toEqual(['University of Toronto', 'University of Waterloo'])
+    expect(merged.items.map((i) => i.publisher)).toEqual(['Toronto', 'Waterloo', 'Toronto', 'Waterloo'])
+    // One university failing does not lose the other.
+    const half = await researchAll(async (i) => (i.universityName === 'University of Toronto' ? Promise.reject(new Error('down')) : make('Waterloo', 1)), { topics: [], course: null, universities: [] }, ['University of Toronto', 'University of Waterloo'])
+    expect(half.items).toHaveLength(1)
+    expect(half.record.failure).toBeNull()
+  })
+})

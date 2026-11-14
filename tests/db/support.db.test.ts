@@ -2250,7 +2250,7 @@ describe('Derek daily allowance, web research and routing', () => {
       const input = research.mock.calls[0][0] as { topics: string[]; course: string | null; universities: unknown[] }
       expect(input.topics).toEqual(['fees or costs'])
       expect(input.course).toBe('MSc Computer Science')
-      expect(Object.keys(input).sort()).toEqual(['course', 'destinations', 'topics', 'universities', 'universityName'])
+      expect(Object.keys(input).sort()).toEqual(['course', 'destinations', 'level', 'topics', 'universities', 'universityName'])
       expect(JSON.stringify(input)).not.toMatch(/Asha|Rao|student\d+@test|@/)
       // The answer says what the page says and links it, with no internal wording; the review record keeps the source.
       const [body] = await derekBodies(q.conversationId)
@@ -3096,6 +3096,35 @@ describe('Derek on the open internet, and student conduct (Owner brief, 13 Nov 2
       const all = await rows<{ title: string }>('SELECT title FROM notifications WHERE conversation_id = ?', [q.conversationId])
       expect(JSON.stringify([...notes, ...all])).toMatch(/cannot be right/)
       expect(await left(s)).toBe(9)
+    })
+
+    it('a comparison of two universities researches both, compares requirements and fees, and tells the model to compare side by side', async () => {
+      const s = await makeStudent('Asha Rao')
+      await accept(s)
+      const q = await C.createConversation(pool(), s, { body: 'Compare the University of Toronto and the University of British Columbia for a master’s in computer science.', clientRequestId: rid() })
+      const calls: import('@/lib/derek/research').ResearchInput[] = []
+      const TOR = 'https://sgs.utoronto.test/admission'
+      const UBC = 'https://grad.ubc.test/admission'
+      const run = async (input: import('@/lib/derek/research').ResearchInput): Promise<ResearchResult> => {
+        calls.push(input)
+        const url = /Toronto/.test(String(input.universityName)) ? TOR : UBC
+        const name = /Toronto/.test(String(input.universityName)) ? 'Toronto' : 'British Columbia'
+        return {
+          items: [{ ref: `web:${name.slice(0, 3)}:0`, text: `${UNVERIFIED_TAG}: from the web page "Admission": ${name} requires a four-year bachelor’s degree with a B+ average for the master’s in computer science.`, sourceUrl: url, publisher: name, checkedAt: TODAY, unverified: true }],
+          record: { attempted: true, query: name, sources: [{ url, publisher: name, title: 'Admission', retrievedAt: TODAY, published: null, outdated: false, via: 'search' }], conflicts: [], outdated: [], failure: null },
+        }
+      }
+      const { provider, state } = counting(() => `Both want a bachelor’s degree: [Toronto](${TOR}) lists a B+ average and [British Columbia](${UBC}) lists the same B+ average, so check each department.`)
+      const out = await D.prepareDerekDraft(pool(), q.conversationId, q.triggerMessageId!, { provider, status: FREE, research: run, loadEvidence: async () => [] })
+      expect(out.state).toMatch(/auto_sent|review/)
+      expect(calls.map((c) => c.universityName).sort()).toEqual(['University of British Columbia', 'University of Toronto'])
+      for (const c of calls) {
+        expect(c.topics).toEqual(['entry or language requirements', 'fees or costs'])
+        expect(c.level).toBe('graduate')
+        expect(c.destinations).toEqual([{ iso2: 'CA', name: 'Canada' }]) // British Columbia is Canada, not the UK
+      }
+      expect(String(state.requests[0].guidance?.note)).toMatch(/comparison of two universities[\s\S]*side-by-side/)
+      expect(state.requests[0].evidence.map((e) => e.sourceUrl).sort()).toEqual([TOR, UBC].sort())
     })
 
     it('a refused visa, deportation or an appeal still goes to a person, never to Derek', async () => {
